@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package xrconnect.devices.v1alpha1;
+
+import "xrconnect/devices/v1alpha1/device.proto";
+import "xrconnect/devices/v1alpha1/events.proto";
+
+import "google/protobuf/empty.proto";
+
+service DeviceManager {
+  rpc EventStream(EventStreamRequest) returns (stream EventStreamResponse);
+
+  rpc ScanStart(ScanStartRequest) returns (ScanStartResponse);
+  rpc ScanStop(ScanStopRequest) returns (ScanStopResponse);
+
+  rpc DeviceConnect(DeviceConnectRequest) returns (DeviceConnectResponse);
+  rpc DeviceDisconnect(DeviceDisconnectRequest) returns (DeviceDisconnectResponse);
+  rpc DeviceAdd(DeviceAddRequest) returns (DeviceAddResponse);
+}
+
+message EventStreamRequest {};
+message EventStreamResponse {
+  DeviceMessage message = 1;
+};
+
+message ScanStartRequest {};
+message ScanStartResponse {};
+message ScanStopRequest {};
+message ScanStopResponse {};
+
+message DeviceConnectRequest {
+  string device_id = 1;
+}
+message DeviceConnectResponse {};
+message DeviceDisconnectRequest {
+  string device_id = 1;
+}
+message DeviceDisconnectResponse {};
+
+message DeviceAddRequest {
+  message OpenGlove {
+    message SerialPort {
+      string port = 1;
+      optional int32 baud_rate = 2;
+    }
+    message Bluetooth {
+      string address = 1;
+    }
+    message BluetoothLE {
+      string address = 1;
+
+      reserved 2 to 10;
+
+      optional string service_uuid = 11;
+      optional string rx_uuid = 12;
+      optional string tx_uuid = 13;
+    }
+
+    reserved 2 to 4;
+    Device.Chirality chirality = 5;
+    reserved 6 to 10;
+
+    oneof transport {
+      SerialPort serial_port = 21;
+      Bluetooth bluetooth = 22;
+      BluetoothLE bluetooth_le = 23;
+    }
+  }
+
+  reserved 1 to 10;
+  oneof type {
+    OpenGlove openglove = 11;
+  }
+}
+message DeviceAddResponse {};

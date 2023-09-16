@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package xrconnect.devices.v1alpha1;
+
+import "xrconnect/devices/v1alpha1/device.proto";
+
+message DeviceMessage {
+  message ScanStarted {}
+  message ScanStopped {}
+
+  message DeviceDiscovered {
+    Device device = 1;
+  }
+  message DeviceConnected {
+    Device device = 1;
+  }
+  message DeviceUpdated {
+    Device device = 1;
+  }
+
+  reserved 1 to 120;
+  reserved 123 to 150;
+  oneof type {
+    ScanStarted scan_started = 121;
+    ScanStopped scan_stopped = 122;
+
+    DeviceDiscovered device_discovered = 151;
+    DeviceConnected device_connected = 152;
+    DeviceUpdated device_updated = 153;
+  }
+}

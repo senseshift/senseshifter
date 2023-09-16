@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package xrconnect.devices.v1alpha1;
+
+message Device {
+  message Info {
+    string manufacturer = 1;
+    string model = 2;
+  }
+  message Properties {
+    message Battery {
+      enum State {
+        STATE_UNKNOWN = 0;
+        STATE_CHARGING = 1;
+        STATE_DISCHARGING = 2;
+        STATE_NOT_CHARGING = 3;
+        STATE_FULL = 4;
+      }
+
+      optional State state = 1;
+      repeated float levels = 2;
+    }
+
+    optional string serial_number = 1;
+    optional string firmware_version = 2;
+    optional Battery battery = 3;
+  }
+
+  enum Status {
+    STATUS_UNKNOWN = 0;
+    STATUS_DISCONNECTED = 1;
+    STATUS_CONNECTING = 2;
+    STATUS_CONNECTED = 3;
+    STATUS_DISCONNECTING = 4;
+  }
+  enum Chirality {
+    CHIRALITY_UNKNOWN = 0;
+    CHIRALITY_LEFT = 1;
+    CHIRALITY_RIGHT = 2;
+  }
+
+  string device_id = 1;
+  string name = 2;
+  Status status = 3;
+
+  reserved 4 to 50;
+
+  Info info = 51;
+  Properties properties = 52;
+}

@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/*"
+]
+
+[workspace.dependencies]
+xrconnect-proto = { path = "crates/xrconnect-proto" }
+
+# Common dependencies
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "^0.1.37"

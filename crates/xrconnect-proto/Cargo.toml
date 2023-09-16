@@ -1,0 +1,29 @@
+[package]
+name = "xrconnect-proto"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+full = ["tonic-client", "tonic-server", "specta", "serde-serialize"]
+
+tonic-client = ["dep:tonic"]
+tonic-server = ["dep:tonic"]
+
+specta = ["dep:specta", "serde-serialize"]
+serde-serialize = ["dep:serde"]
+
+[dependencies]
+prost = "^0.12"
+async-trait = "^0.1.73"
+
+tonic = { version = "^0.10", optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
+specta = { version = "1", optional = true }
+
+[build-dependencies]
+tonic-build = "^0.10"
+
+[dev-dependencies]
+serde_json = { workspace = true }
