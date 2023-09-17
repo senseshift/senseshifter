@@ -31,11 +31,15 @@ message ScanStopResponse {};
 message DeviceConnectRequest {
   string device_id = 1;
 }
-message DeviceConnectResponse {};
+message DeviceConnectResponse {
+  Device device = 1;
+};
 message DeviceDisconnectRequest {
   string device_id = 1;
 }
-message DeviceDisconnectResponse {};
+message DeviceDisconnectResponse {
+  Device device = 1;
+};
 
 message DeviceAddRequest {
   message OpenGlove {
@@ -43,7 +47,7 @@ message DeviceAddRequest {
       string port = 1;
       optional int32 baud_rate = 2;
     }
-    message Bluetooth {
+    message RFComm {
       string address = 1;
     }
     message BluetoothLE {
@@ -62,9 +66,10 @@ message DeviceAddRequest {
 
     oneof transport {
       SerialPort serial_port = 21;
-      Bluetooth bluetooth = 22;
+      RFComm rfcomm = 22;
       BluetoothLE bluetooth_le = 23;
     }
+    reserved 24 to 40;
   }
 
   reserved 1 to 10;
@@ -72,4 +77,6 @@ message DeviceAddRequest {
     OpenGlove openglove = 11;
   }
 }
-message DeviceAddResponse {};
+message DeviceAddResponse {
+  Device device = 1;
+};

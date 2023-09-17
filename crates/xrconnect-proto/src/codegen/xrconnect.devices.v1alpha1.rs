@@ -139,6 +139,54 @@ pub mod device {
         ::prost::Enumeration
     )]
     #[repr(i32)]
+    pub enum Transport {
+        Unknown = 0,
+        Ble = 1,
+        Serial = 2,
+        RFComm = 3,
+    }
+    impl Transport {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Transport::Unknown => "TRANSPORT_UNKNOWN",
+                Transport::Ble => "TRANSPORT_BLE",
+                Transport::Serial => "TRANSPORT_SERIAL",
+                Transport::RFComm => "TRANSPORT_RFCOMM",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "TRANSPORT_UNKNOWN" => Some(Self::Unknown),
+                "TRANSPORT_BLE" => Some(Self::Ble),
+                "TRANSPORT_SERIAL" => Some(Self::Serial),
+                "TRANSPORT_RFCOMM" => Some(Self::RFComm),
+                _ => None,
+            }
+        }
+    }
+    #[cfg_attr(
+        feature = "serde-serialize",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
+    #[repr(i32)]
     pub enum Status {
         Unknown = 0,
         Disconnected = 1,
@@ -384,7 +432,10 @@ pub struct DeviceConnectRequest {
 #[cfg_attr(feature = "specta", derive(::specta::Type))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeviceConnectResponse {}
+pub struct DeviceConnectResponse {
+    #[prost(message, optional, tag = "1")]
+    pub device: ::core::option::Option<Device>,
+}
 #[cfg_attr(
     feature = "serde-serialize",
     derive(::serde::Serialize, ::serde::Deserialize),
@@ -405,7 +456,10 @@ pub struct DeviceDisconnectRequest {
 #[cfg_attr(feature = "specta", derive(::specta::Type))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeviceDisconnectResponse {}
+pub struct DeviceDisconnectResponse {
+    #[prost(message, optional, tag = "1")]
+    pub device: ::core::option::Option<Device>,
+}
 #[cfg_attr(
     feature = "serde-serialize",
     derive(::serde::Serialize, ::serde::Deserialize),
@@ -458,7 +512,7 @@ pub mod device_add_request {
         #[cfg_attr(feature = "specta", derive(::specta::Type))]
         #[allow(clippy::derive_partial_eq_without_eq)]
         #[derive(Clone, PartialEq, ::prost::Message)]
-        pub struct Bluetooth {
+        pub struct RFComm {
             #[prost(string, tag = "1")]
             pub address: ::prost::alloc::string::String,
         }
@@ -492,7 +546,7 @@ pub mod device_add_request {
             #[prost(message, tag = "21")]
             SerialPort(SerialPort),
             #[prost(message, tag = "22")]
-            Bluetooth(Bluetooth),
+            RFComm(RFComm),
             #[prost(message, tag = "23")]
             BluetoothLE(BluetoothLE),
         }
@@ -518,8 +572,12 @@ pub mod device_add_request {
 #[cfg_attr(feature = "specta", derive(::specta::Type))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeviceAddResponse {}
+pub struct DeviceAddResponse {
+    #[prost(message, optional, tag = "1")]
+    pub device: ::core::option::Option<Device>,
+}
 /// Generated client implementations.
+#[cfg(feature = "tonic-client")]
 pub mod device_manager_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
@@ -787,6 +845,7 @@ pub mod device_manager_client {
     }
 }
 /// Generated server implementations.
+#[cfg(feature = "tonic-server")]
 pub mod device_manager_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;

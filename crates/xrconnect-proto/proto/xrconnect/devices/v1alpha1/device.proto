@@ -3,6 +3,13 @@ syntax = "proto3";
 package xrconnect.devices.v1alpha1;
 
 message Device {
+  enum Transport {
+    TRANSPORT_UNKNOWN = 0;
+    TRANSPORT_BLE = 1;
+    TRANSPORT_SERIAL = 2;
+    TRANSPORT_RFCOMM = 3;
+  }
+
   message Info {
     string manufacturer = 1;
     string model = 2;

@@ -15,8 +15,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       ".",
       "#[cfg_attr(feature = \"specta\", derive(::specta::Type))]",
     )
-    .server_mod_attribute("io.senseshift.xrconnect.v1", "#[cfg(feature = \"tonic-server\")]")
-    .client_mod_attribute("io.senseshift.xrconnect.v1", "#[cfg(feature = \"tonic-client\")]");
+    .server_mod_attribute(".", "#[cfg(feature = \"tonic-server\")]")
+    .client_mod_attribute(".", "#[cfg(feature = \"tonic-client\")]");
 
   builder
     .compile(
@@ -29,6 +29,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ("open_glove", "openglove"),
     ("Openglove", "OpenGlove"),
     ("BluetoothLe", "BluetoothLE"),
+    ("Rfcomm", "RFComm"),
+    ("RfComm", "RFComm")
   ];
 
   // files in out_dir with '.rs' extension
@@ -45,9 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   for filename in filenames {
     let filename = filename?.path();
-    let contents = std::fs::read_to_string(&filename)?;
-
-    let mut contents = contents;
+    let mut contents = std::fs::read_to_string(&filename)?;
 
     for (from, to) in &replacements {
       contents = contents.replace(from, to);

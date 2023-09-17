@@ -16,5 +16,21 @@ pub mod devices {
         }
       }
     }
+
+    impl From<device_message::ScanStarted> for DeviceMessage {
+      fn from(scan_started: device_message::ScanStarted) -> Self {
+        Self {
+          r#type: Some(device_message::Type::ScanStarted(scan_started)),
+        }
+      }
+    }
+
+    impl From<device_message::ScanStopped> for DeviceMessage {
+      fn from(scan_stopped: device_message::ScanStopped) -> Self {
+        Self {
+          r#type: Some(device_message::Type::ScanStopped(scan_stopped)),
+        }
+      }
+    }
   }
 }

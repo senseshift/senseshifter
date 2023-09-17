@@ -4,8 +4,10 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/crates/device-manager-api/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/device-manager/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-devicemanager/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrconnect-proto/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-manager/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-manager/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
