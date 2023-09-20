@@ -7,7 +7,7 @@ edition = "2021"
 
 [features]
 default = []
-full = ["tonic-client", "tonic-server", "serde-serialize", "specta"]
+full = ["tonic-client", "tonic-server", "serde", "specta"]
 
 tonic-client = ["tonic"]
 tonic-server = ["tonic"]
@@ -15,8 +15,8 @@ tonic = ["dep:tonic"]
 
 # micro_rpc = ["dep:micro_rpc", "dep:micro_rpc_build"]
 
-specta = ["dep:specta", "serde-serialize"]
-serde-serialize = ["dep:serde"]
+specta = ["dep:specta", "serde"]
+serde = ["dep:serde"]
 
 [dependencies]
 prost = "^0.12"

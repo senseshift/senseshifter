@@ -1,5 +1,5 @@
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -21,7 +21,7 @@ pub struct Device {
 /// Nested message and enum types in `Device`.
 pub mod device {
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -35,7 +35,7 @@ pub mod device {
         pub model: ::prost::alloc::string::String,
     }
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -53,7 +53,7 @@ pub mod device {
     /// Nested message and enum types in `Properties`.
     pub mod properties {
         #[cfg_attr(
-            feature = "serde-serialize",
+            feature = "serde",
             derive(::serde::Serialize, ::serde::Deserialize),
             serde(rename_all = "snake_case")
         )]
@@ -69,7 +69,7 @@ pub mod device {
         /// Nested message and enum types in `Battery`.
         pub mod battery {
             #[cfg_attr(
-                feature = "serde-serialize",
+                feature = "serde",
                 derive(::serde::Serialize, ::serde::Deserialize),
                 serde(rename_all = "snake_case")
             )]
@@ -122,7 +122,7 @@ pub mod device {
         }
     }
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -170,7 +170,7 @@ pub mod device {
         }
     }
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -221,7 +221,7 @@ pub mod device {
         }
     }
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -267,7 +267,82 @@ pub mod device {
     }
 }
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
+    derive(::serde::Serialize, ::serde::Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[cfg_attr(feature = "specta", derive(::specta::Type))]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RawDevice {
+    #[prost(oneof = "raw_device::Type", tags = "21, 22, 23")]
+    pub r#type: ::core::option::Option<raw_device::Type>,
+}
+/// Nested message and enum types in `RawDevice`.
+pub mod raw_device {
+    #[cfg_attr(
+        feature = "serde",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BluetoothLE {
+        /// The MAC address of the device.
+        #[prost(string, tag = "1")]
+        pub address: ::prost::alloc::string::String,
+        /// The name of the device.
+        #[prost(string, tag = "2")]
+        pub name: ::prost::alloc::string::String,
+    }
+    #[cfg_attr(
+        feature = "serde",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct Serial {
+        #[prost(string, tag = "1")]
+        pub port: ::prost::alloc::string::String,
+    }
+    #[cfg_attr(
+        feature = "serde",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct RFComm {
+        /// The MAC address of the device.
+        #[prost(string, tag = "1")]
+        pub address: ::prost::alloc::string::String,
+        /// The name of the device.
+        #[prost(string, tag = "2")]
+        pub name: ::prost::alloc::string::String,
+    }
+    #[cfg_attr(
+        feature = "serde",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Type {
+        #[prost(message, tag = "21")]
+        BluetoothLE(BluetoothLE),
+        #[prost(message, tag = "22")]
+        Serial(Serial),
+        #[prost(message, tag = "23")]
+        RFComm(RFComm),
+    }
+}
+#[cfg_attr(
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -281,7 +356,7 @@ pub struct DeviceMessage {
 /// Nested message and enum types in `DeviceMessage`.
 pub mod device_message {
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -290,7 +365,7 @@ pub mod device_message {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct ScanStarted {}
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -299,7 +374,7 @@ pub mod device_message {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct ScanStopped {}
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -311,7 +386,7 @@ pub mod device_message {
         pub device: ::core::option::Option<super::Device>,
     }
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -323,7 +398,7 @@ pub mod device_message {
         pub device: ::core::option::Option<super::Device>,
     }
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -335,7 +410,7 @@ pub mod device_message {
         pub device: ::core::option::Option<super::Device>,
     }
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -356,7 +431,7 @@ pub mod device_message {
     }
 }
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -365,7 +440,7 @@ pub mod device_message {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EventStreamRequest {}
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -377,7 +452,7 @@ pub struct EventStreamResponse {
     pub message: ::core::option::Option<DeviceMessage>,
 }
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -386,7 +461,7 @@ pub struct EventStreamResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ScanStartRequest {}
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -395,7 +470,7 @@ pub struct ScanStartRequest {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ScanStartResponse {}
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -404,7 +479,7 @@ pub struct ScanStartResponse {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ScanStopRequest {}
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -413,7 +488,7 @@ pub struct ScanStopRequest {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ScanStopResponse {}
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -425,7 +500,7 @@ pub struct DeviceConnectRequest {
     pub device_id: ::prost::alloc::string::String,
 }
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -437,7 +512,7 @@ pub struct DeviceConnectResponse {
     pub device: ::core::option::Option<Device>,
 }
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -449,7 +524,7 @@ pub struct DeviceDisconnectRequest {
     pub device_id: ::prost::alloc::string::String,
 }
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -461,7 +536,7 @@ pub struct DeviceDisconnectResponse {
     pub device: ::core::option::Option<Device>,
 }
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -475,7 +550,7 @@ pub struct DeviceAddRequest {
 /// Nested message and enum types in `DeviceAddRequest`.
 pub mod device_add_request {
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -491,7 +566,7 @@ pub mod device_add_request {
     /// Nested message and enum types in `OpenGlove`.
     pub mod openglove {
         #[cfg_attr(
-            feature = "serde-serialize",
+            feature = "serde",
             derive(::serde::Serialize, ::serde::Deserialize),
             serde(rename_all = "snake_case")
         )]
@@ -505,7 +580,7 @@ pub mod device_add_request {
             pub baud_rate: ::core::option::Option<i32>,
         }
         #[cfg_attr(
-            feature = "serde-serialize",
+            feature = "serde",
             derive(::serde::Serialize, ::serde::Deserialize),
             serde(rename_all = "snake_case")
         )]
@@ -513,11 +588,12 @@ pub mod device_add_request {
         #[allow(clippy::derive_partial_eq_without_eq)]
         #[derive(Clone, PartialEq, ::prost::Message)]
         pub struct RFComm {
+            /// The MAC address of the device.
             #[prost(string, tag = "1")]
             pub address: ::prost::alloc::string::String,
         }
         #[cfg_attr(
-            feature = "serde-serialize",
+            feature = "serde",
             derive(::serde::Serialize, ::serde::Deserialize),
             serde(rename_all = "snake_case")
         )]
@@ -525,6 +601,7 @@ pub mod device_add_request {
         #[allow(clippy::derive_partial_eq_without_eq)]
         #[derive(Clone, PartialEq, ::prost::Message)]
         pub struct BluetoothLE {
+            /// The MAC address of the device.
             #[prost(string, tag = "1")]
             pub address: ::prost::alloc::string::String,
             #[prost(string, optional, tag = "11")]
@@ -535,7 +612,7 @@ pub mod device_add_request {
             pub tx_uuid: ::core::option::Option<::prost::alloc::string::String>,
         }
         #[cfg_attr(
-            feature = "serde-serialize",
+            feature = "serde",
             derive(::serde::Serialize, ::serde::Deserialize),
             serde(rename_all = "snake_case")
         )]
@@ -552,7 +629,7 @@ pub mod device_add_request {
         }
     }
     #[cfg_attr(
-        feature = "serde-serialize",
+        feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
         serde(rename_all = "snake_case")
     )]
@@ -565,7 +642,7 @@ pub mod device_add_request {
     }
 }
 #[cfg_attr(
-    feature = "serde-serialize",
+    feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -575,6 +652,28 @@ pub mod device_add_request {
 pub struct DeviceAddResponse {
     #[prost(message, optional, tag = "1")]
     pub device: ::core::option::Option<Device>,
+}
+/// optional Device.Transport transport = 1;
+#[cfg_attr(
+    feature = "serde",
+    derive(::serde::Serialize, ::serde::Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[cfg_attr(feature = "specta", derive(::specta::Type))]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RawDeviceRequest {}
+#[cfg_attr(
+    feature = "serde",
+    derive(::serde::Serialize, ::serde::Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[cfg_attr(feature = "specta", derive(::specta::Type))]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RawDeviceResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub raw_devices: ::prost::alloc::vec::Vec<RawDevice>,
 }
 /// Generated client implementations.
 #[cfg(feature = "tonic-client")]
@@ -842,6 +941,36 @@ pub mod device_manager_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        pub async fn get_raw_devices(
+            &mut self,
+            request: impl tonic::IntoRequest<super::RawDeviceRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::RawDeviceResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/xrconnect.devices.v1alpha1.DeviceManager/GetRawDevices",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "xrconnect.devices.v1alpha1.DeviceManager",
+                        "GetRawDevices",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -898,6 +1027,13 @@ pub mod device_manager_server {
             request: tonic::Request<super::DeviceAddRequest>,
         ) -> std::result::Result<
             tonic::Response<super::DeviceAddResponse>,
+            tonic::Status,
+        >;
+        async fn get_raw_devices(
+            &self,
+            request: tonic::Request<super::RawDeviceRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::RawDeviceResponse>,
             tonic::Status,
         >;
     }
@@ -1243,6 +1379,52 @@ pub mod device_manager_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = DeviceAddSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/xrconnect.devices.v1alpha1.DeviceManager/GetRawDevices" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetRawDevicesSvc<T: DeviceManager>(pub Arc<T>);
+                    impl<
+                        T: DeviceManager,
+                    > tonic::server::UnaryService<super::RawDeviceRequest>
+                    for GetRawDevicesSvc<T> {
+                        type Response = super::RawDeviceResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::RawDeviceRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as DeviceManager>::get_raw_devices(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetRawDevicesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

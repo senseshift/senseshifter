@@ -2,8 +2,10 @@ use std::{
   pin::Pin,
   result::Result as StdResult,
 };
+use std::future::Future;
+use std::sync::Arc;
 use anyhow::Result;
-use tracing::{error};
+use tracing::{debug, error};
 
 use xrconnect_proto::{
   devices::v1alpha1::{
@@ -11,6 +13,8 @@ use xrconnect_proto::{
   },
 };
 
+#[cfg(feature = "tonic")]
+use tonic::{Request, Response, Status, async_trait};
 #[cfg(feature = "tonic")]
 use xrconnect_proto::{
   devices::v1alpha1::{
@@ -29,22 +33,24 @@ use xrconnect_proto::{
     DeviceDisconnectRequest,
     DeviceConnectResponse,
     DeviceDisconnectResponse,
-
     device_manager_server::{
       DeviceManager as DeviceManagerRPC,
     },
   },
 };
-#[cfg(feature = "tonic")]
-use tonic::{Request, Response, Status, async_trait};
 
 use async_stream::stream;
 use futures::{pin_mut, Stream};
+use futures_util::future::join_all;
+use log::info;
 use tokio::sync::{broadcast, mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
 mod task;
+
 use task::DeviceManagerTask;
+use xrconnect_proto::devices::v1alpha1::{RawDeviceRequest, RawDeviceResponse};
+use crate::transport::api::{RawSerialDevice, TransportManager, TransportManagerBuilder};
 
 #[derive(Debug)]
 pub(super) enum DeviceManagerCommand {
@@ -52,32 +58,71 @@ pub(super) enum DeviceManagerCommand {
   ScanStop(oneshot::Sender<Result<()>>),
 }
 
-pub struct DeviceManagerBuilder {}
+pub struct DeviceManagerBuilder {
+  transport_managers: Vec<Box<dyn TransportManagerBuilder>>,
+}
 
 impl Default for DeviceManagerBuilder {
   fn default() -> Self {
-    Self {}
+    let mut builder = Self {
+      transport_managers: Vec::new(),
+    };
+
+    #[cfg(feature = "btle-manager")]
+    {
+      use crate::transport::BtleManagerBuilder;
+      builder.transport(BtleManagerBuilder::default());
+    }
+
+    #[cfg(feature = "serialport-manager")]
+    {
+      use crate::transport::SerialPortManagerBuilder;
+      builder.transport(SerialPortManagerBuilder::default());
+    }
+
+    builder
   }
 }
 
 impl DeviceManagerBuilder {
+  pub fn transport<T>(&mut self, builder: T) -> &mut Self
+    where
+      T: TransportManagerBuilder + 'static,
+  {
+    self.transport_managers.push(Box::new(builder));
+    self
+  }
+
   pub fn build(&self) -> Result<DeviceManager> {
-    let (task_command_sender, task_command_receiver) = mpsc::unbounded_channel();
+    let (task_command_sender, task_command_receiver) = mpsc::channel(256);
     let (event_sender, _event_receiver) = broadcast::channel(256);
     let cancel_token = CancellationToken::new();
 
-    let mut task = DeviceManagerTask {
+    let (transport_event_sender, transport_event_receiver) = mpsc::channel(256);
+    let transport_managers: Vec<_> = self.transport_managers
+      .iter()
+      .map(|builder| -> Result<Box<dyn TransportManager>> {
+        builder.finish(transport_event_sender.clone())
+      })
+      .collect::<Result<Vec<_>, _>>()?;
+    let transport_managers = Arc::new(transport_managers);
+
+    let task = DeviceManagerTask {
+      transport_managers: transport_managers.clone(),
       command_receiver: task_command_receiver,
+      transport_event_receiver,
       event_sender: event_sender.clone(),
       cancel_token: cancel_token.child_token(),
     };
     tokio::spawn(async move {
+      pin_mut!(task);
       if let Err(err) = task.run().await {
         error!("Device manager task exited with error: {}", err);
       }
     });
 
     let manager = DeviceManager {
+      transport_managers,
       task_command_sender,
       event_sender,
       cancel_token,
@@ -88,14 +133,19 @@ impl DeviceManagerBuilder {
 }
 
 pub struct DeviceManager {
-  task_command_sender: mpsc::UnboundedSender<DeviceManagerCommand>,
+  transport_managers: Arc<Vec<Box<dyn TransportManager>>>,
+  task_command_sender: mpsc::Sender<DeviceManagerCommand>,
   event_sender: broadcast::Sender<DeviceMessage>,
   cancel_token: CancellationToken,
 }
 
 impl Default for DeviceManager {
   fn default() -> Self {
-    Self::builder().build().expect("Default is infallible")
+    let mut builder = Self::builder();
+
+    builder
+      .build()
+      .expect("Default is infallible")
   }
 }
 
@@ -115,19 +165,36 @@ impl DeviceManager {
   }
 
   pub async fn scan_start(&self) -> Result<()> {
-    let command_sender = self.task_command_sender.clone();
     let (sender, receiver) = oneshot::channel();
 
-    let _ = command_sender.send(DeviceManagerCommand::ScanStart(sender));
+    self.task_command_sender.send(DeviceManagerCommand::ScanStart(sender)).await?;
     receiver.await?
   }
 
   pub async fn scan_stop(&self) -> Result<()> {
-    let command_sender = self.task_command_sender.clone();
     let (sender, receiver) = oneshot::channel();
 
-    let _ = command_sender.send(DeviceManagerCommand::ScanStop(sender));
+    self.task_command_sender.send(DeviceManagerCommand::ScanStop(sender)).await?;
     receiver.await?
+  }
+
+  pub async fn raw_serial_devices(&self) -> Result<Vec<RawSerialDevice>> {
+    let futures: Vec<_> = self.transport_managers
+      .iter()
+      .map(|manager| manager.raw_serial_devices())
+      .collect();
+
+    let per_manager: Result<Vec<Option<Vec<_>>>> = join_all(futures).await
+      .into_iter()
+      .collect();
+
+    let devices = per_manager?
+      .into_iter()
+      .flatten()
+      .flatten()
+      .collect::<Vec<_>>();
+
+    Ok(devices)
   }
 }
 
@@ -158,13 +225,13 @@ impl DeviceManagerRPC for DeviceManager {
   async fn scan_start(&self, _request: Request<ScanStartRequest>) -> StdResult<Response<ScanStartResponse>, Status> {
     self.scan_start().await
       .map(|_| Response::new(ScanStartResponse {}))
-      .map_err(|err| Status::internal(err.to_string()))
+      .map_err(|err| Status::from_error(Box::from(err)))
   }
 
   async fn scan_stop(&self, _request: Request<ScanStopRequest>) -> StdResult<Response<ScanStopResponse>, Status> {
     self.scan_stop().await
       .map(|_| Response::new(ScanStopResponse {}))
-      .map_err(|err| Status::internal(err.to_string()))
+      .map_err(|err| Status::from_error(Box::from(err)))
   }
 
   async fn device_connect(&self, request: Request<DeviceConnectRequest>) -> StdResult<Response<DeviceConnectResponse>, Status> {
@@ -177,6 +244,14 @@ impl DeviceManagerRPC for DeviceManager {
 
   async fn device_add(&self, request: Request<DeviceAddRequest>) -> StdResult<Response<DeviceAddResponse>, Status> {
     todo!()
+  }
+
+  async fn get_raw_devices(&self, request: Request<RawDeviceRequest>) -> StdResult<Response<RawDeviceResponse>, Status> {
+    self.raw_serial_devices().await
+      .map(|devices| Response::new(RawDeviceResponse {
+        raw_devices: devices.into_iter().map(|device| device.into()).collect(),
+      }))
+      .map_err(|err| Status::from_error(Box::from(err)))
   }
 }
 
@@ -191,7 +266,8 @@ mod tests {
     let (event_sender, _event_receiver) = broadcast::channel(1);
 
     let device_manager = DeviceManager {
-      task_command_sender: mpsc::unbounded_channel().0,
+      transport_managers: Arc::new(Vec::new()),
+      task_command_sender: mpsc::channel(1).0,
       event_sender: event_sender.clone(),
       cancel_token: CancellationToken::new(),
     };

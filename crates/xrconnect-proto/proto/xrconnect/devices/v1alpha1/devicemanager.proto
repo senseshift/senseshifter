@@ -16,6 +16,8 @@ service DeviceManager {
   rpc DeviceConnect(DeviceConnectRequest) returns (DeviceConnectResponse);
   rpc DeviceDisconnect(DeviceDisconnectRequest) returns (DeviceDisconnectResponse);
   rpc DeviceAdd(DeviceAddRequest) returns (DeviceAddResponse);
+
+  rpc GetRawDevices(RawDeviceRequest) returns (RawDeviceResponse);
 }
 
 message EventStreamRequest {};
@@ -48,9 +50,11 @@ message DeviceAddRequest {
       optional int32 baud_rate = 2;
     }
     message RFComm {
+      // The MAC address of the device.
       string address = 1;
     }
     message BluetoothLE {
+      // The MAC address of the device.
       string address = 1;
 
       reserved 2 to 10;
@@ -80,3 +84,10 @@ message DeviceAddRequest {
 message DeviceAddResponse {
   Device device = 1;
 };
+
+message RawDeviceRequest {
+  // optional Device.Transport transport = 1;
+}
+message RawDeviceResponse {
+  repeated RawDevice raw_devices = 1;
+}

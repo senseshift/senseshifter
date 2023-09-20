@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .out_dir(out_dir)
     .type_attribute(
       ".",
-      "#[cfg_attr(feature = \"serde-serialize\", derive(::serde::Serialize, ::serde::Deserialize), serde(rename_all = \"snake_case\"))]",
+      "#[cfg_attr(feature = \"serde\", derive(::serde::Serialize, ::serde::Deserialize), serde(rename_all = \"snake_case\"))]",
     )
     .type_attribute(
       ".",

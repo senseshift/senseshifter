@@ -55,3 +55,28 @@ message Device {
   Info info = 51;
   Properties properties = 52;
 }
+
+message RawDevice {
+  message BluetoothLE {
+    // The MAC address of the device.
+    string address = 1;
+    // The name of the device.
+    string name = 2;
+  }
+  message Serial {
+    string port = 1;
+  }
+  message RFComm {
+    // The MAC address of the device.
+    string address = 1;
+    // The name of the device.
+    string name = 2;
+  }
+
+  reserved 1 to 20;
+  oneof type {
+    BluetoothLE bluetooth_le = 21;
+    Serial serial = 22;
+    RFComm rfcomm = 23;
+  }
+}
