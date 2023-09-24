@@ -6,13 +6,90 @@
 #[cfg_attr(feature = "specta", derive(::specta::Type))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RawDevice {
+    #[prost(oneof = "raw_device::Type", tags = "21, 22, 23")]
+    pub r#type: ::core::option::Option<raw_device::Type>,
+}
+/// Nested message and enum types in `RawDevice`.
+pub mod raw_device {
+    #[cfg_attr(
+        feature = "serde",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct Serial {
+        #[prost(string, tag = "1")]
+        pub port: ::prost::alloc::string::String,
+    }
+    #[cfg_attr(
+        feature = "serde",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct RFComm {
+        /// The MAC address of the device.
+        #[prost(string, tag = "1")]
+        pub address: ::prost::alloc::string::String,
+        /// The name of the device.
+        #[prost(string, tag = "2")]
+        pub name: ::prost::alloc::string::String,
+    }
+    #[cfg_attr(
+        feature = "serde",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BluetoothLE {
+        /// The MAC address of the device.
+        #[prost(string, tag = "1")]
+        pub address: ::prost::alloc::string::String,
+        /// The name of the device.
+        #[prost(string, tag = "2")]
+        pub name: ::prost::alloc::string::String,
+    }
+    #[cfg_attr(
+        feature = "serde",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Type {
+        #[prost(message, tag = "21")]
+        Serial(Serial),
+        #[prost(message, tag = "22")]
+        RFComm(RFComm),
+        #[prost(message, tag = "23")]
+        BluetoothLE(BluetoothLE),
+    }
+}
+#[cfg_attr(
+    feature = "serde",
+    derive(::serde::Serialize, ::serde::Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[cfg_attr(feature = "specta", derive(::specta::Type))]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Device {
     #[prost(string, tag = "1")]
     pub device_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "device::Status", tag = "3")]
     pub status: i32,
+    #[prost(bool, tag = "4")]
+    pub connectible: bool,
     #[prost(message, optional, tag = "51")]
     pub info: ::core::option::Option<device::Info>,
     #[prost(message, optional, tag = "52")]
@@ -274,81 +351,6 @@ pub mod device {
 #[cfg_attr(feature = "specta", derive(::specta::Type))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct RawDevice {
-    #[prost(oneof = "raw_device::Type", tags = "21, 22, 23")]
-    pub r#type: ::core::option::Option<raw_device::Type>,
-}
-/// Nested message and enum types in `RawDevice`.
-pub mod raw_device {
-    #[cfg_attr(
-        feature = "serde",
-        derive(::serde::Serialize, ::serde::Deserialize),
-        serde(rename_all = "snake_case")
-    )]
-    #[cfg_attr(feature = "specta", derive(::specta::Type))]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BluetoothLE {
-        /// The MAC address of the device.
-        #[prost(string, tag = "1")]
-        pub address: ::prost::alloc::string::String,
-        /// The name of the device.
-        #[prost(string, tag = "2")]
-        pub name: ::prost::alloc::string::String,
-    }
-    #[cfg_attr(
-        feature = "serde",
-        derive(::serde::Serialize, ::serde::Deserialize),
-        serde(rename_all = "snake_case")
-    )]
-    #[cfg_attr(feature = "specta", derive(::specta::Type))]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct Serial {
-        #[prost(string, tag = "1")]
-        pub port: ::prost::alloc::string::String,
-    }
-    #[cfg_attr(
-        feature = "serde",
-        derive(::serde::Serialize, ::serde::Deserialize),
-        serde(rename_all = "snake_case")
-    )]
-    #[cfg_attr(feature = "specta", derive(::specta::Type))]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct RFComm {
-        /// The MAC address of the device.
-        #[prost(string, tag = "1")]
-        pub address: ::prost::alloc::string::String,
-        /// The name of the device.
-        #[prost(string, tag = "2")]
-        pub name: ::prost::alloc::string::String,
-    }
-    #[cfg_attr(
-        feature = "serde",
-        derive(::serde::Serialize, ::serde::Deserialize),
-        serde(rename_all = "snake_case")
-    )]
-    #[cfg_attr(feature = "specta", derive(::specta::Type))]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Oneof)]
-    pub enum Type {
-        #[prost(message, tag = "21")]
-        BluetoothLE(BluetoothLE),
-        #[prost(message, tag = "22")]
-        Serial(Serial),
-        #[prost(message, tag = "23")]
-        RFComm(RFComm),
-    }
-}
-#[cfg_attr(
-    feature = "serde",
-    derive(::serde::Serialize, ::serde::Deserialize),
-    serde(rename_all = "snake_case")
-)]
-#[cfg_attr(feature = "specta", derive(::specta::Type))]
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeviceMessage {
     #[prost(oneof = "device_message::Type", tags = "121, 122, 151, 152, 153")]
     pub r#type: ::core::option::Option<device_message::Type>,
@@ -382,7 +384,9 @@ pub mod device_message {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct DeviceDiscovered {
-        #[prost(message, optional, tag = "1")]
+        #[prost(string, tag = "1")]
+        pub device_id: ::prost::alloc::string::String,
+        #[prost(message, optional, tag = "2")]
         pub device: ::core::option::Option<super::Device>,
     }
     #[cfg_attr(
@@ -394,7 +398,9 @@ pub mod device_message {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct DeviceConnected {
-        #[prost(message, optional, tag = "1")]
+        #[prost(string, tag = "1")]
+        pub device_id: ::prost::alloc::string::String,
+        #[prost(message, optional, tag = "2")]
         pub device: ::core::option::Option<super::Device>,
     }
     #[cfg_attr(
@@ -406,7 +412,9 @@ pub mod device_message {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct DeviceUpdated {
-        #[prost(message, optional, tag = "1")]
+        #[prost(string, tag = "1")]
+        pub device_id: ::prost::alloc::string::String,
+        #[prost(message, optional, tag = "2")]
         pub device: ::core::option::Option<super::Device>,
     }
     #[cfg_attr(
@@ -558,8 +566,6 @@ pub mod device_add_request {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct OpenGlove {
-        #[prost(enumeration = "super::device::Chirality", tag = "5")]
-        pub chirality: i32,
         #[prost(oneof = "openglove::Transport", tags = "21, 22, 23")]
         pub transport: ::core::option::Option<openglove::Transport>,
     }
@@ -653,7 +659,6 @@ pub struct DeviceAddResponse {
     #[prost(message, optional, tag = "1")]
     pub device: ::core::option::Option<Device>,
 }
-/// optional Device.Transport transport = 1;
 #[cfg_attr(
     feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),
@@ -662,7 +667,10 @@ pub struct DeviceAddResponse {
 #[cfg_attr(feature = "specta", derive(::specta::Type))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct RawDeviceRequest {}
+pub struct RawDeviceRequest {
+    #[prost(enumeration = "device::Transport", optional, tag = "1")]
+    pub transport: ::core::option::Option<i32>,
+}
 #[cfg_attr(
     feature = "serde",
     derive(::serde::Serialize, ::serde::Deserialize),

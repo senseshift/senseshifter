@@ -6,6 +6,8 @@ pub use prost;
 pub use async_trait::async_trait;
 
 pub mod devices {
+
+  #[cfg(feature = "v1alpha1")]
   pub mod v1alpha1 {
     include!("codegen/xrconnect.devices.v1alpha1.rs");
 

@@ -1,0 +1,27 @@
+[package]
+name = "xrc-transport-btle"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["btleplug"]
+
+btleplug = ["dep:btleplug"]
+
+serde = ["dep:serde", "btleplug/serde"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+xrc-transport = { workspace = true }
+
+anyhow = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
+getset = "^0.1.2"
+
+btleplug = { workspace = true, optional = true }
+
+futures = { workspace = true }
+tokio = { workspace = true, features = ["sync", "rt"] }
+dashmap = "5"

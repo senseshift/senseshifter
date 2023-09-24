@@ -2,6 +2,31 @@ syntax = "proto3";
 
 package xrconnect.devices.v1alpha1;
 
+message RawDevice {
+  message Serial {
+    string port = 1;
+  }
+  message RFComm {
+    // The MAC address of the device.
+    string address = 1;
+    // The name of the device.
+    string name = 2;
+  }
+  message BluetoothLE {
+    // The MAC address of the device.
+    string address = 1;
+    // The name of the device.
+    string name = 2;
+  }
+
+  reserved 1 to 20;
+  oneof type {
+    Serial serial = 21;
+    RFComm rfcomm = 22;
+    BluetoothLE bluetooth_le = 23;
+  }
+}
+
 message Device {
   enum Transport {
     TRANSPORT_UNKNOWN = 0;
@@ -47,36 +72,12 @@ message Device {
   }
 
   string device_id = 1;
-  string name = 2;
+  optional string name = 2;
   Status status = 3;
+  bool connectible = 4;
 
-  reserved 4 to 50;
+  reserved 5 to 50;
 
   Info info = 51;
   Properties properties = 52;
-}
-
-message RawDevice {
-  message BluetoothLE {
-    // The MAC address of the device.
-    string address = 1;
-    // The name of the device.
-    string name = 2;
-  }
-  message Serial {
-    string port = 1;
-  }
-  message RFComm {
-    // The MAC address of the device.
-    string address = 1;
-    // The name of the device.
-    string name = 2;
-  }
-
-  reserved 1 to 20;
-  oneof type {
-    BluetoothLE bluetooth_le = 21;
-    Serial serial = 22;
-    RFComm rfcomm = 23;
-  }
 }

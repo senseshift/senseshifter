@@ -8,6 +8,15 @@
       <sourceFolder url="file://$MODULE_DIR$/core/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-manager/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-manager/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/apple-continuity/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/apple-continuity/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-transport-btle/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-transport-serialport/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-transport/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-devices-apple-continuity/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-devices-bhaptics/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-devices-opengloves/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-transport-btleplug/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

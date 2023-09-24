@@ -6,39 +6,75 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-full = ["default", "grpc"]
-default = ["btle-manager", "serialport-manager", "rfcomm-manager"]
+default = ["proto-v1alpha1"]
+full = [
+    "default",
+    "transport-full",
+    "devices-full",
+    "grpc",
+    "serde",
+]
 
-btle-manager = ["dep:btleplug"]
-serialport-manager = ["dep:serialport"]
-rfcomm-manager = []
+transport-full = [
+    "transport-btle",
+    "transport-serialport",
+    "transport-rfcomm",
+]
+transport-btle = ["dep:xrc-transport-btle"]
+transport-serialport = [] # TODO: add serialport
+transport-rfcomm = [] # TODO: add RFComm
+
+devices-full = [
+    "devices-apple-continuity",
+    "devices-bhaptics",
+    "devices-opengloves",
+    "devices-protubevr",
+]
+devices-apple-continuity = ["dep:xrc-devices-apple-continuity"]
+devices-bhaptics = ["dep:xrc-devices-bhaptics"]
+devices-opengloves = ["dep:xrc-devices-opengloves"]
+devices-protubevr = [] # todo: add ProTubeVR support
+
+proto-v1alpha1 = [
+    "xrconnect-proto/v1alpha1",
+    "xrc-transport/proto-v1alpha1",
+    "xrc-devices-apple-continuity/proto-v1alpha1",
+]
+
+serde = ["dep:serde", "xrconnect-proto/serde", "xrc-transport-btle/serde"]
 
 grpc = ["tonic"]
 tonic = ["xrconnect-proto/tonic-server", "dep:tonic"]
 
 [dependencies]
 xrconnect-proto = { workspace = true }
+xrc-transport = { workspace = true }
+
+xrc-transport-btle = { workspace = true, optional = true }
+
+xrc-devices-apple-continuity = { path = "../xrc-devices-apple-continuity", optional = true }
+xrc-devices-bhaptics = { path = "../xrc-devices-bhaptics", optional = true }
+xrc-devices-opengloves = { path = "../xrc-devices-opengloves", optional = true }
 
 anyhow = { workspace = true }
 tracing = { workspace = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
+getset = "^0.1.2"
 
-async-trait = "^0.1.73"
-async-stream = "^0.3.5"
-futures = "^0.3.26"
-futures-util = "^0.3.26"
-tokio = { version = "^1.27.0", features = ["full"] }
-tokio-util = "^0.7.7"
-tokio-stream = "^0.1.14"
-
-btleplug = { workspace = true, optional = true }
-serialport = { version = "^4.2.2", optional = true }
+async-trait = { workspace = true }
+async-stream = { workspace = true }
+futures = { workspace = true }
+futures-util = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
+tokio-stream = { workspace = true }
+dashmap = "5"
 
 tonic = { version = "^0.10", optional = true }
-log = "0.4.20"
 
 [dev-dependencies]
 tracing-subscriber = "^0.3.17"
 
 [[example]]
 name = "grpc-server"
-required-features = ["tonic"]
+required-features = ["tonic", "proto-v1alpha1", "transport-full", "devices-full", "serde"]

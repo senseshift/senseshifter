@@ -3,59 +3,132 @@ use std::{
   result::Result as StdResult,
 };
 use std::future::Future;
+use std::ops::Deref;
 use std::sync::Arc;
 use anyhow::Result;
 use tracing::{debug, error};
 
-use xrconnect_proto::{
-  devices::v1alpha1::{
-    DeviceMessage,
-  },
-};
-
 #[cfg(feature = "tonic")]
 use tonic::{Request, Response, Status, async_trait};
-#[cfg(feature = "tonic")]
+#[cfg(all(feature = "tonic", feature = "proto-v1alpha1"))]
+use xrconnect_proto::devices::v1alpha1::device_manager_server::{
+  DeviceManager as DeviceManagerRPC,
+};
+#[cfg(feature = "proto-v1alpha1")]
 use xrconnect_proto::{
-  devices::v1alpha1::{
-    // Event Streaming
-    EventStreamRequest,
-    EventStreamResponse,
-    // Scanning
-    ScanStartRequest,
-    ScanStartResponse,
-    ScanStopRequest,
-    ScanStopResponse,
-    // Device Actions
-    DeviceAddRequest,
-    DeviceAddResponse,
-    DeviceConnectRequest,
-    DeviceDisconnectRequest,
-    DeviceConnectResponse,
-    DeviceDisconnectResponse,
-    device_manager_server::{
-      DeviceManager as DeviceManagerRPC,
+  devices::{
+    v1alpha1::{
+      DeviceMessage,
+      device_message,
+      // Event Streaming
+      EventStreamRequest,
+      EventStreamResponse,
+      // Scanning
+      ScanStartRequest,
+      ScanStartResponse,
+      ScanStopRequest,
+      ScanStopResponse,
+      // Device Actions
+      DeviceAddRequest,
+      DeviceAddResponse,
+      DeviceConnectRequest,
+      DeviceDisconnectRequest,
+      DeviceConnectResponse,
+      DeviceDisconnectResponse,
     },
-  },
+  }
 };
 
 use async_stream::stream;
 use futures::{pin_mut, Stream};
 use futures_util::future::join_all;
-use log::info;
-use tokio::sync::{broadcast, mpsc, oneshot};
+use tracing::info;
+use tokio::sync::{broadcast, mpsc, oneshot, RwLock, RwLockReadGuard, TryLockError};
 use tokio_util::sync::CancellationToken;
 
 mod task;
-
 use task::DeviceManagerTask;
-use xrconnect_proto::devices::v1alpha1::{RawDeviceRequest, RawDeviceResponse};
-use crate::transport::api::{RawSerialDevice, TransportManager, TransportManagerBuilder};
 
-#[derive(Debug)]
+use xrconnect_proto::devices::v1alpha1::{RawDeviceRequest, RawDeviceResponse};
+use xrc_transport::api::{Device, TransportManager, TransportManagerBuilder};
+
 pub(super) enum DeviceManagerCommand {
   ScanStart(oneshot::Sender<Result<()>>),
   ScanStop(oneshot::Sender<Result<()>>),
+}
+
+impl std::fmt::Debug for DeviceManagerCommand {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      DeviceManagerCommand::ScanStart(_) => write!(f, "ScanStart"),
+      DeviceManagerCommand::ScanStop(_) => write!(f, "ScanStop"),
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub enum DeviceManagerEvent {
+  ScanStarted,
+  ScanStopped,
+  DeviceDiscovered {
+    device_id: String,
+    device: Arc<RwLock<Box<dyn Device>>>,
+  },
+  DeviceUpdated {
+    device_id: String,
+    device: Arc<RwLock<Box<dyn Device>>>,
+  },
+}
+
+impl PartialEq for DeviceManagerEvent {
+  fn eq(&self, other: &Self) -> bool {
+    match self {
+      DeviceManagerEvent::ScanStarted => {
+        matches!(other, DeviceManagerEvent::ScanStarted)
+      }
+      DeviceManagerEvent::ScanStopped => {
+        matches!(other, DeviceManagerEvent::ScanStopped)
+      }
+      DeviceManagerEvent::DeviceDiscovered { device_id, .. } => {
+        matches!(other, DeviceManagerEvent::DeviceDiscovered { device_id: other_device_id, .. } if device_id == other_device_id)
+      }
+      DeviceManagerEvent::DeviceUpdated { device_id, .. } => {
+        matches!(other, DeviceManagerEvent::DeviceUpdated { device_id: other_device_id, .. } if device_id == other_device_id)
+      }
+    }
+  }
+}
+
+#[cfg(feature = "proto-v1alpha1")]
+impl Into<DeviceMessage> for DeviceManagerEvent {
+  fn into(self) -> DeviceMessage {
+    match self {
+      DeviceManagerEvent::ScanStarted => DeviceMessage {
+        r#type: Some(device_message::Type::ScanStarted(device_message::ScanStarted {})),
+      },
+      DeviceManagerEvent::ScanStopped => DeviceMessage {
+        r#type: Some(device_message::Type::ScanStopped(device_message::ScanStopped {})),
+      },
+      DeviceManagerEvent::DeviceDiscovered { device_id, device } => DeviceMessage {
+        r#type: Some(device_message::Type::DeviceDiscovered(device_message::DeviceDiscovered {
+          device_id,
+          device: match device.try_read() {
+            Ok(device) => Some(device.deref().deref().into()),
+            Err(_) => None,
+          },
+        })),
+      },
+      DeviceManagerEvent::DeviceUpdated { device_id, device } => DeviceMessage {
+        r#type: Some(device_message::Type::DeviceUpdated(device_message::DeviceUpdated {
+          device_id,
+          device: match device.try_read() {
+            Ok(device) => Some(device.deref().deref().into()),
+            Err(_) => None,
+          },
+        })),
+      },
+    }
+  }
 }
 
 pub struct DeviceManagerBuilder {
@@ -68,16 +141,53 @@ impl Default for DeviceManagerBuilder {
       transport_managers: Vec::new(),
     };
 
-    #[cfg(feature = "btle-manager")]
+    #[cfg(feature = "transport-btle")]
     {
-      use crate::transport::BtleManagerBuilder;
-      builder.transport(BtleManagerBuilder::default());
+      use xrc_transport_btle::BtleManagerBuilder;
+      let mut btle_builder = BtleManagerBuilder::default();
+
+      #[cfg(feature = "devices-apple-continuity")]
+      {
+        use xrc_devices_apple_continuity::AppleContinuityProtocolSpecifierBuilder;
+        btle_builder.specifier(AppleContinuityProtocolSpecifierBuilder::default());
+      }
+
+      #[cfg(feature = "devices-bhaptics")]
+      {
+        // todo: add bHaptics
+      }
+
+      #[cfg(feature = "devices-opengloves")]
+      {
+        // todo: add OpenGloves
+      }
+
+      builder.transport(btle_builder);
     }
 
-    #[cfg(feature = "serialport-manager")]
+    #[cfg(feature = "transport-serialport")]
     {
-      use crate::transport::SerialPortManagerBuilder;
-      builder.transport(SerialPortManagerBuilder::default());
+      // todo: add serialport
+
+      #[cfg(feature = "devices-opengloves")]
+      {
+        // todo: add OpenGloves
+      }
+    }
+
+    #[cfg(feature = "transport-rfcomm")]
+    {
+      // todo: add serialport
+
+      #[cfg(feature = "devices-opengloves")]
+      {
+        // todo: add OpenGloves
+      }
+
+      #[cfg(feature = "devices-protubevr")]
+      {
+        // todo: add ProTubeVR
+      }
     }
 
     builder
@@ -85,9 +195,7 @@ impl Default for DeviceManagerBuilder {
 }
 
 impl DeviceManagerBuilder {
-  pub fn transport<T>(&mut self, builder: T) -> &mut Self
-    where
-      T: TransportManagerBuilder + 'static,
+  pub fn transport<T: TransportManagerBuilder + 'static>(&mut self, builder: T) -> &mut Self
   {
     self.transport_managers.push(Box::new(builder));
     self
@@ -105,10 +213,9 @@ impl DeviceManagerBuilder {
         builder.finish(transport_event_sender.clone())
       })
       .collect::<Result<Vec<_>, _>>()?;
-    let transport_managers = Arc::new(transport_managers);
 
     let task = DeviceManagerTask {
-      transport_managers: transport_managers.clone(),
+      transport_managers,
       command_receiver: task_command_receiver,
       transport_event_receiver,
       event_sender: event_sender.clone(),
@@ -122,7 +229,6 @@ impl DeviceManagerBuilder {
     });
 
     let manager = DeviceManager {
-      transport_managers,
       task_command_sender,
       event_sender,
       cancel_token,
@@ -133,9 +239,8 @@ impl DeviceManagerBuilder {
 }
 
 pub struct DeviceManager {
-  transport_managers: Arc<Vec<Box<dyn TransportManager>>>,
   task_command_sender: mpsc::Sender<DeviceManagerCommand>,
-  event_sender: broadcast::Sender<DeviceMessage>,
+  event_sender: broadcast::Sender<DeviceManagerEvent>,
   cancel_token: CancellationToken,
 }
 
@@ -154,7 +259,7 @@ impl DeviceManager {
     DeviceManagerBuilder::default()
   }
 
-  pub fn event_stream(&self) -> impl Stream<Item=DeviceMessage> {
+  pub fn event_stream(&self) -> impl Stream<Item=DeviceManagerEvent> {
     let receiver = self.event_sender.subscribe();
     stream! {
       pin_mut!(receiver);
@@ -177,25 +282,6 @@ impl DeviceManager {
     self.task_command_sender.send(DeviceManagerCommand::ScanStop(sender)).await?;
     receiver.await?
   }
-
-  pub async fn raw_serial_devices(&self) -> Result<Vec<RawSerialDevice>> {
-    let futures: Vec<_> = self.transport_managers
-      .iter()
-      .map(|manager| manager.raw_serial_devices())
-      .collect();
-
-    let per_manager: Result<Vec<Option<Vec<_>>>> = join_all(futures).await
-      .into_iter()
-      .collect();
-
-    let devices = per_manager?
-      .into_iter()
-      .flatten()
-      .flatten()
-      .collect::<Vec<_>>();
-
-    Ok(devices)
-  }
 }
 
 impl Drop for DeviceManager {
@@ -215,7 +301,9 @@ impl DeviceManagerRPC for DeviceManager {
     let stream = stream! {
       pin_mut!(receiver);
       while let Ok(event) = receiver.recv().await {
-        yield Ok(EventStreamResponse::from(event));
+        yield Ok(EventStreamResponse {
+          message: Some(event.into()),
+        });
       }
     };
 
@@ -247,18 +335,13 @@ impl DeviceManagerRPC for DeviceManager {
   }
 
   async fn get_raw_devices(&self, request: Request<RawDeviceRequest>) -> StdResult<Response<RawDeviceResponse>, Status> {
-    self.raw_serial_devices().await
-      .map(|devices| Response::new(RawDeviceResponse {
-        raw_devices: devices.into_iter().map(|device| device.into()).collect(),
-      }))
-      .map_err(|err| Status::from_error(Box::from(err)))
+    todo!()
   }
 }
 
 #[cfg(test)]
 mod tests {
   use futures_util::StreamExt;
-  use xrconnect_proto::devices::v1alpha1::device_message::*;
   use super::*;
 
   #[tokio::test]
@@ -266,7 +349,6 @@ mod tests {
     let (event_sender, _event_receiver) = broadcast::channel(1);
 
     let device_manager = DeviceManager {
-      transport_managers: Arc::new(Vec::new()),
       task_command_sender: mpsc::channel(1).0,
       event_sender: event_sender.clone(),
       cancel_token: CancellationToken::new(),
@@ -274,11 +356,9 @@ mod tests {
 
     let event_stream = Box::pin(device_manager.event_stream());
 
-    let _ = event_sender.send(DeviceMessage {
-      r#type: Some(Type::ScanStarted(ScanStarted {})),
-    });
+    let _ = event_sender.send(DeviceManagerEvent::ScanStarted);
 
     let (event, _) = event_stream.into_future().await;
-    assert_eq!(event.unwrap().r#type.unwrap(), Type::ScanStarted(ScanStarted {}));
+    assert_eq!(event.unwrap(), DeviceManagerEvent::ScanStarted);
   }
 }

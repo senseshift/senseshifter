@@ -9,13 +9,16 @@ message DeviceMessage {
   message ScanStopped {}
 
   message DeviceDiscovered {
-    Device device = 1;
+    string device_id = 1;
+    Device device = 2;
   }
   message DeviceConnected {
-    Device device = 1;
+    string device_id = 1;
+    Device device = 2;
   }
   message DeviceUpdated {
-    Device device = 1;
+    string device_id = 1;
+    Device device = 2;
   }
 
   reserved 1 to 120;

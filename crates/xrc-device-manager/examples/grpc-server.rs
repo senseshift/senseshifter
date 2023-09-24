@@ -1,6 +1,7 @@
 use anyhow::Result;
 use futures::{pin_mut, StreamExt};
 use tonic::transport::Server;
+use tracing::info;
 
 use xrc_device_manager::DeviceManager;
 use xrconnect_proto::devices::v1alpha1::device_manager_server::DeviceManagerServer;
@@ -19,7 +20,7 @@ async fn main() -> Result<()> {
   tokio::spawn(async move {
     pin_mut!(event_stream);
     while let Some(event) = event_stream.next().await {
-      println!("Event: {:?}", event);
+      info!("Event: {:?}", event);
     }
   });
 

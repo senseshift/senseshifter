@@ -64,10 +64,6 @@ message DeviceAddRequest {
       optional string tx_uuid = 13;
     }
 
-    reserved 2 to 4;
-    Device.Chirality chirality = 5;
-    reserved 6 to 10;
-
     oneof transport {
       SerialPort serial_port = 21;
       RFComm rfcomm = 22;
@@ -86,7 +82,7 @@ message DeviceAddResponse {
 };
 
 message RawDeviceRequest {
-  // optional Device.Transport transport = 1;
+  optional Device.Transport transport = 1;
 }
 message RawDeviceResponse {
   repeated RawDevice raw_devices = 1;

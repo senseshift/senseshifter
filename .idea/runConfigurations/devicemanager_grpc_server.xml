@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run devicemanager-grpc-server" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="devicemanager-grpc-server" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="run --package xrc-device-manager --example grpc-server" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <option name="emulateTerminal" value="true" />
@@ -10,7 +10,7 @@
     <option name="buildTarget" value="REMOTE" />
     <option name="backtrace" value="SHORT" />
     <envs>
-      <env name="RUST_LOG" value="xrc_device_manager=trace" />
+      <env name="RUST_LOG" value="info,xrc_device_manager=debug,xrc_transport_btle=debug" />
     </envs>
     <option name="isRedirectInput" value="false" />
     <option name="redirectInputPath" value="" />

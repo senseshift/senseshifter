@@ -1,0 +1,453 @@
+[
+  {
+    "name": "TactBelt",
+    "nameContains": "tactbelt",
+    "firmwareService": "tactbelt",
+    "rawValue": 508,
+    "candidatePositions": [
+      "Vest"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "Tactosy2",
+    "nameContains": "tactosy2_v3 (l",
+    "firmwareService": "v4-tactosy2",
+    "rawValue": 508,
+    "candidatePositions": [
+      "ForearmL",
+      "ForearmR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "Tactosy2",
+    "nameContains": "tactosy2_v3 (r",
+    "firmwareService": "v4-tactosy2",
+    "rawValue": 508,
+    "candidatePositions": [
+      "ForearmR",
+      "ForearmL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyH",
+    "nameContains": "tactosyh_v3 (l",
+    "firmwareService": "v4-tactosyh",
+    "rawValue": 508,
+    "candidatePositions": [
+      "HandL",
+      "HandR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyH",
+    "nameContains": "tactosyh_v3 (r",
+    "firmwareService": "v4-tactosyh",
+    "rawValue": 508,
+    "candidatePositions": [
+      "HandR",
+      "HandL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyF",
+    "nameContains": "tactosyf_v3 (l",
+    "firmwareService": "v4-tactosyf",
+    "rawValue": 508,
+    "candidatePositions": [
+      "FootL",
+      "FootR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyF",
+    "nameContains": "tactosyf_v3 (r",
+    "firmwareService": "v4-tactosyf",
+    "rawValue": 508,
+    "candidatePositions": [
+      "FootR",
+      "FootL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "Tactosy2",
+    "nameContains": "tactosy2_v3",
+    "firmwareService": "v4-tactosy2",
+    "rawValue": 508,
+    "candidatePositions": [
+      "ForearmL",
+      "ForearmR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyH",
+    "nameContains": "tactosyh_v3",
+    "firmwareService": "v4-tactosyh",
+    "rawValue": 508,
+    "candidatePositions": [
+      "HandL",
+      "HandR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyF",
+    "nameContains": "tactosyf_v3",
+    "firmwareService": "v4-tactosyf",
+    "rawValue": 508,
+    "candidatePositions": [
+      "FootL",
+      "FootR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactVisor",
+    "nameContains": "tactvisor_v",
+    "firmwareService": "tactvisor",
+    "rawValue": 508,
+    "candidatePositions": [
+      "Head"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "Tactosy2",
+    "nameContains": "tactosy2_v2 (l",
+    "firmwareService": "v3-tactosy2",
+    "rawValue": 508,
+    "candidatePositions": [
+      "ForearmL",
+      "ForearmR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "Tactosy2",
+    "nameContains": "tactosy2_v2 (r",
+    "firmwareService": "v3-tactosy2",
+    "rawValue": 508,
+    "candidatePositions": [
+      "ForearmR",
+      "ForearmL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyH",
+    "nameContains": "tactosyh_v2 (l",
+    "firmwareService": "v3-tactosyh",
+    "rawValue": 508,
+    "candidatePositions": [
+      "HandL",
+      "HandR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyH",
+    "nameContains": "tactosyh_v2 (r",
+    "firmwareService": "v3-tactosyh",
+    "rawValue": 508,
+    "candidatePositions": [
+      "HandR",
+      "HandL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyF",
+    "nameContains": "tactosyf_v2 (l",
+    "firmwareService": "v3-tactosyf",
+    "rawValue": 508,
+    "candidatePositions": [
+      "FootL",
+      "FootR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyF",
+    "nameContains": "tactosyf_v2 (r",
+    "firmwareService": "v3-tactosyf",
+    "rawValue": 508,
+    "candidatePositions": [
+      "FootR",
+      "FootL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "Tactosy2",
+    "nameContains": "tactosy2_v2",
+    "firmwareService": "v3-tactosy2",
+    "rawValue": 508,
+    "candidatePositions": [
+      "ForearmL",
+      "ForearmR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyH",
+    "nameContains": "tactosyh_v2",
+    "firmwareService": "v3-tactosyh",
+    "rawValue": 508,
+    "candidatePositions": [
+      "HandL",
+      "HandR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactosyF",
+    "nameContains": "tactosyf_v2",
+    "firmwareService": "v3-tactosyf",
+    "rawValue": 508,
+    "candidatePositions": [
+      "FootL",
+      "FootR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "Tactal",
+    "nameContains": "tactal_v2",
+    "rawValue": 508,
+    "firmwareService": "v3-tactal",
+    "candidatePositions": [
+      "Head"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "Tactosy",
+    "nameContains": "tactosy_",
+    "firmwareService": "tactosy-v2",
+    "rawValue": 508,
+    "candidatePositions": [
+      "ForearmL",
+      "ForearmL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "Tactosy2",
+    "nameContains": "tactosy2_",
+    "firmwareService": "v2-tactosy2",
+    "rawValue": 508,
+    "candidatePositions": [
+      "ForearmL",
+      "ForearmR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "Tactot",
+    "nameContains": "tactot_",
+    "firmwareService": "tactot",
+    "rawValue": 508,
+    "candidatePositions": [
+      "Vest"
+    ],
+    "hasBattery": false,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "Tactot2",
+    "nameContains": "tactot2_",
+    "firmwareService": "tactot2",
+    "rawValue": 508,
+    "candidatePositions": [
+      "Vest"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "Tactot3",
+    "nameContains": "tactot3_",
+    "firmwareService": "v2-tactot3",
+    "rawValue": 508,
+    "candidatePositions": [
+      "Vest"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "Tactot3",
+    "nameContains": "tactot_",
+    "firmwareService": "tactot3",
+    "rawValue": 508,
+    "candidatePositions": [
+      "Vest"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "TactSuitX40",
+    "nameContains": "tactsuit",
+    "firmwareService": "tactsuit_x40",
+    "rawValue": 509,
+    "candidatePositions": [
+      "Vest"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactSuitX16",
+    "nameContains": "tactsuit",
+    "firmwareService": "tactsuit_x16",
+    "rawValue": 510,
+    "candidatePositions": [
+      "Vest"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "Tactal",
+    "nameContains": "tactal_",
+    "rawValue": 508,
+    "firmwareService": "v2-tactal",
+    "candidatePositions": [
+      "Head"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "TactGloveL",
+    "nameContains": "tactglove (l",
+    "firmwareService": "tactglovel-v1",
+    "rawValue": 508,
+    "candidatePositions": [
+      "GloveL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactGloveR",
+    "nameContains": "tactglove (r",
+    "firmwareService": "tactglover-v1",
+    "rawValue": 508,
+    "candidatePositions": [
+      "GloveR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": true
+  },
+  {
+    "name": "TactFacial",
+    "nameContains": "tactfacial_",
+    "firmwareService": "tactfacial",
+    "rawValue": 508,
+    "candidatePositions": [
+      "Head"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "TactosyH",
+    "nameContains": "tactosyh_",
+    "firmwareService": "v2-tactosyh",
+    "rawValue": 508,
+    "candidatePositions": [
+      "HandL",
+      "HandR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "TactosyF",
+    "nameContains": "tactosyf_",
+    "firmwareService": "v2-tactosyf",
+    "rawValue": 508,
+    "candidatePositions": [
+      "FootL",
+      "FootR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "TactThermoHL",
+    "nameContains": "tactthermohl",
+    "firmwareService": "",
+    "rawValue": 508,
+    "candidatePositions": [
+      "HandL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "TactThermoHR",
+    "nameContains": "tactthermohr",
+    "firmwareService": "",
+    "rawValue": 508,
+    "candidatePositions": [
+      "HandR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "TactThermoFL",
+    "nameContains": "tactthermofl",
+    "firmwareService": "",
+    "rawValue": 508,
+    "candidatePositions": [
+      "FootL"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  },
+  {
+    "name": "TactThermoFR",
+    "nameContains": "tactthermofr",
+    "firmwareService": "",
+    "rawValue": 508,
+    "candidatePositions": [
+      "FootR"
+    ],
+    "hasBattery": true,
+    "hasDfuRecover": false
+  }
+]
