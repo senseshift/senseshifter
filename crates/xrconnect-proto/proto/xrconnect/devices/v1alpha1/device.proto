@@ -35,21 +35,25 @@ message Device {
     TRANSPORT_RFCOMM = 3;
   }
 
+  // Secondary (after name and ID) device information, that aimed to help identify the device along other devices.
   message Info {
-    string manufacturer = 1;
-    string model = 2;
+    optional string manufacturer = 1;
+    optional string product = 2;
   }
+
+  // Device properties, that are not required for the device to function, but provide additional information about the device.
   message Properties {
     message Battery {
       enum State {
         STATE_UNKNOWN = 0;
         STATE_CHARGING = 1;
         STATE_DISCHARGING = 2;
-        STATE_NOT_CHARGING = 3;
-        STATE_FULL = 4;
+        STATE_FULL = 3;
       }
 
       optional State state = 1;
+
+      // The current battery levels, in the range [0, 1].
       repeated float levels = 2;
     }
 
@@ -65,19 +69,55 @@ message Device {
     STATUS_CONNECTED = 3;
     STATUS_DISCONNECTING = 4;
   }
-  enum Chirality {
-    CHIRALITY_UNKNOWN = 0;
-    CHIRALITY_LEFT = 1;
-    CHIRALITY_RIGHT = 2;
+
+  message Settings {
+    message Entry {
+      message BoolSettings {
+        bool value = 1;
+      }
+      message SelectSettings {
+        string value = 1;
+        repeated string options = 2;
+      }
+
+      oneof value {
+        BoolSettings bool_value = 11;
+        SelectSettings select_value = 12;
+      }
+    }
+
+    // Determines if the device should be automatically connected to upon discovery.
+    bool auto_connect = 1;
+
+    // Device-specific settings.
+    map<string, Entry> entries = 10;
   }
 
+  // Unique device ID, that is used to identify the device.
   string device_id = 1;
+
+  // Original device name, as provided by the driver.
   optional string name = 2;
-  Status status = 3;
-  bool connectible = 4;
 
-  reserved 5 to 50;
+  // Display name, that is used to identify the device to the user.
+  optional string display_name = 3;
 
+  reserved 4 to 9;
+
+  Status status = 10;
+
+  // Determines if the device can be connected to.
+  bool connectible = 11;
+
+  reserved 12 to 50;
+
+  // Secondary (after name and ID) device information, that aimed to help identify the device along other devices.
   Info info = 51;
+  // Device properties, that are not required for the device to function, but provide additional information about the device.
   Properties properties = 52;
+
+  reserved 53 to 59;
+
+  // Device settings, that can be changed by the user.
+  optional Settings settings = 60;
 }

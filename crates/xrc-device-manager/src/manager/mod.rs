@@ -72,11 +72,9 @@ pub enum DeviceManagerEvent {
   ScanStopped,
   DeviceDiscovered {
     device_id: String,
-    device: Arc<RwLock<Box<dyn Device>>>,
   },
   DeviceUpdated {
     device_id: String,
-    device: Arc<RwLock<Box<dyn Device>>>,
   },
 }
 
@@ -109,24 +107,30 @@ impl Into<DeviceMessage> for DeviceManagerEvent {
       DeviceManagerEvent::ScanStopped => DeviceMessage {
         r#type: Some(device_message::Type::ScanStopped(device_message::ScanStopped {})),
       },
-      DeviceManagerEvent::DeviceDiscovered { device_id, device } => DeviceMessage {
-        r#type: Some(device_message::Type::DeviceDiscovered(device_message::DeviceDiscovered {
-          device_id,
-          device: match device.try_read() {
-            Ok(device) => Some(device.deref().deref().into()),
-            Err(_) => None,
-          },
-        })),
+      _ => {
+        error!("DeviceManagerEvent::into() not implemented for {:?}", self);
+        DeviceMessage {
+          r#type: None,
+        }
       },
-      DeviceManagerEvent::DeviceUpdated { device_id, device } => DeviceMessage {
-        r#type: Some(device_message::Type::DeviceUpdated(device_message::DeviceUpdated {
-          device_id,
-          device: match device.try_read() {
-            Ok(device) => Some(device.deref().deref().into()),
-            Err(_) => None,
-          },
-        })),
-      },
+      // DeviceManagerEvent::DeviceDiscovered { device_id, device } => DeviceMessage {
+      //   r#type: Some(device_message::Type::DeviceDiscovered(device_message::DeviceDiscovered {
+      //     device_id,
+      //     device: match device.try_read() {
+      //       Ok(device) => Some(device.deref().deref().into()),
+      //       Err(_) => None,
+      //     },
+      //   })),
+      // },
+      // DeviceManagerEvent::DeviceUpdated { device_id, device } => DeviceMessage {
+      //   r#type: Some(device_message::Type::DeviceUpdated(device_message::DeviceUpdated {
+      //     device_id,
+      //     device: match device.try_read() {
+      //       Ok(device) => Some(device.deref().deref().into()),
+      //       Err(_) => None,
+      //     },
+      //   })),
+      // },
     }
   }
 }
@@ -154,7 +158,8 @@ impl Default for DeviceManagerBuilder {
 
       #[cfg(feature = "devices-bhaptics")]
       {
-        // todo: add bHaptics
+        use xrc_devices_bhaptics::BHapticsProtocolSpecifierBuilder;
+        btle_builder.specifier(BHapticsProtocolSpecifierBuilder::default());
       }
 
       #[cfg(feature = "devices-opengloves")]

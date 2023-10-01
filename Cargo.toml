@@ -10,6 +10,9 @@ xrconnect-proto = { path = "crates/xrconnect-proto" }
 xrc-transport = { path = "crates/xrc-device-transport" }
 xrc-transport-btle = { path = "crates/xrc-device-transport-btle" }
 xrc-device-manager = { path = "crates/xrc-device-manager" }
+xrc-geometry = { path = "crates/xrc-geometry" }
+xrc-haptic-manager = { path = "crates/xrc-haptic-manager" }
+xrc-haptics-body = { path = "crates/xrc-haptics-body" }
 
 btleplug = { git = "https://github.com/senseshift/btleplug.git", rev = "75c180e" }
 

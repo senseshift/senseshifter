@@ -4,6 +4,25 @@ use serde::Deserialize;
 static DEVICE_CONFIGURATION_JSON: &str = include_str!("device-config.json");
 
 #[derive(Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Position {
+  Vest,
+
+  Head,
+
+  ForearmR,
+  ForearmL,
+
+  HandR,
+  HandL,
+
+  GloveR,
+  GloveL,
+
+  FootR,
+  FootL,
+}
+
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BHapticsDeviceType {
   TactBelt,
   Tactosy2,
@@ -60,6 +79,10 @@ pub struct BHapticsDeviceIdentifier {
   #[get = "pub"]
   #[serde(rename = "rawValue")]
   appearance: u16,
+
+  #[get = "pub"]
+  #[serde(rename = "candidatePositions")]
+  candidate_positions: Vec<Position>,
 }
 
 pub(crate) fn load_device_identifiers() -> Vec<BHapticsDeviceIdentifier> {

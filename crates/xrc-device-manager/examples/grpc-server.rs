@@ -24,6 +24,8 @@ async fn main() -> Result<()> {
     }
   });
 
+  manager.scan_start().await?;
+
   Server::builder()
     .add_service(DeviceManagerServer::new(manager))
     .serve(addr)

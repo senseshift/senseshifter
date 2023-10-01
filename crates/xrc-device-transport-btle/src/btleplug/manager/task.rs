@@ -22,7 +22,7 @@ use dashmap::mapref::entry::Entry;
 use xrc_transport::api::{Device, TransportManagerEvent};
 
 use super::BtlePlugManagerCommand;
-use crate::btleplug::{BtlePlugConnector, BtlePlugPeripheralInfo, BtlePlugProtocolSpecifier, PlatformBtlePlugConnector};
+use crate::btleplug::{BtlePlugConnector, BtlePlugDevice, BtlePlugPeripheralInfo, BtlePlugProtocolSpecifier, PlatformBtlePlugConnector};
 
 pub(super) struct BtlePlugManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
@@ -31,7 +31,7 @@ pub(super) struct BtlePlugManagerTask {
   /// Shared between manager and task.
   adapter_connected: Arc<AtomicBool>,
   protocol_specifiers: Vec<Box<dyn BtlePlugProtocolSpecifier>>,
-  known_addresses: DashMap<PeripheralId, Arc<RwLock<Box<dyn Device>>>>,
+  known_addresses: DashMap<PeripheralId, Arc<Box<dyn Device>>>,
 }
 
 impl BtlePlugManagerTask {
@@ -135,22 +135,6 @@ impl BtlePlugManagerTask {
 
   #[instrument(skip(self, adapter))]
   async fn handle_peripheral(&mut self, peripheral_id: &PeripheralId, adapter: &Adapter) {
-    if let Entry::Occupied(mut entry) = self.known_addresses.entry(peripheral_id.clone()) {
-      let device = entry.get().clone();
-      let mut device_lock = device.write().await;
-      device_lock.update().await;
-
-      let event = TransportManagerEvent::DeviceUpdated {
-        device_id: peripheral_id.to_string(),
-        device: device.clone(),
-      };
-      if let Err(err) = self.event_sender.send(event).await {
-        error!("Unable to send device updated event: {}", err);
-      }
-
-      return;
-    }
-
     let peripheral = match adapter.peripheral(peripheral_id).await {
       Ok(peripheral) => peripheral,
       Err(err) => {
@@ -165,7 +149,7 @@ impl BtlePlugManagerTask {
       peripheral_info,
     ) as PlatformBtlePlugConnector;
 
-    let device: Option<Box<dyn Device>> = self.protocol_specifiers
+    let device: Option<Box<dyn BtlePlugDevice>> = self.protocol_specifiers
       .iter()
       .find_map(move |protocol_specifier| {
         match protocol_specifier.specify(connector.clone()) {
@@ -183,17 +167,6 @@ impl BtlePlugManagerTask {
         return;
       }
     };
-
-    let device = Arc::new(RwLock::new(device));
-    self.known_addresses.insert(peripheral_id.clone(), device.clone());
-    let event = TransportManagerEvent::DeviceDiscovered {
-      device_id: peripheral_id.to_string(),
-      device,
-    };
-
-    if let Err(err) = self.event_sender.send(event).await {
-      error!("Unable to send device discovered event: {}", err);
-    }
   }
 
   async fn get_peripheral_info(peripheral: &Peripheral) -> BtlePlugPeripheralInfo {

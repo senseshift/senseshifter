@@ -3,6 +3,7 @@
 
 /// Re-export to ensure that users of this crate can access the same version.
 pub use prost;
+pub use prost_types;
 pub use async_trait::async_trait;
 
 pub mod devices {

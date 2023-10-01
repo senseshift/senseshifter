@@ -29,6 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ("open_glove", "openglove"),
     ("Openglove", "OpenGlove"),
     ("BluetoothLe", "BluetoothLE"),
+    ("Ble", "BLE"),
     ("Rfcomm", "RFComm"),
     ("RfComm", "RFComm")
   ];

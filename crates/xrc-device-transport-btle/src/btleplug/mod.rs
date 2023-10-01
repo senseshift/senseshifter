@@ -14,6 +14,9 @@ use tracing::error;
 
 use xrc_transport::api::{Device, TransportConnector};
 
+mod device;
+pub use device::*;
+
 mod manager;
 pub use manager::{
   BtlePlugManager, BtlePlugManagerBuilder,

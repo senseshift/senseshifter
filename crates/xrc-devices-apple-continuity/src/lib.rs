@@ -1,56 +1,18 @@
 use std::fmt::Debug;
 use apple_continuity::{
   ContinuityMessage,
-  ProximityPairingDeviceModel as DeviceModel,
 };
 use bytes::Bytes;
+use tracing::info;
 use xrc_transport::{
   Result,
   api::Device,
   async_trait,
 };
-use xrc_transport_btle::btleplug::{BtlePlugProtocolSpecifierBuilder, BtlePlugProtocolSpecifier, PlatformBtlePlugConnector};
+use xrc_transport_btle::btleplug::{BtlePlugProtocolSpecifierBuilder, BtlePlugProtocolSpecifier, PlatformBtlePlugConnector, BtlePlugDevice};
 
-struct AppleContinuityDevice {
-  id: String,
-  device_model: DeviceModel,
-
-  connector: PlatformBtlePlugConnector,
-}
-
-impl Debug for AppleContinuityDevice {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("AppleContinuityDevice")
-      .field("id", &self.id)
-      .field("device_model", &self.device_model)
-      .finish()
-  }
-}
-
-impl AppleContinuityDevice {
-  fn new(connector: PlatformBtlePlugConnector, device_model: DeviceModel) -> Self {
-    Self {
-      id: connector.peripheral_info().peripheral_id().to_string(),
-      connector,
-      device_model,
-    }
-  }
-}
-
-#[async_trait]
-impl Device for AppleContinuityDevice {
-  fn id(&self) -> &String {
-    &self.id
-  }
-
-  fn name(&self) -> Option<&String> {
-    None // TODO from system connected devices
-  }
-
-  async fn update(&mut self) {
-    self.connector.update().await;
-  }
-}
+mod device;
+use device::*;
 
 #[derive(Default)]
 pub struct AppleContinuityProtocolSpecifierBuilder {}
@@ -67,7 +29,7 @@ pub struct AppleContinuityProtocolSpecifier {
 
 #[async_trait]
 impl BtlePlugProtocolSpecifier for AppleContinuityProtocolSpecifier {
-  fn specify(&self, connector: PlatformBtlePlugConnector) -> Result<Option<Box<dyn Device>>> {
+  fn specify(&self, connector: PlatformBtlePlugConnector) -> Result<Option<Box<dyn BtlePlugDevice>>> {
     let info = connector.peripheral_info();
     let properties = match info.properties() {
       Some(properties) => properties,
@@ -93,6 +55,8 @@ impl BtlePlugProtocolSpecifier for AppleContinuityProtocolSpecifier {
       connector,
       message.device_model,
     );
+
+    info!("Found Apple Continuity device: {:?}", device);
 
     Ok(Some(Box::new(device)))
   }

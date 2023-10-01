@@ -1,46 +1,25 @@
 use std::fmt::Debug;
 use async_trait::async_trait;
-use xrconnect_proto::devices::v1alpha1::device::{Info, Status};
 
 #[async_trait]
 pub trait Device: Send + Sync + Debug {
   fn id(&self) -> &String;
 
-  fn name(&self) -> Option<&String>;
-
-  fn connected(&self) -> bool {
-    false
-  }
+  fn name(&self) -> Option<String>;
 
   fn connectible(&self) -> bool {
     false
   }
 
-  async fn update(&mut self) {
-    // Do nothing by default
+  fn connected(&self) -> bool {
+    false
   }
-}
 
-#[cfg(feature = "proto-v1alpha1")]
-impl Into<xrconnect_proto::devices::v1alpha1::Device> for &dyn Device {
-  fn into(self) -> xrconnect_proto::devices::v1alpha1::Device {
-    use xrconnect_proto::devices::v1alpha1::{
-      Device as ProtoDevice,
-      device::{
-        Status,
-      },
-    };
+  fn connect(&self) -> crate::Result<()> {
+    Err(anyhow::anyhow!("Device is not connectible"))
+  }
 
-    ProtoDevice {
-      device_id: self.id().to_string(),
-      name: self.name().cloned(),
-      status: match self.connected() {
-        true => Status::Connected.into(),
-        false => Status::Disconnected.into(),
-      },
-      connectible: self.connectible(),
-      info: None,
-      properties: None,
-    }
+  fn disconnect(&self) -> crate::Result<()> {
+    Err(anyhow::anyhow!("Device is not connectible"))
   }
 }

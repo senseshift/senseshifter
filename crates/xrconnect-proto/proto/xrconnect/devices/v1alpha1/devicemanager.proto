@@ -57,8 +57,6 @@ message DeviceAddRequest {
       // The MAC address of the device.
       string address = 1;
 
-      reserved 2 to 10;
-
       optional string service_uuid = 11;
       optional string rx_uuid = 12;
       optional string tx_uuid = 13;

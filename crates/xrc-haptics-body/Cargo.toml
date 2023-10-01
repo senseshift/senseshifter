@@ -1,0 +1,11 @@
+[package]
+name = "xrc-haptics-body"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+xrc-geometry = { workspace = true }
+dashmap = "5"
+tokio = { workspace = true, features = ["sync"] }

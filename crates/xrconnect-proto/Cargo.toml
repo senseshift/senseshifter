@@ -22,6 +22,7 @@ serde = ["dep:serde"]
 
 [dependencies]
 prost = "^0.12"
+prost-types = "^0.12"
 async-trait = "^0.1.73"
 
 tonic = { version = "^0.10", optional = true }

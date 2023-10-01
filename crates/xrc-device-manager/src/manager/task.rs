@@ -114,11 +114,8 @@ impl DeviceManagerTask {
 
         self.event_sender.send(DeviceManagerEvent::ScanStopped)?;
       }
-      TransportManagerEvent::DeviceDiscovered { device_id, device } => {
-        self.event_sender.send(DeviceManagerEvent::DeviceDiscovered { device_id, device })?;
-      }
-      TransportManagerEvent::DeviceUpdated { device_id, device } => {
-        self.event_sender.send(DeviceManagerEvent::DeviceUpdated { device_id, device })?;
+      _ => {
+        error!("Unhandled transport event: {:?}", event)
       }
     }
     Ok(())

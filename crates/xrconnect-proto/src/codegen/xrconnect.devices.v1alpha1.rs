@@ -82,21 +82,33 @@ pub mod raw_device {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Device {
+    /// Unique device ID, that is used to identify the device.
     #[prost(string, tag = "1")]
     pub device_id: ::prost::alloc::string::String,
+    /// Original device name, as provided by the driver.
     #[prost(string, optional, tag = "2")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(enumeration = "device::Status", tag = "3")]
+    /// Display name, that is used to identify the device to the user.
+    #[prost(string, optional, tag = "3")]
+    pub display_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(enumeration = "device::Status", tag = "10")]
     pub status: i32,
-    #[prost(bool, tag = "4")]
+    /// Determines if the device can be connected to.
+    #[prost(bool, tag = "11")]
     pub connectible: bool,
+    /// Secondary (after name and ID) device information, that aimed to help identify the device along other devices.
     #[prost(message, optional, tag = "51")]
     pub info: ::core::option::Option<device::Info>,
+    /// Device properties, that are not required for the device to function, but provide additional information about the device.
     #[prost(message, optional, tag = "52")]
     pub properties: ::core::option::Option<device::Properties>,
+    /// Device settings, that can be changed by the user.
+    #[prost(message, optional, tag = "60")]
+    pub settings: ::core::option::Option<device::Settings>,
 }
 /// Nested message and enum types in `Device`.
 pub mod device {
+    /// Secondary (after name and ID) device information, that aimed to help identify the device along other devices.
     #[cfg_attr(
         feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
@@ -106,11 +118,12 @@ pub mod device {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct Info {
-        #[prost(string, tag = "1")]
-        pub manufacturer: ::prost::alloc::string::String,
-        #[prost(string, tag = "2")]
-        pub model: ::prost::alloc::string::String,
+        #[prost(string, optional, tag = "1")]
+        pub manufacturer: ::core::option::Option<::prost::alloc::string::String>,
+        #[prost(string, optional, tag = "2")]
+        pub product: ::core::option::Option<::prost::alloc::string::String>,
     }
+    /// Device properties, that are not required for the device to function, but provide additional information about the device.
     #[cfg_attr(
         feature = "serde",
         derive(::serde::Serialize, ::serde::Deserialize),
@@ -140,6 +153,7 @@ pub mod device {
         pub struct Battery {
             #[prost(enumeration = "battery::State", optional, tag = "1")]
             pub state: ::core::option::Option<i32>,
+            /// The current battery levels, in the range \[0, 1\].
             #[prost(float, repeated, tag = "2")]
             pub levels: ::prost::alloc::vec::Vec<f32>,
         }
@@ -167,8 +181,7 @@ pub mod device {
                 Unknown = 0,
                 Charging = 1,
                 Discharging = 2,
-                NotCharging = 3,
-                Full = 4,
+                Full = 3,
             }
             impl State {
                 /// String value of the enum field names used in the ProtoBuf definition.
@@ -180,7 +193,6 @@ pub mod device {
                         State::Unknown => "STATE_UNKNOWN",
                         State::Charging => "STATE_CHARGING",
                         State::Discharging => "STATE_DISCHARGING",
-                        State::NotCharging => "STATE_NOT_CHARGING",
                         State::Full => "STATE_FULL",
                     }
                 }
@@ -190,11 +202,87 @@ pub mod device {
                         "STATE_UNKNOWN" => Some(Self::Unknown),
                         "STATE_CHARGING" => Some(Self::Charging),
                         "STATE_DISCHARGING" => Some(Self::Discharging),
-                        "STATE_NOT_CHARGING" => Some(Self::NotCharging),
                         "STATE_FULL" => Some(Self::Full),
                         _ => None,
                     }
                 }
+            }
+        }
+    }
+    #[cfg_attr(
+        feature = "serde",
+        derive(::serde::Serialize, ::serde::Deserialize),
+        serde(rename_all = "snake_case")
+    )]
+    #[cfg_attr(feature = "specta", derive(::specta::Type))]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct Settings {
+        /// Determines if the device should be automatically connected to upon discovery.
+        #[prost(bool, tag = "1")]
+        pub auto_connect: bool,
+        /// Device-specific settings.
+        #[prost(map = "string, message", tag = "10")]
+        pub entries: ::std::collections::HashMap<
+            ::prost::alloc::string::String,
+            settings::Entry,
+        >,
+    }
+    /// Nested message and enum types in `Settings`.
+    pub mod settings {
+        #[cfg_attr(
+            feature = "serde",
+            derive(::serde::Serialize, ::serde::Deserialize),
+            serde(rename_all = "snake_case")
+        )]
+        #[cfg_attr(feature = "specta", derive(::specta::Type))]
+        #[allow(clippy::derive_partial_eq_without_eq)]
+        #[derive(Clone, PartialEq, ::prost::Message)]
+        pub struct Entry {
+            #[prost(oneof = "entry::Value", tags = "11, 12")]
+            pub value: ::core::option::Option<entry::Value>,
+        }
+        /// Nested message and enum types in `Entry`.
+        pub mod entry {
+            #[cfg_attr(
+                feature = "serde",
+                derive(::serde::Serialize, ::serde::Deserialize),
+                serde(rename_all = "snake_case")
+            )]
+            #[cfg_attr(feature = "specta", derive(::specta::Type))]
+            #[allow(clippy::derive_partial_eq_without_eq)]
+            #[derive(Clone, PartialEq, ::prost::Message)]
+            pub struct BoolSettings {
+                #[prost(bool, tag = "1")]
+                pub value: bool,
+            }
+            #[cfg_attr(
+                feature = "serde",
+                derive(::serde::Serialize, ::serde::Deserialize),
+                serde(rename_all = "snake_case")
+            )]
+            #[cfg_attr(feature = "specta", derive(::specta::Type))]
+            #[allow(clippy::derive_partial_eq_without_eq)]
+            #[derive(Clone, PartialEq, ::prost::Message)]
+            pub struct SelectSettings {
+                #[prost(string, tag = "1")]
+                pub value: ::prost::alloc::string::String,
+                #[prost(string, repeated, tag = "2")]
+                pub options: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+            }
+            #[cfg_attr(
+                feature = "serde",
+                derive(::serde::Serialize, ::serde::Deserialize),
+                serde(rename_all = "snake_case")
+            )]
+            #[cfg_attr(feature = "specta", derive(::specta::Type))]
+            #[allow(clippy::derive_partial_eq_without_eq)]
+            #[derive(Clone, PartialEq, ::prost::Oneof)]
+            pub enum Value {
+                #[prost(message, tag = "11")]
+                BoolValue(BoolSettings),
+                #[prost(message, tag = "12")]
+                SelectValue(SelectSettings),
             }
         }
     }
@@ -218,7 +306,7 @@ pub mod device {
     #[repr(i32)]
     pub enum Transport {
         Unknown = 0,
-        Ble = 1,
+        BLE = 1,
         Serial = 2,
         RFComm = 3,
     }
@@ -230,7 +318,7 @@ pub mod device {
         pub fn as_str_name(&self) -> &'static str {
             match self {
                 Transport::Unknown => "TRANSPORT_UNKNOWN",
-                Transport::Ble => "TRANSPORT_BLE",
+                Transport::BLE => "TRANSPORT_BLE",
                 Transport::Serial => "TRANSPORT_SERIAL",
                 Transport::RFComm => "TRANSPORT_RFCOMM",
             }
@@ -239,7 +327,7 @@ pub mod device {
         pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
             match value {
                 "TRANSPORT_UNKNOWN" => Some(Self::Unknown),
-                "TRANSPORT_BLE" => Some(Self::Ble),
+                "TRANSPORT_BLE" => Some(Self::BLE),
                 "TRANSPORT_SERIAL" => Some(Self::Serial),
                 "TRANSPORT_RFCOMM" => Some(Self::RFComm),
                 _ => None,
@@ -293,51 +381,6 @@ pub mod device {
                 "STATUS_CONNECTING" => Some(Self::Connecting),
                 "STATUS_CONNECTED" => Some(Self::Connected),
                 "STATUS_DISCONNECTING" => Some(Self::Disconnecting),
-                _ => None,
-            }
-        }
-    }
-    #[cfg_attr(
-        feature = "serde",
-        derive(::serde::Serialize, ::serde::Deserialize),
-        serde(rename_all = "snake_case")
-    )]
-    #[cfg_attr(feature = "specta", derive(::specta::Type))]
-    #[derive(
-        Clone,
-        Copy,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-        PartialOrd,
-        Ord,
-        ::prost::Enumeration
-    )]
-    #[repr(i32)]
-    pub enum Chirality {
-        Unknown = 0,
-        Left = 1,
-        Right = 2,
-    }
-    impl Chirality {
-        /// String value of the enum field names used in the ProtoBuf definition.
-        ///
-        /// The values are not transformed in any way and thus are considered stable
-        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-        pub fn as_str_name(&self) -> &'static str {
-            match self {
-                Chirality::Unknown => "CHIRALITY_UNKNOWN",
-                Chirality::Left => "CHIRALITY_LEFT",
-                Chirality::Right => "CHIRALITY_RIGHT",
-            }
-        }
-        /// Creates an enum from field names used in the ProtoBuf definition.
-        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-            match value {
-                "CHIRALITY_UNKNOWN" => Some(Self::Unknown),
-                "CHIRALITY_LEFT" => Some(Self::Left),
-                "CHIRALITY_RIGHT" => Some(Self::Right),
                 _ => None,
             }
         }
