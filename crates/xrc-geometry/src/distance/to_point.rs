@@ -92,9 +92,9 @@ impl Distance<&Point2<u8>> for Ellipse<u8, u8> {
 
   fn distance(&self, point: &Point2<u8>) -> f64 {
     use ordered_float::OrderedFloat;
-    use crate::{Within, PointWithin};
+    use crate::Within;
 
-    if self.within(point) == PointWithin::Inside {
+    if self.within(point) == true {
       return 0.0;
     }
 
@@ -186,8 +186,8 @@ impl Distance<&Point2<u8>> for Rectangle<u8> {
   /// assert_eq!(rectangle.distance(&Point2::new(20, 10)), 10.0); // Point is to the right of the rectangle
   /// ```
   fn distance(&self, point: &Point2<u8>) -> f64 {
-    use crate::{Within, PointWithin};
-    if self.within(point) == PointWithin::Inside {
+    use crate::Within;
+    if self.within(point) {
       return 0.0;
     }
 
@@ -237,7 +237,7 @@ impl Distance<&Point2<u8>> for Triangle<u8> {
   /// ```
   fn distance(&self, point: &Point2<u8>) -> f64 {
     // use crate::{Within, PointWithin};
-    // if self.within(point) == PointWithin::Inside {
+    // if self.within(point) == true {
     //   return 0.0;
     // }
 
@@ -274,8 +274,7 @@ impl<T, R> Distance<&Point2<T>> for ShapeCollection<T, R>
   type Result = f64;
 
   fn distance(&self, point: &Point2<T>) -> f64 {
-    use crate::{Within, PointWithin};
-    use ordered_float::OrderedFloat;
+    use crate::Within;
 
     let mut distances = Vec::new();
 

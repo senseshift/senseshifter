@@ -89,4 +89,16 @@ impl Triangle<u8> {
       (y_sum / 3.0).round() as u8,
     )
   }
+
+  pub fn bbox(&self) -> Rectangle<u8> {
+    let min_x = self.0.x.min(self.1.x).min(self.2.x);
+    let min_y = self.0.y.min(self.1.y).min(self.2.y);
+    let max_x = self.0.x.max(self.1.x).max(self.2.x);
+    let max_y = self.0.y.max(self.1.y).max(self.2.y);
+
+    Rectangle::new(
+      Point2::new(min_x, min_y),
+      Point2::new(max_x, max_y),
+    )
+  }
 }

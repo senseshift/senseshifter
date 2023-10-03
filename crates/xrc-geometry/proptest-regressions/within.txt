@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc cfa7be73a53f5116ce326dc224f4fe23790a7d7dde63eb8e053b44ae097047aa # shrinks to input = _EllipseWithinU8FuzzArgs { ellipse: Ellipse { center: [0, 0], radius: (1, 1) }, point: PointView([0, 0]) }

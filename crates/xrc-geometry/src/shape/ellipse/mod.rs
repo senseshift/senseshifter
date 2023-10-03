@@ -44,10 +44,9 @@ impl<T, R> Debug for Ellipse<T, R>
 impl<T, R> Ellipse<T, R>
   where
     T: Scalar,
-    R: Scalar + Zero + PartialOrd,
+    R: Scalar,
 {
   pub fn new(center: Point2<T>, radius: (R, R)) -> Self {
-    assert!(radius.0 > R::zero());
     Self { center, radius }
   }
 
@@ -140,6 +139,15 @@ impl Ellipse<u8, u8> {
     let y = b * phi.sin() + self.center.y as f64;
 
     Point2::new(x, y)
+  }
+
+  pub fn bbox(&self) -> Rectangle<u8> {
+    let x = self.center.x as f64 - self.radius.0 as f64;
+    let y = self.center.y as f64 - self.radius.1 as f64;
+    let width = self.radius.0 as f64 * 2.0;
+    let height = self.radius.1 as f64 * 2.0;
+
+    Rectangle::new(Point2::new(x, y).map(|c| c as u8), Point2::new(x + width, y + height).map(|c| c as u8))
   }
 }
 

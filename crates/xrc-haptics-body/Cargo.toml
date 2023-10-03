@@ -23,3 +23,9 @@ getset = { workspace = true }
 
 [dev-dependencies]
 png = "0.17.10"
+criterion = { version = "0.4", features = ["html_reports"] }
+xrc-geometry-test-fixtures = { path = "../xrc-geometry-test-fixtures"}
+
+[[bench]]
+name = "search_closest"
+harness = false

@@ -17,9 +17,12 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-devices-bhaptics/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-devices-opengloves/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-transport-btleplug/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-geometry-test-fixtures/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-geometry/benches" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-geometry/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-geometry/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-haptic-manager/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-haptics-body/benches" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-haptics-body/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-haptics-body/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

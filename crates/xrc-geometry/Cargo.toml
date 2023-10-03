@@ -2,6 +2,7 @@
 name = "xrc-geometry"
 version = "0.1.0"
 edition = "2021"
+autobenches = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -22,4 +23,13 @@ test-case = "3"
 proptest = "1"
 test-strategy = "^0.3.1"
 nalgebra = { version = "^0.32.3", features = ["proptest"] }
-#
+criterion = { version = "0.4", features = ["html_reports"] }
+xrc-geometry-test-fixtures = { path = "../xrc-geometry-test-fixtures"}
+
+[[bench]]
+name = "within"
+harness = false
+
+[[bench]]
+name = "distance_to_point"
+harness = false
