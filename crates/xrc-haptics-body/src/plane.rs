@@ -8,8 +8,8 @@ use getset::Getters;
 use num::{Zero, traits::Num, Unsigned};
 use nalgebra::Scalar;
 use num::traits::NumOps;
-use xrc_geometry::{distance, distance_squared, Point2};
-use crate::{ActuatorEvent, ActuatorSender, ActuatorGeometry};
+use xrc_geometry::{Shape, Point2};
+use crate::{ActuatorEvent, ActuatorSender};
 
 #[repr(transparent)]
 pub struct PlaneState<T, const D: usize>(pub [[T; D]; D]);
@@ -78,18 +78,18 @@ pub struct HapticPlane<T, I, const D: usize, A>
     I: Num,
 {
   #[getset(get = "pub")]
-  actuators: DashMap<ActuatorGeometry<T, T>, A>,
+  actuators: DashMap<Shape<T, T>, A>,
 
   /// A map of actuator centers to their geometries.
   ///
   /// # Example:
   /// ```rust
-  /// use xrc_geometry::Circle;
-  /// use xrc_haptics_body::{HapticPlaneU8, ActuatorGeometry};
+  /// use xrc_geometry::{Circle, Shape};
+  /// use xrc_haptics_body::{HapticPlaneU8};
   ///
   /// let mut plane = HapticPlaneU8::<()>::default();
   /// let geometry = Circle::new([5, 83].into(), 10);
-  /// let geometry = ActuatorGeometry::from(geometry);
+  /// let geometry = Shape::from(geometry);
   ///
   /// plane.insert(geometry.clone(), ());
   ///
@@ -97,14 +97,14 @@ pub struct HapticPlane<T, I, const D: usize, A>
   /// assert_eq!(plane.centers().get(&center).unwrap().value(), &geometry);
   /// ```
   #[getset(get = "pub")]
-  centers: DashMap<Point2<T>, ActuatorGeometry<T, T>>,
+  centers: DashMap<Point2<T>, Shape<T, T>>,
 
   // /// A map of actuator geometries to their closest neighbors.
   // #[getset(get = "pub")]
   // closest: [[Point2<T>; D]; D],
 
   #[getset(get = "pub")]
-  intensities: DashMap<ActuatorGeometry<T, T>, I>,
+  intensities: DashMap<Shape<T, T>, I>,
 
   /// The current state of the plane.
   ///
@@ -182,13 +182,13 @@ impl<A> HapticPlaneU8<A>
   ///
   /// # Example:
   /// ```rust
-  /// use xrc_geometry::Circle;
-  /// use xrc_haptics_body::{HapticPlaneU8, ActuatorGeometry};
+  /// use xrc_geometry::{Circle, Shape};
+  /// use xrc_haptics_body::{HapticPlaneU8};
   ///
   /// let mut plane = HapticPlaneU8::<()>::default();
   /// let geometry = Circle::new([5, 83].into(), 10);
   ///
-  /// plane.insert(ActuatorGeometry::from(geometry), ());
+  /// plane.insert(Shape::from(geometry), ());
   ///
   /// assert_eq!(plane.actuators().len(), 1);
   /// assert_eq!(plane.centers().len(), 1);
@@ -198,7 +198,7 @@ impl<A> HapticPlaneU8<A>
   /// assert!(plane.centers().contains_key(&center));
   ///
   /// ```
-  pub fn insert(&mut self, geometry: ActuatorGeometry<u8, u8>, sender: A) {
+  pub fn insert(&mut self, geometry: Shape<u8, u8>, sender: A) {
     self.actuators.insert(geometry.clone(), sender);
     self.centers.insert(geometry.center(), geometry.clone());
     self.intensities.insert(geometry, 0);
@@ -285,15 +285,15 @@ mod tests {
   fn test_search_closest() {
     let mut plane = HapticPlaneU8::<()>::default();
 
-    plane.insert(ActuatorGeometry::from(Circle::new([10 , 10 ].into(), 10)), ());
-    plane.insert(ActuatorGeometry::from(Circle::new([10 , 245].into(), 10)), ());
-    plane.insert(ActuatorGeometry::from(Circle::new([245, 10 ].into(), 10)), ());
-    plane.insert(ActuatorGeometry::from(Circle::new([245, 245].into(), 10)), ());
+    plane.insert(Shape::from(Circle::new([10 , 10 ].into(), 10)), ());
+    plane.insert(Shape::from(Circle::new([10 , 245].into(), 10)), ());
+    plane.insert(Shape::from(Circle::new([245, 10 ].into(), 10)), ());
+    plane.insert(Shape::from(Circle::new([245, 245].into(), 10)), ());
 
-    plane.insert(ActuatorGeometry::from(Circle::new([100, 100].into(), 10)), ());
-    plane.insert(ActuatorGeometry::from(Circle::new([100, 155].into(), 10)), ());
-    plane.insert(ActuatorGeometry::from(Circle::new([155, 100].into(), 10)), ());
-    plane.insert(ActuatorGeometry::from(Circle::new([155, 155].into(), 10)), ());
+    plane.insert(Shape::from(Circle::new([100, 100].into(), 10)), ());
+    plane.insert(Shape::from(Circle::new([100, 155].into(), 10)), ());
+    plane.insert(Shape::from(Circle::new([155, 100].into(), 10)), ());
+    plane.insert(Shape::from(Circle::new([155, 155].into(), 10)), ());
 
     assert_eq!(plane.search_closest(&Point2::new(0  , 0  )), Point2::new(10 , 10 ));
     assert_eq!(plane.search_closest(&Point2::new(0  , 255)), Point2::new(10 , 245));

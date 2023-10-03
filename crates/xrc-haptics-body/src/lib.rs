@@ -1,8 +1,5 @@
 use tokio::sync::mpsc;
 
-mod geometry;
-pub use geometry::*;
-
 mod plane;
 pub use plane::*;
 

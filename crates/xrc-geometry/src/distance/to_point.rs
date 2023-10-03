@@ -1,7 +1,7 @@
 use nalgebra::{Point2, Scalar};
-use num::Num;
-use num::traits::NumOps;
-use crate::{Circle, Ellipse, Line, Rectangle, Triangle};
+use num::traits::{ Num, NumOps, Unsigned };
+
+use crate::{Circle, Ellipse, Line, Rectangle, Triangle, ShapeCollection, Shape, Distance};
 
 /// Calculate the squared distance between two points.
 ///
@@ -51,12 +51,6 @@ pub fn distance<T>(a: &Point2<T>, b: &Point2<T>) -> f64
   distance_squared(a, b).sqrt()
 }
 
-pub trait Distance<T> {
-  type Result;
-
-  fn distance(&self, other: T) -> Self::Result;
-}
-
 impl Distance<&Point2<u8>> for Circle<u8, u8> {
   type Result = f64;
 
@@ -70,7 +64,7 @@ impl Distance<&Point2<u8>> for Circle<u8, u8> {
   /// let circle = Circle::new([5, 5].into(), 10);
   /// let point = [20, 5].into();
   ///
-  /// assert_eq!(circle.distance(&point), 5);
+  /// assert_eq!(circle.distance(&point), 5.0);
   /// ```
   fn distance(&self, point: &Point2<u8>) -> Self::Result {
     let distance_to_center = distance(&self.center, point);
@@ -261,6 +255,90 @@ impl Distance<&Point2<u8>> for Triangle<u8> {
       .iter()
       .copied()
       .fold(f64::MAX, f64::min)
+  }
+}
+impl Distance<Point2<u8>> for Triangle<u8> {
+  type Result = f64;
+
+  fn distance(&self, point: Point2<u8>) -> f64 {
+    self.distance(&point)
+  }
+}
+
+impl<T, R> Distance<&Point2<T>> for ShapeCollection<T, R>
+  where
+    T: Scalar,
+    R: Scalar + Unsigned,
+    Shape<T, R>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+{
+  type Result = f64;
+
+  fn distance(&self, point: &Point2<T>) -> f64 {
+    use crate::{Within, PointWithin};
+    use ordered_float::OrderedFloat;
+
+    let mut distances = Vec::new();
+
+    for shape in self.shapes.iter() {
+      let distance = shape.distance(point);
+      distances.push(distance);
+    }
+
+    distances
+      .iter()
+      .copied()
+      .fold(f64::MAX, f64::min)
+  }
+}
+
+impl<T, R> Distance<Point2<T>> for ShapeCollection<T, R>
+  where
+    T: Scalar,
+    R: Scalar + Unsigned,
+    Shape<T, R>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+{
+  type Result = f64;
+
+  fn distance(&self, point: Point2<T>) -> f64 {
+    self.distance(&point)
+  }
+}
+
+impl<T, R> Distance<&Point2<T>> for Shape<T, R>
+  where
+    T: Scalar,
+    R: Scalar + Unsigned,
+    Ellipse<T, R>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+    Circle<T, R>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+    Rectangle<T>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+    Triangle<T>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+{
+  type Result = f64;
+
+  fn distance(&self, point: &Point2<T>) -> f64 {
+    match self {
+      Self::Ellipse(ellipse) => ellipse.distance(point),
+      Self::Circle(circle) => circle.distance(point),
+      Self::Rectangle(rectangle) => rectangle.distance(point),
+      Self::Triangle(triangle) => triangle.distance(point),
+      Self::Collection(collection) => collection.distance(point),
+    }
+  }
+}
+impl<T, R> Distance<Point2<T>> for Shape<T, R>
+  where
+    T: Scalar,
+    R: Scalar + Unsigned,
+    Ellipse<T, R>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+    Circle<T, R>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+    Rectangle<T>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+    Triangle<T>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+    ShapeCollection<T, R>: for<'a> Distance<&'a Point2<T>, Result = f64>,
+{
+  type Result = f64;
+
+  fn distance(&self, point: Point2<T>) -> f64 {
+    self.distance(&point)
   }
 }
 

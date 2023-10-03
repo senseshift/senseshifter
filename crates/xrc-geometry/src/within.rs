@@ -1,8 +1,8 @@
 use crate::{
-  Circle, Ellipse, Rectangle, Triangle,
+  Circle, Ellipse, Rectangle, Triangle, ShapeCollection, Shape,
 };
 use nalgebra::*;
-use num::Num;
+use num::{Num, Unsigned};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PointWithin {
@@ -177,6 +177,66 @@ impl Within<&Point2<u8>> for Triangle<u8>
       PointWithin::Inside
     } else {
       PointWithin::Outside
+    }
+  }
+}
+impl Within<Point2<u8>> for Triangle<u8>
+{
+  type Result = PointWithin;
+
+  fn within(&self, other: Point2<u8>) -> Self::Result {
+    self.within(&other)
+  }
+}
+
+impl<T, U> Within<&Point2<T>> for ShapeCollection<T, U>
+  where
+    T: Scalar,
+    U: Scalar + Unsigned,
+    Shape<T, U>: for<'a> Within<&'a Point2<T>, Result = PointWithin>,
+{
+  type Result = PointWithin;
+
+  fn within(&self, other: &Point2<T>) -> Self::Result {
+    for geometry in &self.shapes {
+      if geometry.within(other) == PointWithin::Inside {
+        return PointWithin::Inside;
+      }
+    }
+    PointWithin::Outside
+  }
+}
+impl<T, U> Within<Point2<T>> for ShapeCollection<T, U>
+  where
+    T: Scalar,
+    U: Scalar + Unsigned,
+    Shape<T, U>: for<'a> Within<&'a Point2<T>, Result = PointWithin>,
+{
+  type Result = PointWithin;
+
+  fn within(&self, other: Point2<T>) -> Self::Result {
+    self.within(&other)
+  }
+}
+
+impl<T, U> Within<&Point2<T>> for Shape<T, U>
+  where
+    T: Scalar,
+    U: Scalar + Unsigned,
+    Ellipse<T, U>: for<'a> Within<&'a Point<T, 2>, Result=PointWithin>,
+    Circle<T, U>: for<'a> Within<&'a Point<T, 2>, Result=PointWithin>,
+    Rectangle<T>: for<'a> Within<&'a Point<T, 2>, Result=PointWithin>,
+    Triangle<T>: for<'a> Within<&'a Point<T, 2>, Result=PointWithin>,
+{
+  type Result = PointWithin;
+
+  fn within(&self, other: &Point2<T>) -> Self::Result {
+    match self {
+      Self::Circle(circle) => circle.within(other),
+      Self::Ellipse(ellipse) => ellipse.within(other),
+      Self::Rectangle(rectangle) => rectangle.within(other),
+      Self::Triangle(triangle) => triangle.within(other),
+      Self::Collection(collection) => collection.within(other),
     }
   }
 }

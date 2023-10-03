@@ -4,17 +4,11 @@ use num::cast::AsPrimitive;
 use num::Num;
 use num::traits::NumOps;
 
-mod circle;
-mod ellipse;
-mod line;
-mod rectangle;
-mod triangle;
+mod data;
+mod shape;
 
-pub use circle::Circle;
-pub use ellipse::Ellipse;
-pub use line::Line;
-pub use rectangle::Rectangle;
-pub use triangle::Triangle;
+pub use data::*;
+pub use shape::*;
 
 mod within;
 mod distance;
