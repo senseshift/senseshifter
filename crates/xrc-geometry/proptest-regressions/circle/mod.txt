@@ -1,9 +1,0 @@
-# Seeds for failure cases proptest has generated in the past. It is
-# automatically read and these particular cases re-run before any
-# novel cases are generated.
-#
-# It is recommended to check this file in to source control so that
-# everyone who runs the test benefits from these saved cases.
-cc 2958652edefa50095e74e79404f8366e8dae5d7e1efb94ea7bf3cb8c499bebbc # shrinks to input = _ContainsU8FuzzArgs { circle: Circle { center: Point { array: [0, 0] }, radius: 0 }, point: Point { array: [0, 1] } }
-cc a347c9e790599cbb466c25d59264e356f12860d4925a0cb5f8ce8f7c1a9fd5e9 # shrinks to input = _ContainsI8FuzzArgs { circle: Circle { center: Point { array: [-50, -57] }, radius: 0 }, point: Point { array: [117, 13] } }
-cc 3b171b10d0cae22178fad0902bde3217ff8092fc7db2c143d574f39d9ef002f6 # shrinks to input = _ContainsU64FuzzArgs { circle: Circle { center: Point { array: [0, 0] }, radius: 0 }, point: Point { array: [12094801506775357020, 4884358706337382137] } }

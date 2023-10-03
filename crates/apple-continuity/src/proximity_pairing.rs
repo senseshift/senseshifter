@@ -90,7 +90,7 @@ impl TryFrom<bytes::Bytes> for ProximityPairing {
     }
 
     // Byte 2: Prefix
-    let prefix = bytes[2];
+    let _prefix = bytes[2];
 
     // Byte 3-4: Device model
     let device_model = bytes.slice(3..5).get_u16_le();
@@ -146,9 +146,4 @@ impl TryFrom<bytes::Bytes> for ProximityPairing {
 }
 
 #[cfg(test)]
-mod tests {
-  use super::*;
-  use std::convert::{
-    TryInto, TryFrom,
-  };
-}
+mod tests {}
