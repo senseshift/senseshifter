@@ -99,9 +99,8 @@ pub struct HapticPlane<T, I, const D: usize, A>
   #[getset(get = "pub")]
   centers: DashMap<Point2<T>, Shape<T, T>>,
 
-  // /// A map of actuator geometries to their closest neighbors.
-  // #[getset(get = "pub")]
-  // closest: [[Point2<T>; D]; D],
+  #[getset(get = "pub")]
+  closest: [[Point2<T>; D]; D],
 
   #[getset(get = "pub")]
   intensities: DashMap<Shape<T, T>, I>,
@@ -147,7 +146,7 @@ impl<T, I, const D: usize, A> Default for HapticPlane<T, I, D, A>
       actuators: DashMap::new(),
       centers: DashMap::new(),
       intensities: DashMap::new(),
-      // closest: [[Point2::new(T::zero(), T::zero()); D]; D],
+      closest: [[Point2::new(T::zero(), T::zero()); D]; D],
       state: PlaneState::default(),
     }
   }
@@ -199,11 +198,19 @@ impl<A> HapticPlaneU8<A>
   ///
   /// ```
   pub fn insert(&mut self, geometry: Shape<u8, u8>, sender: A) {
+    self.insert_no_recalc(geometry.clone(), sender);
+    self.recalc_closest();
+  }
+
+  pub fn insert_no_recalc(&mut self, geometry: Shape<u8, u8>, sender: A) {
     self.actuators.insert(geometry.clone(), sender);
     self.centers.insert(geometry.center(), geometry.clone());
     self.intensities.insert(geometry, 0);
+  }
 
-    // self.recalc_closest();
+  pub fn get_closest(&self, point: &Point2<u8>) -> Point2<u8> {
+    let (x, y) = Self::point_coords(point);
+    return self.closest[x][y];
   }
 
   pub fn search_closest(&self, point: &Point2<u8>) -> Point2<u8> {
@@ -226,23 +233,18 @@ impl<A> HapticPlaneU8<A>
     return closest;
   }
 
-  // fn recalc_closest(&mut self) {
-  //   for (x, row) in self.closest.iter_mut().enumerate() {
-  //     for (y, closest) in row.iter_mut().enumerate() {
-  //       let point = Point2::new(x as u8, y as u8);
-  //       let mut closest_distance = u32::MAX;
-  //
-  //       for entry in self.centers.iter() {
-  //         let distance = distance_squared(&entry.key(), &point);
-  //
-  //         if distance < closest_distance {
-  //           closest_distance = distance;
-  //           *closest = *entry.key();
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
+  pub fn recalc_closest(&mut self) {
+    let mut closest = self.closest.clone();
+
+    for (x, row) in self.closest.iter().enumerate() {
+      for (y, _) in row.iter().enumerate() {
+        let point = Point2::new(x as u8, y as u8);
+        closest[x][y] = self.search_closest(&point);
+      }
+    }
+
+    self.closest = closest;
+  }
 }
 
 impl HapticPlaneU8<ActuatorSender>

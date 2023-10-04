@@ -152,4 +152,15 @@ impl Ellipse<u8, u8> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+  use super::*;
+  use crate::*;
+
+  use test_case::test_case;
+  use test_strategy::proptest;
+
+  #[proptest]
+  fn bbox_u8_fuzz(ellipse: Ellipse<u8, u8>) {
+    let _out = ellipse.bbox();
+  }
+}

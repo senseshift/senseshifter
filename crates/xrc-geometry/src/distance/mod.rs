@@ -5,4 +5,8 @@ pub trait Distance<T> {
 }
 
 pub mod to_point;
+pub mod to_circle;
+
 pub use to_point::*;
+
+pub use to_circle::*;

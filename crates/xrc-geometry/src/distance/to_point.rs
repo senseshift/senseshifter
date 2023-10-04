@@ -382,7 +382,7 @@ mod tests {
 
   #[proptest]
   fn circle_distance_u8_fuzz(circle: Circle<u8, u8>, point: PointView<u8, 2>) {
-    let _out = circle.distance(&point.into());
+    let _out = circle.distance(point.0);
   }
 
   #[proptest]

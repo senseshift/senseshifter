@@ -11,7 +11,7 @@ fn criterion_benchmark(c: &mut Criterion) {
       plane.insert(geometry.clone(), ());
     });
 
-    let point = Point2::new(142, 109);
+    let point = Point2::new(145, 96);
     let center_point = Point2::new(128, 88);
 
     b.iter(|| assert_eq!(plane.search_closest(&point), center_point));

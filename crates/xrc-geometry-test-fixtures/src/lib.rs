@@ -87,3 +87,88 @@ pub fn hardlight_vest_chest_front() -> Vec<Shape<u8, u8>>
     Shape::from(Ellipse::new([128, 88].into(), (18, 10))),
   ]
 }
+
+pub fn owo_skin_front() -> Vec<Shape<u8, u8>>
+{
+  vec![
+    // Left Side
+    Shape::from(ShapeCollection {
+      shapes: vec![
+        Shape::from(Triangle::new([8 + 90, 53 + 5].into(), [8 + 95, 53 + 32].into(), [8 + 44, 53 + 32].into())),
+        Shape::from(Triangle::new([8 + 103, 53 + 28].into(), [8 + 95, 53 + 32].into(), [8 + 104, 53 + 12].into())),
+        Shape::from(Triangle::new([8 + 95, 53 + 32].into(), [8 + 103, 53 + 28].into(), [8 + 99, 53 + 31].into())),
+        Shape::from(Triangle::new([8 + 12, 53 + 1].into(), [8 + 90, 53 + 5].into(), [8 + 44, 53 + 32].into())),
+        Shape::from(Triangle::new([8 + 34, 53 + 31].into(), [8 + 12, 53 + 1].into(), [8 + 44, 53 + 32].into())),
+        Shape::from(Triangle::new([8 + 95, 53 + 32].into(), [8 + 101, 53 + 9].into(), [8 + 104, 53 + 12].into())),
+        Shape::from(Triangle::new([8 + 101, 53 + 9].into(), [8 + 95, 53 + 32].into(), [8 + 90, 53 + 5].into())),
+        Shape::from(Triangle::new([8 + 12, 53 + 1].into(), [8 + 25, 53 + 28].into(), [8 + 17, 53 + 24].into())),
+        Shape::from(Triangle::new([8 + 25, 53 + 28].into(), [8 + 12, 53 + 1].into(), [8 + 34, 53 + 31].into())),
+        Shape::from(Triangle::new([8 + 12, 53 + 20].into(), [8 + 12, 53 + 1].into(), [8 + 17, 53 + 24].into())),
+        Shape::from(Triangle::new([8 + 12, 53 + 1].into(), [8 + 12, 53 + 20].into(), [8 + 6, 53 + 15].into())),
+        Shape::from(Triangle::new([8 + 4, 53 + 5].into(), [8 + 6, 53 + 15].into(), [8 + 3, 53 + 12].into())),
+        Shape::from(Triangle::new([8 + 4, 53 + 5].into(), [8 + 12, 53 + 1].into(), [8 + 6, 53 + 15].into())),
+        Shape::from(Triangle::new([8 + 4, 53 + 5].into(), [8 + 3, 53 + 12].into(), [8 + 1, 53 + 9].into())),
+        Shape::from(Triangle::new([8 + 97, 53 + 6].into(), [8 + 101, 53 + 9].into(), [8 + 90, 53 + 5].into())),
+      ]
+    }),
+    Shape::from(ShapeCollection {
+      shapes: vec![
+        Shape::from(Triangle::new([48 + 32, 166 + 72].into(), [48 + 10, 166 + 58].into(), [48 + 52, 166 + 67].into())),
+        Shape::from(Triangle::new([48 + 51, 166 + 10].into(), [48 + 10, 166 + 58].into(), [48 + 2, 166 + 42].into())),
+        Shape::from(Triangle::new([48 + 10, 166 + 58].into(), [48 + 51, 166 + 10].into(), [48 + 52, 166 + 67].into())),
+        Shape::from(Triangle::new([48 + 32, 166 + 1].into(), [48 + 51, 166 + 10].into(), [48 + 2, 166 + 42].into())),
+        Shape::from(Triangle::new([48 + 3, 166 + 6].into(), [48 + 32, 166 + 1].into(), [48 + 2, 166 + 42].into())),
+        Shape::from(Triangle::new([48 + 32, 166 + 1].into(), [48 + 3, 166 + 6].into(), [48 + 10, 166 + 1].into())),
+        Shape::from(Triangle::new([48 + 3, 166 + 6].into(), [48 + 6, 166 + 3].into(), [48 + 10, 166 + 1].into())),
+        Shape::from(Triangle::new([48 + 10, 166 + 58].into(), [48 + 4, 166 + 50].into(), [48 + 2, 166 + 42].into())),
+        Shape::from(Triangle::new([48 + 37, 166 + 74].into(), [48 + 32, 166 + 72].into(), [48 + 52, 166 + 67].into())),
+        Shape::from(Triangle::new([48 + 48, 166 + 72].into(), [48 + 37, 166 + 74].into(), [48 + 52, 166 + 67].into())),
+        Shape::from(Triangle::new([48 + 37, 166 + 74].into(), [48 + 48, 166 + 72].into(), [48 + 44, 166 + 74].into())),
+        Shape::from(Triangle::new([48 + 32, 166 + 1].into(), [48 + 41, 166 + 2].into(), [48 + 51, 166 + 10].into())),
+        Shape::from(Triangle::new([48 + 7, 166 + 55].into(), [48 + 4, 166 + 50].into(), [48 + 10, 166 + 58].into())),
+        Shape::from(Triangle::new([48 + 51, 166 + 69].into(), [48 + 48, 166 + 72].into(), [48 + 52, 166 + 67].into())),
+        Shape::from(Triangle::new([48 + 41, 166 + 2].into(), [48 + 49, 166 + 6].into(), [48 + 51, 166 + 10].into())),
+      ]
+    }),
+
+    // Right Side
+    Shape::from(ShapeCollection {
+      shapes: vec![
+        Shape::from(Triangle::new([255 - 8 - 90, 53 + 5].into(), [255 - 8 - 95, 53 + 32].into(), [255 - 8 - 44, 53 + 32].into())),
+        Shape::from(Triangle::new([255 - 8 - 103, 53 + 28].into(), [255 - 8 - 95, 53 + 32].into(), [255 - 8 - 104, 53 + 12].into())),
+        Shape::from(Triangle::new([255 - 8 - 95, 53 + 32].into(), [255 - 8 - 103, 53 + 28].into(), [255 - 8 - 99, 53 + 31].into())),
+        Shape::from(Triangle::new([255 - 8 - 12, 53 + 1].into(), [255 - 8 - 90, 53 + 5].into(), [255 - 8 - 44, 53 + 32].into())),
+        Shape::from(Triangle::new([255 - 8 - 34, 53 + 31].into(), [255 - 8 - 12, 53 + 1].into(), [255 - 8 - 44, 53 + 32].into())),
+        Shape::from(Triangle::new([255 - 8 - 95, 53 + 32].into(), [255 - 8 - 101, 53 + 9].into(), [255 - 8 - 104, 53 + 12].into())),
+        Shape::from(Triangle::new([255 - 8 - 101, 53 + 9].into(), [255 - 8 - 95, 53 + 32].into(), [255 - 8 - 90, 53 + 5].into())),
+        Shape::from(Triangle::new([255 - 8 - 12, 53 + 1].into(), [255 - 8 - 25, 53 + 28].into(), [255 - 8 - 17, 53 + 24].into())),
+        Shape::from(Triangle::new([255 - 8 - 25, 53 + 28].into(), [255 - 8 - 12, 53 + 1].into(), [255 - 8 - 34, 53 + 31].into())),
+        Shape::from(Triangle::new([255 - 8 - 12, 53 + 20].into(), [255 - 8 - 12, 53 + 1].into(), [255 - 8 - 17, 53 + 24].into())),
+        Shape::from(Triangle::new([255 - 8 - 12, 53 + 1].into(), [255 - 8 - 12, 53 + 20].into(), [255 - 8 - 6, 53 + 15].into())),
+        Shape::from(Triangle::new([255 - 8 - 4, 53 + 5].into(), [255 - 8 - 6, 53 + 15].into(), [255 - 8 - 3, 53 + 12].into())),
+        Shape::from(Triangle::new([255 - 8 - 4, 53 + 5].into(), [255 - 8 - 12, 53 + 1].into(), [255 - 8 - 6, 53 + 15].into())),
+        Shape::from(Triangle::new([255 - 8 - 4, 53 + 5].into(), [255 - 8 - 3, 53 + 12].into(), [255 - 8 - 1, 53 + 9].into())),
+        Shape::from(Triangle::new([255 - 8 - 97, 53 + 6].into(), [255 - 8 - 101, 53 + 9].into(), [255 - 8 - 90, 53 + 5].into())),
+      ]
+    }),
+    Shape::from(ShapeCollection {
+      shapes: vec![
+        Shape::from(Triangle::new([255 - 48 -32, 166 + 72].into(), [255 - 48 -10, 166 + 58].into(), [255 - 48 -52, 166 + 67].into())),
+        Shape::from(Triangle::new([255 - 48 -51, 166 + 10].into(), [255 - 48 -10, 166 + 58].into(), [255 - 48 -2, 166 + 42].into())),
+        Shape::from(Triangle::new([255 - 48 -10, 166 + 58].into(), [255 - 48 -51, 166 + 10].into(), [255 - 48 -52, 166 + 67].into())),
+        Shape::from(Triangle::new([255 - 48 -32, 166 + 1].into(), [255 - 48 -51, 166 + 10].into(), [255 - 48 -2, 166 + 42].into())),
+        Shape::from(Triangle::new([255 - 48 -3, 166 + 6].into(), [255 - 48 -32, 166 + 1].into(), [255 - 48 -2, 166 + 42].into())),
+        Shape::from(Triangle::new([255 - 48 -32, 166 + 1].into(), [255 - 48 -3, 166 + 6].into(), [255 - 48 -10, 166 + 1].into())),
+        Shape::from(Triangle::new([255 - 48 -3, 166 + 6].into(), [255 - 48 -6, 166 + 3].into(), [255 - 48 -10, 166 + 1].into())),
+        Shape::from(Triangle::new([255 - 48 -10, 166 + 58].into(), [255 - 48 -4, 166 + 50].into(), [255 - 48 -2, 166 + 42].into())),
+        Shape::from(Triangle::new([255 - 48 -37, 166 + 74].into(), [255 - 48 -32, 166 + 72].into(), [255 - 48 -52, 166 + 67].into())),
+        Shape::from(Triangle::new([255 - 48 -48, 166 + 72].into(), [255 - 48 -37, 166 + 74].into(), [255 - 48 -52, 166 + 67].into())),
+        Shape::from(Triangle::new([255 - 48 -37, 166 + 74].into(), [255 - 48 -48, 166 + 72].into(), [255 - 48 -44, 166 + 74].into())),
+        Shape::from(Triangle::new([255 - 48 -32, 166 + 1].into(), [255 - 48 -41, 166 + 2].into(), [255 - 48 -51, 166 + 10].into())),
+        Shape::from(Triangle::new([255 - 48 -7, 166 + 55].into(), [255 - 48 -4, 166 + 50].into(), [255 - 48 -10, 166 + 58].into())),
+        Shape::from(Triangle::new([255 - 48 -51, 166 + 69].into(), [255 - 48 -48, 166 + 72].into(), [255 - 48 -52, 166 + 67].into())),
+        Shape::from(Triangle::new([255 - 48 -41, 166 + 2].into(), [255 - 48 -49, 166 + 6].into(), [255 - 48 -51, 166 + 10].into())),
+      ]
+    }),
+  ]
+}

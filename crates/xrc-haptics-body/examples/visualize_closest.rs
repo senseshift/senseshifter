@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::BufWriter;
 use num::traits::NumOps;
 use xrc_geometry::*;
-use xrc_geometry_test_fixtures::hardlight_vest_chest_front;
+use xrc_geometry_test_fixtures::{hardlight_vest_chest_front, owo_skin_front};
 use xrc_haptics_body::*;
 
 fn accurate_map<T>(x: T, in_min: T, in_max: T, out_min: T, out_max: T) -> T
@@ -35,22 +35,43 @@ pub fn main() {
   // Hardlight VR Suit
   {
     hardlight_vest_chest_front().iter().for_each(|geometry| {
-      plane.insert(geometry.clone(), ());
+      plane.insert_no_recalc(geometry.clone(), ());
     });
   }
+
+  // // OWO Skin
+  // {
+  //   owo_skin_front().iter().for_each(|geometry| {
+  //     plane.insert(geometry.clone(), ());
+  //   });
+  // }
+
+  let now = std::time::Instant::now();
+  plane.recalc_closest();
+  let duration = now.elapsed();
+  println!("recalc elapsed: {:?} (~{:?} per point)", duration, duration / (256 * 256));
 
   let mut data = vec![0; 256 * 256 * 3];
 
   let now = std::time::Instant::now();
-
   for (x, row) in plane.state().0.iter().enumerate() {
     for (y, _) in row.iter().enumerate() {
       let index = (y * 256 + x) * 3;
       let point = Point2::new(x as u8, y as u8);
-      let closest = plane.search_closest(&point);
+      let closest = plane.get_closest(&point);
 
       data[index + 0] = closest.x;
       data[index + 1] = closest.y;
+    }
+  }
+  let elapsed = now.elapsed();
+  println!("total mapping elapsed: {:?} (~{:?} per point)", elapsed, elapsed / (256 * 256));
+
+  let now = std::time::Instant::now();
+  for (x, row) in plane.state().0.iter().enumerate() {
+    for (y, _) in row.iter().enumerate() {
+      let index = (y * 256 + x) * 3;
+      let point = Point2::new(x as u8, y as u8);
 
       for entry in plane.actuators() {
         let geometry = entry.key();
@@ -66,8 +87,8 @@ pub fn main() {
       }
     }
   }
-
-  println!("elapsed: {:?}", now.elapsed());
+  let elapsed = now.elapsed();
+  println!("mapping shapes withins elapsed: {:?} (~{:?} per point)", elapsed, elapsed / (256 * 256));
 
   let path = Path::new(file!()).with_extension("png");
   println!("writing to {:?}", path);
