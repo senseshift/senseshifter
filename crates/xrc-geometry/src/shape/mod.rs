@@ -175,4 +175,14 @@ impl Shape<u8, u8>
       Self::Collection(collection) => collection.center(),
     }
   }
+
+  pub fn points_inside(&self) -> Vec<Point2<u8>> {
+    match self {
+      Shape::Ellipse(ellipse) => ellipse.points_inside(),
+      Shape::Circle(circle) => circle.points_inside(),
+      Shape::Rectangle(rectangle) => rectangle.points_inside(),
+      Shape::Triangle(triangle) => triangle.points_inside(),
+      Shape::Collection(collection) => collection.points_inside(),
+    }
+  }
 }

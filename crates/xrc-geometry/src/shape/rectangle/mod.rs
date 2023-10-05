@@ -154,6 +154,32 @@ impl Rectangle<u8> {
       ((min.y + max.y) / 2) as u8,
     )
   }
+
+  /// Returns a vector of all points inside the rectangle.
+  ///
+  /// # Example
+  /// ```rust
+  /// use xrc_geometry::{Point2, Rectangle};
+  ///
+  /// let rectangle = Rectangle::new(Point2::new(0, 0), Point2::new(2, 2));
+  /// assert_eq!(rectangle.points_inside(), vec![
+  ///   Point2::new(0, 0),
+  ///   Point2::new(0, 1),
+  ///   Point2::new(1, 0),
+  ///   Point2::new(1, 1),
+  /// ]);
+  /// ```
+  pub fn points_inside(&self) -> Vec<Point2<u8>> {
+    let mut points = Vec::with_capacity(self.width() as usize * self.height() as usize);
+
+    for x in self.min().x..self.max().x {
+      for y in self.min().y..self.max().y {
+        points.push(Point2::new(x, y));
+      }
+    }
+
+    points
+  }
 }
 
 #[cfg(test)]

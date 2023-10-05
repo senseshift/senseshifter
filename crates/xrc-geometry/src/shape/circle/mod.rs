@@ -2,8 +2,8 @@ use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use crate::*;
 use getset::Getters;
+use nalgebra::Vector2;
 use num::{Unsigned, Zero};
-use nalgebra::*;
 
 #[cfg_attr(feature = "serde-serialize", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Getters)]
@@ -96,5 +96,62 @@ impl<T, R> Eq for Circle<T, R>
     R: Scalar + Unsigned + Eq,
 {}
 
+impl Circle<u8, u8> {
+  pub fn bbox(&self) -> Rectangle<u8> {
+    let radius = self.radius as i16;
+    let center = self.center.map(|x| x as i16);
+
+    let min = center - Vector2::new(radius, radius);
+    let max = center + Vector2::new(radius, radius);
+
+    Rectangle::new(min.map(|x| x as u8), max.map(|x| x as u8))
+  }
+
+  pub fn points_inside(&self) -> Vec<Point2<u8>> {
+    return self.bbox().points_inside()
+      .into_iter()
+      .filter(|point| {
+        self.within(*point)
+      })
+      .collect();
+  }
+}
+
 #[cfg(test)]
-mod tests {}
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_circle_bbox() {
+    let circle = Circle::new(Point2::new(12, 12), 10);
+    let bbox = circle.bbox();
+
+    assert_eq!(bbox.min(), &Point2::new(2, 2));
+    assert_eq!(bbox.max(), &Point2::new(22, 22));
+  }
+
+  #[test]
+  fn test_circle_points_inside() {
+    let circle = Circle::new(Point2::new(5, 5), 2);
+    let points = circle.points_inside();
+
+    let expected = vec![
+      Point2::new(3, 5),
+      Point2::new(4, 4),
+      Point2::new(4, 5),
+      Point2::new(4, 6),
+      Point2::new(5, 3),
+      Point2::new(5, 4),
+      Point2::new(5, 5),
+      Point2::new(5, 6),
+      Point2::new(6, 4),
+      Point2::new(6, 5),
+      Point2::new(6, 6),
+    ];
+
+    expected.iter().for_each(|point| {
+      assert!(points.contains(point), "Point {:?} not found in {:?}", point, points);
+    });
+    assert_eq!(points.len(), expected.len());
+  }
+}

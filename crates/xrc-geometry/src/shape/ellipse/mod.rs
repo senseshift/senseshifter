@@ -149,6 +149,15 @@ impl Ellipse<u8, u8> {
 
     Rectangle::new(Point2::new(x, y).map(|c| c as u8), Point2::new(x + width, y + height).map(|c| c as u8))
   }
+
+  pub fn points_inside(&self) -> Vec<Point2<u8>> {
+    return self.bbox().points_inside()
+      .into_iter()
+      .filter(|point| {
+        self.within(*point)
+      })
+      .collect();
+  }
 }
 
 #[cfg(test)]

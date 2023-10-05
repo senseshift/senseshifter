@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ops::Div;
@@ -99,6 +100,18 @@ impl ShapeCollection<u8, u8>
       center += geometry.center().coords.map(|x| x as f64);
     }
     center.div(self.shapes.len() as f64).map(|x| x as u8).into()
+  }
+
+  pub fn points_inside(&self) -> Vec<Point2<u8>> {
+    let mut points = Vec::new();
+    for geometry in &self.shapes {
+      points.extend(geometry.points_inside());
+    }
+    points
+      .into_iter()
+      .collect::<HashSet<_>>()
+      .into_iter()
+      .collect()
   }
 }
 

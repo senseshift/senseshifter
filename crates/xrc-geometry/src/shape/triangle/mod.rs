@@ -101,4 +101,13 @@ impl Triangle<u8> {
       Point2::new(max_x, max_y),
     )
   }
+
+  pub fn points_inside(&self) -> Vec<Point2<u8>> {
+    return self.bbox().points_inside()
+      .into_iter()
+      .filter(|point| {
+        self.within(*point)
+      })
+      .collect();
+  }
 }

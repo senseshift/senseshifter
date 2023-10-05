@@ -68,27 +68,41 @@ pub fn main() {
   println!("total mapping elapsed: {:?} (~{:?} per point)", elapsed, elapsed / (256 * 256));
 
   let now = std::time::Instant::now();
-  for (x, row) in plane.state().0.iter().enumerate() {
-    for (y, _) in row.iter().enumerate() {
-      let index = (y * 256 + x) * 3;
-      let point = Point2::new(x as u8, y as u8);
+  for entry in plane.actuators() {
+    let geometry = entry.key();
+    let center = geometry.center();
 
-      for entry in plane.actuators() {
-        let geometry = entry.key();
-        let center = geometry.center();
-
-        if center == point {
-          data[index + 0] = 255;
-          data[index + 1] = 255;
-          data[index + 2] = 255;
-        } else if geometry.within(&point) == true {
-          data[index + 2] = (data[index + 2] as u16 + 255) as u8;
-        }
-      }
+    for point in geometry.points_inside() {
+      let index = (point.y as usize * 256 + point.x as usize) * 3;
+      data[index + 2] = 255;
     }
+
+    let index = (center.y as usize * 256 + center.x as usize) * 3;
+    data[index + 0] = 255;
+    data[index + 1] = 255;
+    data[index + 2] = 255;
   }
+  // for (x, row) in plane.state().0.iter().enumerate() {
+  //   for (y, _) in row.iter().enumerate() {
+  //     let index = (y * 256 + x) * 3;
+  //     let point = Point2::new(x as u8, y as u8);
+  //
+  //     for entry in plane.actuators() {
+  //       let geometry = entry.key();
+  //       let center = geometry.center();
+  //
+  //       if center == point {
+  //         data[index + 0] = 255;
+  //         data[index + 1] = 255;
+  //         data[index + 2] = 255;
+  //       } else if geometry.within(&point) == true {
+  //         data[index + 2] = (data[index + 2] as u16 + 255) as u8;
+  //       }
+  //     }
+  //   }
+  // }
   let elapsed = now.elapsed();
-  println!("mapping shapes withins elapsed: {:?} (~{:?} per point)", elapsed, elapsed / (256 * 256));
+  println!("mapping shapes withins elapsed: {:?}", elapsed);
 
   let path = Path::new(file!()).with_extension("png");
   println!("writing to {:?}", path);
