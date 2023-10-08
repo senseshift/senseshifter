@@ -5,7 +5,7 @@ use xrc_transport::{
   api::Device,
 };
 
-use crate::btleplug::{BtlePlugDevice, PlatformBtlePlugConnector};
+use crate::btleplug::{PlatformBtlePlugConnector};
 
 pub trait BtlePlugProtocolSpecifierBuilder: Send {
   fn finish(&self) -> Box<dyn BtlePlugProtocolSpecifier>;
@@ -13,5 +13,5 @@ pub trait BtlePlugProtocolSpecifierBuilder: Send {
 
 #[async_trait]
 pub trait BtlePlugProtocolSpecifier: Send + Sync {
-  fn specify(&self, connector: PlatformBtlePlugConnector) -> Result<Option<Box<dyn BtlePlugDevice>>>;
+  fn specify(&self, connector: PlatformBtlePlugConnector) -> Result<Option<Box<dyn Device>>>;
 }

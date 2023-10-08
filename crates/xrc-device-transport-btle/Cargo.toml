@@ -25,3 +25,6 @@ btleplug = { workspace = true, optional = true }
 futures = { workspace = true }
 tokio = { workspace = true, features = ["sync", "rt"] }
 dashmap = "5"
+
+[dev-dependencies]
+mockall = "^0.11"

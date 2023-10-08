@@ -5,7 +5,7 @@ use xrc_transport::{
   api::Device,
   async_trait,
 };
-use xrc_transport_btle::btleplug::{BtlePlugProtocolSpecifierBuilder, BtlePlugProtocolSpecifier, PlatformBtlePlugConnector, BtlePlugDevice};
+use xrc_transport_btle::btleplug::{BtlePlugProtocolSpecifierBuilder, BtlePlugProtocolSpecifier, PlatformBtlePlugConnector};
 
 mod device;
 use device::*;
@@ -71,7 +71,7 @@ impl BHapticsProtocolSpecifier {
 #[async_trait]
 impl BtlePlugProtocolSpecifier for BHapticsProtocolSpecifier {
   #[tracing::instrument(skip(self, connector))]
-  fn specify(&self, connector: PlatformBtlePlugConnector) -> Result<Option<Box<dyn BtlePlugDevice>>> {
+  fn specify(&self, connector: PlatformBtlePlugConnector) -> Result<Option<Box<dyn Device>>> {
     let info = connector.peripheral_info();
     let properties = match info.properties() {
       Some(properties) => properties,

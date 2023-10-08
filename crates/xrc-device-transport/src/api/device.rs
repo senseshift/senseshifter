@@ -5,13 +5,15 @@ use async_trait::async_trait;
 pub trait Device: Send + Sync + Debug {
   fn id(&self) -> &String;
 
-  fn name(&self) -> Option<String>;
+  fn name(&self) -> Option<String> {
+    None
+  }
 
   fn connectible(&self) -> bool {
     false
   }
 
-  fn connected(&self) -> bool {
+  fn is_connected(&self) -> bool {
     false
   }
 

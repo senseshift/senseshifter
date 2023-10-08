@@ -105,20 +105,8 @@ impl Circle<u8, u8> {
     let max = center + Vector2::new(radius, radius);
 
     Rectangle::new(
-      min.map(|x| {
-        if x < 0 {
-          0
-        } else {
-          x as u8
-        }
-      }),
-      max.map(|x| {
-        if x >= u8::MAX as i16 {
-          u8::MAX
-        } else {
-          x as u8 + 1
-        }
-      })
+      min.map(|x| x.clamp(0, u8::MAX as i16) as u8),
+      max.map(|x| x.clamp(0, u8::MAX as i16) as u8)
     )
   }
 
@@ -134,6 +122,7 @@ impl Circle<u8, u8> {
 
 #[cfg(test)]
 mod tests {
+  use test_strategy::proptest;
   use super::*;
 
   #[test]
@@ -151,7 +140,12 @@ mod tests {
     let bbox = circle.bbox();
 
     assert_eq!(bbox.min(), &Point2::new(0, 0));
-    assert_eq!(bbox.max(), &Point2::new(11, 11));
+    assert_eq!(bbox.max(), &Point2::new(10, 10));
+  }
+
+  #[proptest]
+  fn circle_bbox_u8_fuzz(circle: Circle<u8, u8>) {
+    let _out = circle.bbox();
   }
 
   #[test]
@@ -168,9 +162,11 @@ mod tests {
       Point2::new(5, 4),
       Point2::new(5, 5),
       Point2::new(5, 6),
+      Point2::new(5, 7),
       Point2::new(6, 4),
       Point2::new(6, 5),
       Point2::new(6, 6),
+      Point2::new(7, 5),
     ];
 
     expected.iter().for_each(|point| {

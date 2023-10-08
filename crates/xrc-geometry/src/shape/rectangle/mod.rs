@@ -43,20 +43,24 @@ impl<T> Rectangle<T>
 
 impl<T> Rectangle<T>
   where
-    T: Scalar + Ord + Copy,
+    T: Scalar + PartialOrd + Copy,
 {
-  pub fn new(min: Point2<T>, max: Point2<T>) -> Self {
-    // normalize
-    let min = Point2::new(min.x.min(max.x), min.y.min(max.y));
-    let max = Point2::new(min.x.max(max.x), min.y.max(max.y));
+  pub fn new(a: Point2<T>, b: Point2<T>) -> Self {
+    let x_max = if a.x > b.x { a.x } else { b.x };
+    let x_min = if a.x < b.x { a.x } else { b.x };
+    let y_max = if a.y > b.y { a.y } else { b.y };
+    let y_min = if a.y < b.y { a.y } else { b.y };
 
-    Self(min, max)
+    Self(
+      Point2::new(x_min, y_min),
+      Point2::new(x_max, y_max),
+    )
   }
 }
 
 impl<T> Rectangle<T>
   where
-    T: Scalar + ?Ord,
+    T: Scalar + ?PartialOrd,
 {
   pub fn new_unchecked(min: Point2<T>, max: Point2<T>) -> Self {
     Self(min, max)
@@ -165,15 +169,20 @@ impl Rectangle<u8> {
   /// assert_eq!(rectangle.points_inside(), vec![
   ///   Point2::new(0, 0),
   ///   Point2::new(0, 1),
+  ///   Point2::new(0, 2),
   ///   Point2::new(1, 0),
   ///   Point2::new(1, 1),
+  ///   Point2::new(1, 2),
+  ///   Point2::new(2, 0),
+  ///   Point2::new(2, 1),
+  ///   Point2::new(2, 2),
   /// ]);
   /// ```
   pub fn points_inside(&self) -> Vec<Point2<u8>> {
     let mut points = Vec::with_capacity(self.width() as usize * self.height() as usize);
 
-    for x in self.min().x..self.max().x {
-      for y in self.min().y..self.max().y {
+    for x in self.min().x..self.max().x.saturating_add(1) {
+      for y in self.min().y..self.max().y.saturating_add(1) {
         points.push(Point2::new(x, y));
       }
     }
@@ -183,4 +192,18 @@ impl Rectangle<u8> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+  use super::*;
+
+  #[test]
+  fn points_inside_are_within() {
+    use crate::{Point2, Within};
+
+    let rectangle = Rectangle::new(Point2::new(0, 0), Point2::new(2, 2));
+    let points = rectangle.points_inside();
+
+    for point in points {
+      assert!(rectangle.within(&point), "point {:?} is not within rectangle {:?}", point, rectangle);
+    }
+  }
+}

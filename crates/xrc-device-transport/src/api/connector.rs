@@ -7,4 +7,14 @@ pub trait TransportConnector: Sync + Send + Debug {
   {
     Ok(())
   }
+
+  async fn disconnect(&mut self) -> Result<()>
+  {
+    Ok(())
+  }
+
+  fn is_connected(&self) -> bool
+  {
+    false
+  }
 }

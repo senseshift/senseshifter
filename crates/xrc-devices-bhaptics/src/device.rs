@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Formatter};
-use xrc_transport::api::Device;
+use xrc_transport::api::{Device, TransportConnector};
 use xrc_transport::async_trait;
-use xrc_transport_btle::btleplug::{BtlePlugDevice, PlatformBtlePlugConnector};
+use xrc_transport_btle::btleplug::{PlatformBtlePlugConnector};
+use btleplug::api::Peripheral;
 use crate::device_config::BHapticsDeviceType;
 
 pub(crate) struct BHapticsDevice {
@@ -46,6 +47,12 @@ impl Device for BHapticsDevice {
   fn name(&self) -> Option<String> {
     Some(self.name.clone())
   }
-}
 
-impl BtlePlugDevice for BHapticsDevice {}
+  fn connectible(&self) -> bool {
+    true
+  }
+
+  fn is_connected(&self) -> bool {
+    self.connector.is_connected()
+  }
+}

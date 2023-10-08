@@ -51,7 +51,7 @@ pub fn main() {
   let duration = now.elapsed();
   println!("recalc elapsed: {:?} (~{:?} per point)", duration, duration / (256 * 256));
 
-  let mut data = vec![0; 256 * 256 * 3];
+  let mut data = [0; 256 * 256 * 3];
 
   let now = std::time::Instant::now();
   for (x, row) in plane.state().0.iter().enumerate() {

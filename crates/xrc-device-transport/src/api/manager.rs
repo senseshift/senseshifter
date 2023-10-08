@@ -15,9 +15,11 @@ pub enum TransportManagerEvent {
   ScanFinished,
   DeviceDiscovered {
     device_id: String,
+    // device: Box<dyn Device>,
   },
   DeviceUpdated {
     device_id: String,
+    // device: Box<dyn Device>,
   },
 }
 

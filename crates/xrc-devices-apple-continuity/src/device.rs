@@ -4,7 +4,7 @@ use apple_continuity::{
 };
 use xrc_transport::api::Device;
 use xrc_transport::async_trait;
-use xrc_transport_btle::btleplug::{BtlePlugDevice, PlatformBtlePlugConnector};
+use xrc_transport_btle::btleplug::{PlatformBtlePlugConnector};
 
 pub(crate) struct AppleContinuityDevice {
   id: String,
@@ -35,9 +35,8 @@ impl Device for AppleContinuityDevice {
     &self.id
   }
 
+  /// todo: get from system connected devices
   fn name(&self) -> Option<String> {
-    None // TODO from system connected devices
+    None
   }
 }
-
-impl BtlePlugDevice for AppleContinuityDevice {}

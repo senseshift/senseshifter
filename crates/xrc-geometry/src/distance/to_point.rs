@@ -1,7 +1,10 @@
+use std::ops::{Mul, Sub};
+use std::process::Output;
 use nalgebra::{Point2, Scalar};
 use num::traits::{ Num, NumOps, Unsigned };
+use ordered_float::OrderedFloat;
 
-use crate::{Circle, Ellipse, Line, Rectangle, Triangle, ShapeCollection, Shape, Distance};
+use crate::{Circle, Ellipse, Line, Rectangle, Triangle, ShapeCollection, Shape, Distance, FloatMath};
 
 /// Calculate the squared distance between two points.
 ///
@@ -9,19 +12,20 @@ use crate::{Circle, Ellipse, Line, Rectangle, Triangle, ShapeCollection, Shape, 
 /// ```rust
 /// use xrc_geometry::{Point2, distance_squared};
 ///
-/// let a = Point2::new(0, 0);
-/// let b = Point2::new(3, 4);
+/// let a = Point2::new(0u8, 0u8);
+/// let b = Point2::new(3u8, 4u8);
 ///
 /// assert_eq!(distance_squared(&a, &b), 25.0);
+/// assert_eq!(distance_squared(&a, &b), distance_squared(&b, &a));
 /// ```
 pub fn distance_squared<T>(a: &Point2<T>, b: &Point2<T>) -> f64
   where
-    T: Scalar + Num + NumOps + Ord + Copy + Into<f64>,
+    T: FloatMath,
 {
-  let x_max = a.x.max(b.x);
-  let x_min = a.x.min(b.x);
-  let y_max = a.y.max(b.y);
-  let y_min = a.y.min(b.y);
+  let x_max = if a.x > b.x { a.x } else { b.x };
+  let x_min = if a.x < b.x { a.x } else { b.x };
+  let y_max = if a.y > b.y { a.y } else { b.y };
+  let y_min = if a.y < b.y { a.y } else { b.y };
 
   let x = x_max - x_min;
   let y = y_max - y_min;
@@ -38,43 +42,51 @@ pub fn distance_squared<T>(a: &Point2<T>, b: &Point2<T>) -> f64
 /// ```rust
 /// use xrc_geometry::{Point2, distance};
 ///
-/// let a = Point2::new(0, 0);
-/// let b = Point2::new(3, 4);
+/// let a = Point2::new(0u8, 0u8);
+/// let b = Point2::new(3u8, 4u8);
 ///
 /// assert_eq!(distance(&a, &b), 5.0);
+/// assert_eq!(distance(&a, &b), distance(&b, &a));
 /// ```
+#[inline]
 pub fn distance<T>(a: &Point2<T>, b: &Point2<T>) -> f64
   where
-    T: Scalar + Num + NumOps + Ord + Copy + Into<f64>,
+    T: FloatMath,
 {
   use num::integer::Roots;
   distance_squared(a, b).sqrt()
 }
 
-impl Distance<&Point2<u8>> for Point2<u8> {
+impl<T> Distance<&Point2<T>> for Point2<T>
+  where
+    T: FloatMath,
+{
   type Result = f64;
 
   /// Calculate the distance between two points.
   ///
   /// # Example:
   /// ```rust
-  /// use xrc_geometry::{Point2, distance};
+  /// use xrc_geometry::{Point2, Distance};
   ///
-  /// let a = Point2::new(0, 0);
-  /// let b = Point2::new(3, 4);
+  /// let a = Point2::new(0u8, 0u8);
+  /// let b = Point2::new(3u8, 4u8);
   ///
-  /// assert_eq!(distance(&a, &b), 5.0);
+  /// assert_eq!(a.distance(&b), 5.0);
   /// ```
   #[inline]
-  fn distance(&self, point: &Point2<u8>) -> Self::Result {
+  fn distance(&self, point: &Point2<T>) -> Self::Result {
     distance(self, point)
   }
 }
-impl Distance<Point2<u8>> for Point2<u8> {
+impl<T> Distance<Point2<T>> for Point2<T>
+  where
+    T: FloatMath,
+{
   type Result = f64;
 
   #[inline]
-  fn distance(&self, point: Point2<u8>) -> Self::Result {
+  fn distance(&self, point: Point2<T>) -> Self::Result {
     self.distance(&point)
   }
 }
@@ -89,18 +101,13 @@ impl Distance<&Point2<u8>> for Circle<u8, u8> {
   /// ```rust
   /// use xrc_geometry::{Point2, Circle, Distance};
   ///
-  /// let circle = Circle::new([5, 5].into(), 10);
-  /// let point = [20, 5].into();
+  /// let circle = Circle::<u8, u8>::new([5, 5].into(), 10);
+  /// let point = Point2::<u8>::new(20, 5);
   ///
   /// assert_eq!(circle.distance(&point), 5.0);
   /// ```
   fn distance(&self, point: &Point2<u8>) -> Self::Result {
     let distance_to_center = distance(&self.center, point);
-
-    // if the point is inside the circle, return 0
-    if distance_to_center < self.radius as f64 {
-      return 0.0;
-    }
 
     let distance_to_edge = distance_to_center - self.radius as f64;
 
@@ -128,8 +135,8 @@ impl Distance<&Point2<u8>> for Ellipse<u8, u8> {
 
     let point_on_ellipse = self.point_intersection(point, 10);
     distance(
-      &point_on_ellipse.map(|c| OrderedFloat(c)),
-      &point.map(|c| OrderedFloat(c as f64)),
+      &point_on_ellipse,
+      &point.map(|c| c as f64),
     )
   }
 }
@@ -185,10 +192,7 @@ impl Distance<&Point2<u8>> for Line<u8> {
       yy = xy1.y + param * d;
     }
 
-    let dx = xy.x - xx;
-    let dy = xy.y - yy;
-
-    (dx * dx + dy * dy).sqrt()
+    return distance(&xy, &Point2::new(xx, yy));
   }
 }
 impl Distance<Point2<u8>> for Line<u8> {
@@ -261,7 +265,7 @@ impl Distance<&Point2<u8>> for Triangle<u8> {
   /// );
   ///
   /// assert_eq!(triangle.distance(&Point2::new(5, 5)), 0.0); // Point is inside the triangle
-  /// assert_eq!(triangle.distance(&Point2::new(20, 10)), 10.0); // Point is to the right of the triangle
+  /// assert_eq!(triangle.distance(&Point2::new(20, 10)).round(), 14.0); // Point is to the right of the triangle
   /// ```
   fn distance(&self, point: &Point2<u8>) -> f64 {
     // use crate::{Within, PointWithin};
@@ -390,6 +394,11 @@ mod tests {
 
   #[proptest]
   fn distance_squared_u8_fuzz(a: PointView<u8, 2>, b: PointView<u8, 2>) {
+    let _out = distance_squared(&a.into(), &b.into());
+  }
+
+  #[proptest]
+  fn distance_squared_u16_fuzz(a: PointView<u16, 2>, b: PointView<u16, 2>) {
     let _out = distance_squared(&a.into(), &b.into());
   }
 

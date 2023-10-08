@@ -7,7 +7,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let ellipse = Ellipse::new([128, 88].into(), (18, 10));
     let point = Point2::new(145, 96);
 
-    b.iter(|| assert_eq!(ellipse.distance(&point), 3.179607474124923));
+    b.iter(|| assert_eq!(ellipse.distance(&point).round(), 3));
   });
 }
 

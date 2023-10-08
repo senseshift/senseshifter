@@ -546,6 +546,18 @@ pub struct ScanStopResponse {}
 #[cfg_attr(feature = "specta", derive(::specta::Type))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetDevicesResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub devices: ::prost::alloc::vec::Vec<Device>,
+}
+#[cfg_attr(
+    feature = "serde",
+    derive(::serde::Serialize, ::serde::Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[cfg_attr(feature = "specta", derive(::specta::Type))]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeviceConnectRequest {
     #[prost(string, tag = "1")]
     pub device_id: ::prost::alloc::string::String,
@@ -722,7 +734,7 @@ pub struct RawDeviceRequest {
 #[cfg_attr(feature = "specta", derive(::specta::Type))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct RawDeviceResponse {
+pub struct GetRawDevicesResponse {
     #[prost(message, repeated, tag = "1")]
     pub raw_devices: ::prost::alloc::vec::Vec<RawDevice>,
 }
@@ -902,6 +914,36 @@ pub mod device_manager_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        pub async fn get_devices(
+            &mut self,
+            request: impl tonic::IntoRequest<()>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetDevicesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/xrconnect.devices.v1alpha1.DeviceManager/GetDevices",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "xrconnect.devices.v1alpha1.DeviceManager",
+                        "GetDevices",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn device_connect(
             &mut self,
             request: impl tonic::IntoRequest<super::DeviceConnectRequest>,
@@ -996,7 +1038,7 @@ pub mod device_manager_client {
             &mut self,
             request: impl tonic::IntoRequest<super::RawDeviceRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::RawDeviceResponse>,
+            tonic::Response<super::GetRawDevicesResponse>,
             tonic::Status,
         > {
             self.inner
@@ -1059,6 +1101,13 @@ pub mod device_manager_server {
             tonic::Response<super::ScanStopResponse>,
             tonic::Status,
         >;
+        async fn get_devices(
+            &self,
+            request: tonic::Request<()>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetDevicesResponse>,
+            tonic::Status,
+        >;
         async fn device_connect(
             &self,
             request: tonic::Request<super::DeviceConnectRequest>,
@@ -1084,7 +1133,7 @@ pub mod device_manager_server {
             &self,
             request: tonic::Request<super::RawDeviceRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::RawDeviceResponse>,
+            tonic::Response<super::GetRawDevicesResponse>,
             tonic::Status,
         >;
     }
@@ -1306,6 +1355,47 @@ pub mod device_manager_server {
                     };
                     Box::pin(fut)
                 }
+                "/xrconnect.devices.v1alpha1.DeviceManager/GetDevices" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetDevicesSvc<T: DeviceManager>(pub Arc<T>);
+                    impl<T: DeviceManager> tonic::server::UnaryService<()>
+                    for GetDevicesSvc<T> {
+                        type Response = super::GetDevicesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(&mut self, request: tonic::Request<()>) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as DeviceManager>::get_devices(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetDevicesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/xrconnect.devices.v1alpha1.DeviceManager/DeviceConnect" => {
                     #[allow(non_camel_case_types)]
                     struct DeviceConnectSvc<T: DeviceManager>(pub Arc<T>);
@@ -1452,7 +1542,7 @@ pub mod device_manager_server {
                         T: DeviceManager,
                     > tonic::server::UnaryService<super::RawDeviceRequest>
                     for GetRawDevicesSvc<T> {
-                        type Response = super::RawDeviceResponse;
+                        type Response = super::GetRawDevicesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,

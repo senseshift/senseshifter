@@ -1,15 +1,16 @@
 use std::fmt::Debug;
+use btleplug::api::{BDAddr, Peripheral};
 use apple_continuity::{
   ContinuityMessage,
 };
 use bytes::Bytes;
-use tracing::info;
+use tracing::{error, info};
 use xrc_transport::{
   Result,
   api::Device,
   async_trait,
 };
-use xrc_transport_btle::btleplug::{BtlePlugProtocolSpecifierBuilder, BtlePlugProtocolSpecifier, PlatformBtlePlugConnector, BtlePlugDevice};
+use xrc_transport_btle::btleplug::{BtlePlugProtocolSpecifierBuilder, BtlePlugProtocolSpecifier, PlatformBtlePlugConnector};
 
 mod device;
 use device::*;
@@ -29,7 +30,7 @@ pub struct AppleContinuityProtocolSpecifier {
 
 #[async_trait]
 impl BtlePlugProtocolSpecifier for AppleContinuityProtocolSpecifier {
-  fn specify(&self, connector: PlatformBtlePlugConnector) -> Result<Option<Box<dyn BtlePlugDevice>>> {
+  fn specify(&self, connector: PlatformBtlePlugConnector) -> Result<Option<Box<dyn Device>>> {
     let info = connector.peripheral_info();
     let properties = match info.properties() {
       Some(properties) => properties,
@@ -55,8 +56,6 @@ impl BtlePlugProtocolSpecifier for AppleContinuityProtocolSpecifier {
       connector,
       message.device_model,
     );
-
-    info!("Found Apple Continuity device: {:?}", device);
 
     Ok(Some(Box::new(device)))
   }

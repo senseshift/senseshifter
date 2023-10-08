@@ -13,11 +13,13 @@ service DeviceManager {
   rpc ScanStart(ScanStartRequest) returns (ScanStartResponse);
   rpc ScanStop(ScanStopRequest) returns (ScanStopResponse);
 
+  rpc GetDevices(google.protobuf.Empty) returns (GetDevicesResponse);
+
   rpc DeviceConnect(DeviceConnectRequest) returns (DeviceConnectResponse);
   rpc DeviceDisconnect(DeviceDisconnectRequest) returns (DeviceDisconnectResponse);
   rpc DeviceAdd(DeviceAddRequest) returns (DeviceAddResponse);
 
-  rpc GetRawDevices(RawDeviceRequest) returns (RawDeviceResponse);
+  rpc GetRawDevices(RawDeviceRequest) returns (GetRawDevicesResponse);
 }
 
 message EventStreamRequest {};
@@ -29,6 +31,10 @@ message ScanStartRequest {};
 message ScanStartResponse {};
 message ScanStopRequest {};
 message ScanStopResponse {};
+
+message GetDevicesResponse {
+  repeated Device devices = 1;
+};
 
 message DeviceConnectRequest {
   string device_id = 1;
@@ -82,6 +88,6 @@ message DeviceAddResponse {
 message RawDeviceRequest {
   optional Device.Transport transport = 1;
 }
-message RawDeviceResponse {
+message GetRawDevicesResponse {
   repeated RawDevice raw_devices = 1;
 }

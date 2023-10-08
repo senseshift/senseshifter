@@ -274,7 +274,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "uuid",
- "windows",
+ "windows 0.48.0",
 ]
 
 [[package]]
@@ -2631,6 +2631,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "windows"
+version = "0.51.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca229916c5ee38c2f2bc1e9d8f04df975b4bd93f9955dc69fabb5d91270045c9"
+dependencies = [
+ "windows-core",
+ "windows-targets",
+]
+
+[[package]]
+name = "windows-core"
+version = "0.51.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1f8cf84f35d2db49a46868f947758c7a1138116f7fac3bc844f43ade1292e64"
+dependencies = [
+ "windows-targets",
+]
+
+[[package]]
 name = "windows-sys"
 version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2750,8 +2769,10 @@ name = "xrc-devices-apple-continuity"
 version = "0.1.0"
 dependencies = [
  "apple-continuity",
+ "btleplug",
  "bytes",
  "tracing",
+ "windows 0.51.1",
  "xrc-transport",
  "xrc-transport-btle",
  "xrconnect-proto",
@@ -2761,6 +2782,7 @@ dependencies = [
 name = "xrc-devices-bhaptics"
 version = "0.1.0"
 dependencies = [
+ "btleplug",
  "getset",
  "serde",
  "serde_json",
@@ -2846,6 +2868,7 @@ dependencies = [
  "dashmap",
  "futures",
  "getset",
+ "mockall",
  "serde",
  "tokio",
  "tracing",

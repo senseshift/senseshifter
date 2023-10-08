@@ -100,13 +100,6 @@ impl<T> Within<&Point2<T>> for Rectangle<T>
       return false;
     }
 
-    // check if on edge
-    if other.x == self.min().x || other.x == self.max().x {
-      return true;
-    } else if other.y == self.min().y || other.y == self.max().y {
-      return true;
-    }
-
     true
   }
 }

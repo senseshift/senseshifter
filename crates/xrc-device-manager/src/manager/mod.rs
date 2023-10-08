@@ -49,7 +49,7 @@ use tokio_util::sync::CancellationToken;
 mod task;
 use task::DeviceManagerTask;
 
-use xrconnect_proto::devices::v1alpha1::{RawDeviceRequest, RawDeviceResponse};
+use xrconnect_proto::devices::v1alpha1::{RawDeviceRequest, GetRawDevicesResponse, GetDevicesResponse};
 use xrc_transport::api::{Device, TransportManager, TransportManagerBuilder};
 
 pub(super) enum DeviceManagerCommand {
@@ -327,6 +327,10 @@ impl DeviceManagerRPC for DeviceManager {
       .map_err(|err| Status::from_error(Box::from(err)))
   }
 
+  async fn get_devices(&self, request: Request<()>) -> StdResult<Response<GetDevicesResponse>, Status> {
+    todo!()
+  }
+
   async fn device_connect(&self, request: Request<DeviceConnectRequest>) -> StdResult<Response<DeviceConnectResponse>, Status> {
     todo!()
   }
@@ -339,7 +343,7 @@ impl DeviceManagerRPC for DeviceManager {
     todo!()
   }
 
-  async fn get_raw_devices(&self, request: Request<RawDeviceRequest>) -> StdResult<Response<RawDeviceResponse>, Status> {
+  async fn get_raw_devices(&self, request: Request<RawDeviceRequest>) -> StdResult<Response<GetRawDevicesResponse>, Status> {
     todo!()
   }
 }
