@@ -643,6 +643,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
 
 [[package]]
+name = "flaky_test"
+version = "0.1.0"
+source = "git+https://github.com/leon0399/flaky_test.git?branch=feature/advanced-attributes#3009306f66947fec84c8d6910fab07097b63f96d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2835,6 +2845,7 @@ dependencies = [
  "anyhow",
  "criterion",
  "dashmap",
+ "flaky_test",
  "getset",
  "nalgebra",
  "num",

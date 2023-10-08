@@ -14,19 +14,6 @@ pub struct Circle<T: Scalar, R: Scalar + Unsigned> {
   pub(crate) radius: R,
 }
 
-impl<T, R> Default for Circle<T, R>
-  where
-    T: Scalar + Default + Zero,
-    R: Scalar + Unsigned + Default,
-{
-  fn default() -> Self {
-    Self {
-      center: Point2::default(),
-      radius: R::default(),
-    }
-  }
-}
-
 impl<T, R> Debug for Circle<T, R>
   where
     T: Scalar + Debug,
@@ -114,7 +101,7 @@ impl Circle<u8, u8> {
     return self.bbox().points_inside()
       .into_iter()
       .filter(|point| {
-        self.within(*point)
+        self.within(point)
       })
       .collect();
   }
@@ -122,25 +109,21 @@ impl Circle<u8, u8> {
 
 #[cfg(test)]
 mod tests {
+  use test_case::test_case;
   use test_strategy::proptest;
+  use crate::assert_vec_eq;
   use super::*;
 
-  #[test]
-  fn test_circle_bbox() {
-    let circle = Circle::new(Point2::new(12, 12), 10);
+  #[test_case(Circle::new(Point2::new(12 , 12 ), 10), Point2::new(2  , 2  ), Point2::new(22 , 22 ); "normal")]
+  #[test_case(Circle::new(Point2::new(0  , 0  ), 10), Point2::new(0  , 0  ), Point2::new(10 , 10 ); "edge/top+start")]
+  #[test_case(Circle::new(Point2::new(255, 0  ), 10), Point2::new(245, 0  ), Point2::new(255, 10 ); "edge/top+end")]
+  #[test_case(Circle::new(Point2::new(0  , 255), 10), Point2::new(0  , 245), Point2::new(10 , 255); "edge/bottom+start")]
+  #[test_case(Circle::new(Point2::new(255, 255), 10), Point2::new(245, 245), Point2::new(255, 255); "edge/bottom+end")]
+  fn test_circle_bbox(circle: Circle<u8, u8>, min: Point2<u8>, max: Point2<u8>) {
     let bbox = circle.bbox();
 
-    assert_eq!(bbox.min(), &Point2::new(2, 2));
-    assert_eq!(bbox.max(), &Point2::new(22, 22));
-  }
-
-  #[test]
-  fn test_circle_bbox_edge() {
-    let circle = Circle::new(Point2::new(0, 0), 10);
-    let bbox = circle.bbox();
-
-    assert_eq!(bbox.min(), &Point2::new(0, 0));
-    assert_eq!(bbox.max(), &Point2::new(10, 10));
+    assert_eq!(bbox.min(), &min);
+    assert_eq!(bbox.max(), &max);
   }
 
   #[proptest]
@@ -169,13 +152,7 @@ mod tests {
       Point2::new(7, 5),
     ];
 
-    expected.iter().for_each(|point| {
-      assert!(points.contains(point), "Point {:?} not found in {:?}", point, points);
-    });
-    points.iter().for_each(|point| {
-      assert!(expected.contains(point), "Unexpected point {:?} found", point);
-    });
-    assert_eq!(points.len(), expected.len());
+    assert_vec_eq!(points, expected);
   }
 
   #[test]
@@ -212,12 +189,6 @@ mod tests {
       Point2::new(5, 0),
     ];
 
-    expected.iter().for_each(|point| {
-      assert!(points.contains(point), "Point {:?} not found in {:?}", point, points);
-    });
-    points.iter().for_each(|point| {
-      assert!(expected.contains(point), "Unexpected point {:?} found", point);
-    });
-    assert_eq!(points.len(), expected.len());
+    assert_vec_eq!(points, expected);
   }
 }

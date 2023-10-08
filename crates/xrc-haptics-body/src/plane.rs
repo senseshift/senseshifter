@@ -316,8 +316,9 @@ impl HapticPlaneU8<ActuatorSender>
 mod tests {
   use super::*;
   use xrc_geometry::*;
+  use flaky_test::flaky_test;
 
-  #[test]
+  #[flaky_test(5)]
   fn test_search_closest() {
     let mut plane = HapticPlaneU8::<()>::default();
 

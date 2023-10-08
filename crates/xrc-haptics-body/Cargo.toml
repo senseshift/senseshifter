@@ -25,7 +25,9 @@ getset = { workspace = true }
 png = "0.17.10"
 criterion = { version = "0.4", features = ["html_reports"] }
 xrc-geometry-test-fixtures = { path = "../xrc-geometry-test-fixtures"}
+flaky_test = { workspace = true }
 
 [[bench]]
 name = "search_closest"
 harness = false
+

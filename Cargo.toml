@@ -33,3 +33,5 @@ tokio-stream = "^0.1.14"
 
 micro_rpc = { git = "https://github.com/project-oak/oak.git" }
 micro_rpc_build = { git = "https://github.com/project-oak/oak.git" }
+
+flaky_test = { git = "https://github.com/leon0399/flaky_test.git", branch = "feature/advanced-attributes" }

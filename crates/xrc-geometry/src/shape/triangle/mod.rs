@@ -81,12 +81,12 @@ impl Triangle<u8> {
   /// assert_eq!(triangle.center(), [3, 3].into());
   /// ```
   pub fn center(&self) -> Point2<u8> {
-    let x_sum: f64 = self.0.x as f64 + self.1.x as f64 + self.2.x as f64;
-    let y_sum: f64 = self.0.y as f64 + self.1.y as f64 + self.2.y as f64;
+    let x_sum: u16 = self.0.x as u16 + self.1.x as u16 + self.2.x as u16;
+    let y_sum: u16 = self.0.y as u16 + self.1.y as u16 + self.2.y as u16;
 
     Point2::new(
-      (x_sum / 3.0).round() as u8,
-      (y_sum / 3.0).round() as u8,
+      (x_sum as f64 / 3.0).round() as u8,
+      (y_sum as f64 / 3.0).round() as u8,
     )
   }
 
@@ -109,5 +109,18 @@ impl Triangle<u8> {
         self.within(*point)
       })
       .collect();
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use test_case::test_case;
+  use test_strategy::proptest;
+  use crate::assert_vec_eq;
+  use super::*;
+
+  #[proptest]
+  fn triangle_bbox_u8_fuzz(triangle: Triangle<u8>) {
+    let _bbox = triangle.bbox();
   }
 }

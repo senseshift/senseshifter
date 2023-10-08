@@ -26,9 +26,22 @@ impl<T> Debug for Line<T>
 
 impl<T> Line<T>
   where
+    T: Scalar + PartialOrd,
+{
+  pub fn new(a: Point2<T>, b: Point2<T>) -> Self {
+    if a < b {
+      Self { start: a, end: b }
+    } else {
+      Self { start: b, end: a }
+    }
+  }
+}
+
+impl<T> Line<T>
+  where
     T: Scalar,
 {
-  pub fn new(start: Point2<T>, end: Point2<T>) -> Self {
+  pub fn new_unchecked(start: Point2<T>, end: Point2<T>) -> Self {
     Self { start, end }
   }
 }
