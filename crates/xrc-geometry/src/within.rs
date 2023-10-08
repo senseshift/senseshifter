@@ -1,6 +1,4 @@
-use crate::{
-  Circle, Ellipse, Rectangle, Triangle, ShapeCollection, Shape,
-};
+use crate::{Circle, Ellipse, Rectangle, Triangle, ShapeCollection, Shape};
 use nalgebra::*;
 use num::{Num, Unsigned};
 

@@ -22,7 +22,7 @@ fn accurate_map<T>(x: T, in_min: T, in_max: T, out_min: T, out_max: T) -> T
 pub fn main() {
   let mut plane = HapticPlaneU8::<()>::default();
 
-  // Actual bHaptics X40
+  // // Actual bHaptics X40
   // for x in [44, 99, 157, 212].iter() {
   //   for y in [85, 118, 151, 184, 217].iter() {
   //     let center = Point2::new(*x, *y);
@@ -58,8 +58,27 @@ pub fn main() {
     for (y, _) in row.iter().enumerate() {
       let index = (y * 256 + x) * 3;
       let point = Point2::new(x as u8, y as u8);
-      let closest = plane.get_closest(&point);
 
+      // let circle = Circle::new(point, 10);
+      // let closests: Vec<_> = circle.points_inside().iter()
+      //   .map(|point| plane.get_closest(&point))
+      //   .collect();
+      //
+      // // calc average
+      // let circle_closest: (u32, u32) = closests.iter()
+      //   .fold((0, 0), |acc, point| {
+      //     (acc.0 + point.x as u32, acc.1 + point.y as u32)
+      //   });
+      //
+      // let (r, g) = (
+      //   (circle_closest.0 / closests.len() as u32) as u8,
+      //   (circle_closest.1 / closests.len() as u32) as u8,
+      // );
+      //
+      // data[index + 0] = r;
+      // data[index + 1] = g;
+
+      let closest = plane.get_closest(&point);
       data[index + 0] = closest.x;
       data[index + 1] = closest.y;
     }
@@ -69,38 +88,56 @@ pub fn main() {
 
   let now = std::time::Instant::now();
   for entry in plane.actuators() {
-    let geometry = entry.key();
-    let center = geometry.center();
-
-    for point in geometry.points_inside() {
+    for point in entry.key().points_inside() {
       let index = (point.y as usize * 256 + point.x as usize) * 3;
       data[index + 2] = 255;
     }
 
+    let center = entry.key().center();
     let index = (center.y as usize * 256 + center.x as usize) * 3;
     data[index + 0] = 255;
     data[index + 1] = 255;
     data[index + 2] = 255;
+
+    // // outline bbox
+    // {
+    //   let bbox = entry.key().bbox();
+    //
+    //   // Top line
+    //   for x in bbox.min().x..bbox.max().x {
+    //     let index = (bbox.min().y as usize * 256 + x as usize) * 3;
+    //     data[index + 0] = 255;
+    //     data[index + 1] = 255;
+    //     data[index + 2] = 255;
+    //   }
+    //   // Bottom line
+    //   for x in bbox.min().x..bbox.max().x {
+    //     let index = (bbox.max().y as usize * 256 + x as usize) * 3;
+    //     data[index + 0] = 255;
+    //     data[index + 1] = 255;
+    //     data[index + 2] = 255;
+    //   }
+    //   // Left line
+    //   for y in bbox.min().y..bbox.max().y {
+    //     let index = (y as usize * 256 + bbox.min().x as usize) * 3;
+    //     data[index + 0] = 255;
+    //     data[index + 1] = 255;
+    //     data[index + 2] = 255;
+    //   }
+    //   // Right line
+    //   for y in bbox.min().y..bbox.max().y {
+    //     let index = (y as usize * 256 + bbox.max().x as usize) * 3;
+    //     data[index + 0] = 255;
+    //     data[index + 1] = 255;
+    //     data[index + 2] = 255;
+    //   }
+    //
+    //   // let center = bbox.center();
+    //   // let index = (center.y as usize * 256 + center.x as usize) * 3;
+    //   // data[index + 2] = 255;
+    // }
   }
-  // for (x, row) in plane.state().0.iter().enumerate() {
-  //   for (y, _) in row.iter().enumerate() {
-  //     let index = (y * 256 + x) * 3;
-  //     let point = Point2::new(x as u8, y as u8);
-  //
-  //     for entry in plane.actuators() {
-  //       let geometry = entry.key();
-  //       let center = geometry.center();
-  //
-  //       if center == point {
-  //         data[index + 0] = 255;
-  //         data[index + 1] = 255;
-  //         data[index + 2] = 255;
-  //       } else if geometry.within(&point) == true {
-  //         data[index + 2] = (data[index + 2] as u16 + 255) as u8;
-  //       }
-  //     }
-  //   }
-  // }
+
   let elapsed = now.elapsed();
   println!("mapping shapes withins elapsed: {:?}", elapsed);
 

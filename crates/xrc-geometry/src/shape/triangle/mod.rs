@@ -98,7 +98,13 @@ impl Triangle<u8> {
 
     Rectangle::new(
       Point2::new(min_x, min_y),
-      Point2::new(max_x, max_y),
+      Point2::new(max_x, max_y).map(|x| {
+        if x == u8::MAX {
+          x
+        } else {
+          x + 1
+        }
+      }),
     )
   }
 

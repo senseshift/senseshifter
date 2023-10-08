@@ -104,7 +104,22 @@ impl Circle<u8, u8> {
     let min = center - Vector2::new(radius, radius);
     let max = center + Vector2::new(radius, radius);
 
-    Rectangle::new(min.map(|x| x as u8), max.map(|x| x as u8))
+    Rectangle::new(
+      min.map(|x| {
+        if x < 0 {
+          0
+        } else {
+          x as u8
+        }
+      }),
+      max.map(|x| {
+        if x >= u8::MAX as i16 {
+          u8::MAX
+        } else {
+          x as u8 + 1
+        }
+      })
+    )
   }
 
   pub fn points_inside(&self) -> Vec<Point2<u8>> {
@@ -131,7 +146,16 @@ mod tests {
   }
 
   #[test]
-  fn test_circle_points_inside() {
+  fn test_circle_bbox_edge() {
+    let circle = Circle::new(Point2::new(0, 0), 10);
+    let bbox = circle.bbox();
+
+    assert_eq!(bbox.min(), &Point2::new(0, 0));
+    assert_eq!(bbox.max(), &Point2::new(11, 11));
+  }
+
+  #[test]
+  fn test_points_inside() {
     let circle = Circle::new(Point2::new(5, 5), 2);
     let points = circle.points_inside();
 
@@ -151,6 +175,52 @@ mod tests {
 
     expected.iter().for_each(|point| {
       assert!(points.contains(point), "Point {:?} not found in {:?}", point, points);
+    });
+    points.iter().for_each(|point| {
+      assert!(expected.contains(point), "Unexpected point {:?} found", point);
+    });
+    assert_eq!(points.len(), expected.len());
+  }
+
+  #[test]
+  pub fn test_points_inside_edge() {
+    let circle = Circle::new(Point2::new(0, 0), 5);
+    let points = circle.points_inside();
+
+    let expected = vec![
+      Point2::new(0, 0),
+      Point2::new(0, 1),
+      Point2::new(0, 2),
+      Point2::new(0, 3),
+      Point2::new(0, 4),
+      Point2::new(0, 5),
+      Point2::new(1, 0),
+      Point2::new(1, 1),
+      Point2::new(1, 2),
+      Point2::new(1, 3),
+      Point2::new(1, 4),
+      Point2::new(2, 0),
+      Point2::new(2, 1),
+      Point2::new(2, 2),
+      Point2::new(2, 3),
+      Point2::new(2, 4),
+      Point2::new(3, 0),
+      Point2::new(3, 1),
+      Point2::new(3, 2),
+      Point2::new(3, 3),
+      Point2::new(3, 4),
+      Point2::new(4, 0),
+      Point2::new(4, 1),
+      Point2::new(4, 2),
+      Point2::new(4, 3),
+      Point2::new(5, 0),
+    ];
+
+    expected.iter().for_each(|point| {
+      assert!(points.contains(point), "Point {:?} not found in {:?}", point, points);
+    });
+    points.iter().for_each(|point| {
+      assert!(expected.contains(point), "Unexpected point {:?} found", point);
     });
     assert_eq!(points.len(), expected.len());
   }

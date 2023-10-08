@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::ops::{Index, IndexMut};
@@ -8,7 +9,7 @@ use getset::Getters;
 use num::{Zero, traits::Num, Unsigned};
 use nalgebra::Scalar;
 use num::traits::NumOps;
-use xrc_geometry::{Shape, Point2};
+use xrc_geometry::{Shape, Point2, distance_squared, Circle};
 use crate::{ActuatorEvent, ActuatorSender};
 
 #[repr(transparent)]
@@ -202,35 +203,68 @@ impl<A> HapticPlaneU8<A>
     self.recalc_closest();
   }
 
+  /// **WARNING**: This method does not recalculate the closest actuator for each point.
+  /// You should call [`Self::recalc_closest`] after inserting all actuators.
+  ///
+  /// Inserts an actuator into the plane without recalculating the closest actuator for each point.
+  /// This is useful when inserting multiple actuators at once.
   pub fn insert_no_recalc(&mut self, geometry: Shape<u8, u8>, sender: A) {
     self.actuators.insert(geometry.clone(), sender);
     self.centers.insert(geometry.center(), geometry.clone());
     self.intensities.insert(geometry, 0);
   }
 
+  /// Get the center for the closest actuator to the given point.
   pub fn get_closest(&self, point: &Point2<u8>) -> Point2<u8> {
     let (x, y) = Self::point_coords(point);
     return self.closest[x][y];
   }
 
+  /// Get closest actuators for each point in the given circle.
+  ///
+  /// Returns a vector of tuples, where the first element is the closest point and the second
+  /// element is the magnitude of the distance between the point and the closest actuator.
+  pub fn get_closest_circle(&self, circle: &Circle<u8, u8>) -> Vec<(Point2<u8>, f64)> {
+    let points: Vec<_> = circle.points_inside()
+      .into_iter()
+      .collect::<HashSet<_>>()
+      .into_iter()
+      .collect();
+
+    let len = points.len() as f64;
+
+    let mut closest = points
+      .into_iter()
+      .map(|point| (point, 1.0 / len))
+      .collect();
+
+    closest
+  }
+
+  /// Computes the center for the closest actuator to the given point.
   pub fn search_closest(&self, point: &Point2<u8>) -> Point2<u8> {
     use xrc_geometry::Distance;
 
-    let mut closest_distance = f64::MAX;
-    let mut closest = Point2::new(u8::MAX, u8::MAX);
+    // // Center of the closest actuator
+    // self.centers.iter()
+    //   .map(|entry| (entry.key().clone(), entry.key().distance(point)))
+    //   .min_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+    //   .map(|(geometry, _)| geometry)
+    //   .unwrap()
 
-    for entry in self.actuators.iter() {
-      let geometry = entry.key();
-      let center = geometry.center();
-      let distance = geometry.distance(point);
+    // Accurate
+    self.actuators.iter()
+      .map(|entry| (entry.key().clone(), entry.key().distance(point)))
+      .min_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+      .map(|(geometry, _)| geometry.center())
+      .unwrap()
 
-      if distance < closest_distance {
-        closest_distance = distance;
-        closest = center;
-      }
-    }
-
-    return closest;
+    // // Center of bbox
+    // self.actuators.iter()
+    //   .map(|entry| (entry.key().clone().bbox().center(), entry.key().clone().bbox().center().distance(point)))
+    //   .min_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+    //   .map(|(geometry, _)| geometry)
+    //   .unwrap()
   }
 
   pub fn recalc_closest(&mut self) {

@@ -144,10 +144,13 @@ impl Ellipse<u8, u8> {
   pub fn bbox(&self) -> Rectangle<u8> {
     let x = self.center.x as f64 - self.radius.0 as f64;
     let y = self.center.y as f64 - self.radius.1 as f64;
-    let width = self.radius.0 as f64 * 2.0;
-    let height = self.radius.1 as f64 * 2.0;
+    let width = self.radius.0 as f64 * 2.0 + 1.;
+    let height = self.radius.1 as f64 * 2.0 + 1.;
 
-    Rectangle::new(Point2::new(x, y).map(|c| c as u8), Point2::new(x + width, y + height).map(|c| c as u8))
+    Rectangle::new(
+      Point2::new(x, y).map(|c| c as u8),
+      Point2::new(x + width, y + height)
+        .map(|c| c as u8))
   }
 
   pub fn points_inside(&self) -> Vec<Point2<u8>> {

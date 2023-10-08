@@ -51,6 +51,34 @@ pub fn distance<T>(a: &Point2<T>, b: &Point2<T>) -> f64
   distance_squared(a, b).sqrt()
 }
 
+impl Distance<&Point2<u8>> for Point2<u8> {
+  type Result = f64;
+
+  /// Calculate the distance between two points.
+  ///
+  /// # Example:
+  /// ```rust
+  /// use xrc_geometry::{Point2, distance};
+  ///
+  /// let a = Point2::new(0, 0);
+  /// let b = Point2::new(3, 4);
+  ///
+  /// assert_eq!(distance(&a, &b), 5.0);
+  /// ```
+  #[inline]
+  fn distance(&self, point: &Point2<u8>) -> Self::Result {
+    distance(self, point)
+  }
+}
+impl Distance<Point2<u8>> for Point2<u8> {
+  type Result = f64;
+
+  #[inline]
+  fn distance(&self, point: Point2<u8>) -> Self::Result {
+    self.distance(&point)
+  }
+}
+
 impl Distance<&Point2<u8>> for Circle<u8, u8> {
   type Result = f64;
 

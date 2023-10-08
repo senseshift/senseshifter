@@ -176,6 +176,16 @@ impl Shape<u8, u8>
     }
   }
 
+  pub fn bbox(&self) -> Rectangle<u8> {
+    match self {
+      Self::Ellipse(ellipse) => ellipse.bbox().clone(),
+      Self::Circle(circle) => circle.bbox().clone(),
+      Self::Rectangle(rectangle) => rectangle.clone(),
+      Self::Triangle(triangle) => triangle.bbox(),
+      Self::Collection(collection) => collection.bbox(),
+    }
+  }
+
   pub fn points_inside(&self) -> Vec<Point2<u8>> {
     match self {
       Shape::Ellipse(ellipse) => ellipse.points_inside(),
