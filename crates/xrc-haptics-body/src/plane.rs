@@ -214,31 +214,27 @@ impl<A> HapticPlaneU8<A>
     self.intensities.insert(geometry, 0);
   }
 
+  /// Removes an actuator from the plane.
+  pub fn remove(&mut self, geometry: &Shape<u8, u8>) {
+    self.remove_no_recalc(geometry);
+    self.recalc_closest();
+  }
+
+  /// **WARNING**: This method does not recalculate the closest actuator for each point.
+  /// You should call [`Self::recalc_closest`] after inserting all actuators.
+  ///
+  /// Removes an actuator from the plane without recalculating the closest actuator for each point.
+  /// This is useful when removing multiple actuators at once.
+  pub fn remove_no_recalc(&mut self, geometry: &Shape<u8, u8>) {
+    self.actuators.remove(geometry);
+    self.centers.remove(&geometry.center());
+    self.intensities.remove(geometry);
+  }
+
   /// Get the center for the closest actuator to the given point.
   pub fn get_closest(&self, point: &Point2<u8>) -> Point2<u8> {
     let (x, y) = Self::point_coords(point);
     return self.closest[x][y];
-  }
-
-  /// Get closest actuators for each point in the given circle.
-  ///
-  /// Returns a vector of tuples, where the first element is the closest point and the second
-  /// element is the magnitude of the distance between the point and the closest actuator.
-  pub fn get_closest_circle(&self, circle: &Circle<u8, u8>) -> Vec<(Point2<u8>, f64)> {
-    let points: Vec<_> = circle.points_inside()
-      .into_iter()
-      .collect::<HashSet<_>>()
-      .into_iter()
-      .collect();
-
-    let len = points.len() as f64;
-
-    let mut closest = points
-      .into_iter()
-      .map(|point| (point, 1.0 / len))
-      .collect();
-
-    closest
   }
 
   /// Computes the center for the closest actuator to the given point.

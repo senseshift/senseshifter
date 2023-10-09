@@ -1,74 +1,24 @@
-use std::fmt::{Debug, Formatter};
-use std::hash::{Hash, Hasher};
-use crate::*;
-use getset::Getters;
+use std::fmt::Debug;
+use std::hash::Hash;
+use derivative::Derivative;
 use num::{Unsigned, Zero};
-use nalgebra::*;
+
+use crate::*;
 
 #[cfg_attr(feature = "serde-serialize", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Derivative)]
+#[derivative(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Triangle<T: Scalar>(pub Point2<T>, pub Point2<T>, pub Point2<T>);
-
-impl<T> Debug for Triangle<T>
-  where
-    T: Scalar + Debug,
-{
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("Triangle")
-      .field("0", &self.0)
-      .field("1", &self.1)
-      .field("2", &self.2)
-      .finish()
-  }
-}
 
 impl<T> Triangle<T>
   where
     T: Scalar,
 {
+  #[inline]
   pub fn new(a: Point2<T>, b: Point2<T>, c: Point2<T>) -> Self {
     Self(a, b, c)
   }
 }
-
-impl<T> Hash for Triangle<T>
-  where
-    T: Scalar + Hash,
-{
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    self.0.hash(state);
-    self.1.hash(state);
-    self.2.hash(state);
-  }
-}
-
-impl<T> Copy for Triangle<T>
-  where
-    T: Scalar + Copy,
-{}
-
-impl<T> Clone for Triangle<T>
-  where
-    T: Scalar + Clone,
-{
-  fn clone(&self) -> Self {
-    Self(self.0.clone(), self.1.clone(), self.2.clone())
-  }
-}
-
-impl<T> PartialEq for Triangle<T>
-  where
-    T: Scalar + PartialEq,
-{
-  fn eq(&self, other: &Self) -> bool {
-    self.0 == other.0 && self.1 == other.1 && self.2 == other.2
-  }
-}
-
-impl<T> Eq for Triangle<T>
-  where
-    T: Scalar + Eq,
-{}
-
 
 impl Triangle<u8> {
   /// Returns the center of the triangle.
@@ -114,13 +64,18 @@ impl Triangle<u8> {
 
 #[cfg(test)]
 mod tests {
+  use super::*;
+
   use test_case::test_case;
   use test_strategy::proptest;
-  use crate::assert_vec_eq;
-  use super::*;
 
   #[proptest]
   fn triangle_bbox_u8_fuzz(triangle: Triangle<u8>) {
     let _bbox = triangle.bbox();
+  }
+
+  #[proptest]
+  fn triangle_points_inside_u8_fuzz(triangle: Triangle<u8>) {
+    let _points = triangle.points_inside();
   }
 }

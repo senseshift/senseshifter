@@ -1,13 +1,14 @@
-use std::fmt::{Debug, Display, Formatter};
-use std::hash::{Hash, Hasher};
-use crate::*;
+use std::fmt::Debug;
+use std::hash::Hash;
+use derivative::Derivative;
 use getset::Getters;
 use num::{Unsigned, Zero};
-use nalgebra::*;
-use ordered_float::OrderedFloat;
+
+use crate::*;
 
 #[cfg_attr(feature = "serde-serialize", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Getters)]
+#[derive(Getters, Derivative)]
+#[derivative(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Ellipse<T: Scalar, R: Scalar> {
   #[getset(get = "pub")]
   pub(crate) center: Point2<T>,
@@ -15,95 +16,26 @@ pub struct Ellipse<T: Scalar, R: Scalar> {
   pub(crate) radius: (R, R),
 }
 
-impl<T, R> Default for Ellipse<T, R>
-  where
-    T: Scalar + Default + Zero,
-    R: Scalar + Default + Zero,
-{
-  fn default() -> Self {
-    Self {
-      center: Point2::default(),
-      radius: (R::default(), R::default()),
-    }
-  }
-}
-
-impl<T, R> Debug for Ellipse<T, R>
-  where
-    T: Scalar + Debug,
-    R: Scalar + Debug,
-{
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("Ellipse")
-      .field("center", &self.center)
-      .field("radius", &self.radius)
-      .finish()
-  }
-}
-
 impl<T, R> Ellipse<T, R>
   where
     T: Scalar,
     R: Scalar,
 {
+  #[inline]
   pub fn new(center: Point2<T>, radius: (R, R)) -> Self {
     Self { center, radius }
   }
 
+  #[inline]
   pub fn width(&self) -> &R {
     &self.radius.0
   }
 
+  #[inline]
   pub fn height(&self) -> &R {
     &self.radius.1
   }
 }
-
-impl<T, R> Hash for Ellipse<T, R>
-  where
-    T: Scalar + Hash,
-    R: Scalar + Hash,
-{
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    self.center.hash(state);
-    self.radius.hash(state);
-  }
-}
-
-impl<T, R> Copy for Ellipse<T, R>
-  where
-    T: Scalar + Copy,
-    R: Scalar + Copy,
-{}
-
-impl<T, R> Clone for Ellipse<T, R>
-  where
-    T: Scalar + Clone,
-    R: Scalar + Clone,
-{
-  fn clone(&self) -> Self {
-    Self {
-      center: self.center.clone(),
-      radius: self.radius.clone(),
-    }
-  }
-}
-
-impl<T, R> PartialEq for Ellipse<T, R>
-  where
-    T: Scalar + PartialEq,
-    R: Scalar + PartialEq,
-{
-  fn eq(&self, other: &Self) -> bool {
-    self.center == other.center && self.radius == other.radius
-  }
-}
-
-impl<T, R> Eq for Ellipse<T, R>
-  where
-    T: Scalar + Eq,
-    R: Scalar + Eq,
-{}
 
 impl Ellipse<u8, u8> {
   pub fn point_intersection(&self, point: &Point2<u8>, max_iterations: usize) -> Point2<f64> {
@@ -166,13 +98,17 @@ impl Ellipse<u8, u8> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::*;
 
   use test_case::test_case;
   use test_strategy::proptest;
 
   #[proptest]
-  fn bbox_u8_fuzz(ellipse: Ellipse<u8, u8>) {
+  fn ellipse_bbox_u8_fuzz(ellipse: Ellipse<u8, u8>) {
     let _out = ellipse.bbox();
+  }
+
+  #[proptest]
+  fn ellipse_points_inside_u8_fuzz(ellipse: Ellipse<u8, u8>) {
+    let _out = ellipse.points_inside();
   }
 }
