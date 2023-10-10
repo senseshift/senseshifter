@@ -10,12 +10,15 @@ serde-serialize = ["dep:serde", "xrc-geometry/serde-serialize", "dashmap/serde"]
 
 [[example]]
 name = "visualize_closest"
+test = false
 
 [dependencies]
 xrc-geometry = { workspace = true }
 num = "0.4"
 nalgebra = "^0.32.3"
-dashmap = "5"
+dashmap = { version = "5", features = ["rayon"]}
+ndarray = "0.15.6"
+rayon = "1.7"
 anyhow = "1"
 tokio = { workspace = true, features = ["sync"] }
 serde = { workspace = true, features = ["derive"], optional = true }

@@ -32,22 +32,22 @@ pub fn main() {
   //   }
   // }
 
-  // // Hardlight VR Suit
-  // {
-  //   hardlight_vest_chest_front().iter().for_each(|geometry| {
-  //     plane.insert_no_recalc(geometry.clone(), ());
-  //   });
-  // }
+  // Hardlight VR Suit
+  {
+    hardlight_vest_chest_front().iter().for_each(|geometry| {
+      plane.insert_no_recalc(geometry.clone(), ());
+    });
+  }
 
-  plane.insert(Shape::from(Circle::new([10 , 10 ].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([10 , 245].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([245, 10 ].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([245, 245].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([10 , 10 ].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([10 , 245].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([245, 10 ].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([245, 245].into(), 10)), ());
 
-  plane.insert(Shape::from(Circle::new([100, 100].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([100, 155].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([155, 100].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([155, 155].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([100, 100].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([100, 155].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([155, 100].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([155, 155].into(), 10)), ());
 
   // // OWO Skin
   // {
