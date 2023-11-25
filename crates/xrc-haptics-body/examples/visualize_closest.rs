@@ -32,22 +32,131 @@ pub fn main() {
   //   }
   // }
 
-  // // Hardlight VR Suit
+  // Hardlight VR Suit
+  {
+    hardlight_vest_chest_front().iter().for_each(|geometry| {
+      plane.insert_no_recalc(geometry.clone(), ());
+    });
+  }
+
+  // // AbdulC render
   // {
-  //   hardlight_vest_chest_front().iter().for_each(|geometry| {
-  //     plane.insert_no_recalc(geometry.clone(), ());
-  //   });
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([26, 25].into(), [64, 15].into(), [71, 27].into())),
+  //     Shape::from(Triangle::new([26, 25].into(), [71, 27].into(), [31, 36].into())),
+  //     Shape::from(Triangle::new([81, 39].into(), [71, 27].into(), [31, 36].into())),
+  //     Shape::from(Triangle::new([81, 39].into(), [36, 52].into(), [31, 36].into())),
+  //     Shape::from(Triangle::new([81, 39].into(), [36, 52].into(), [37, 66].into())),
+  //     Shape::from(Triangle::new([81, 39].into(), [36, 52].into(), [35, 80].into())),
+  //     Shape::from(Triangle::new([81, 39].into(), [120, 110].into(), [35, 80].into())),
+  //     Shape::from(Triangle::new([81, 39].into(), [120, 110].into(), [119, 72].into())),
+  //     Shape::from(Triangle::new([81, 39].into(), [98, 48].into(), [119, 72].into())),
+  //     Shape::from(Triangle::new([121, 53].into(), [98, 48].into(), [119, 72].into())),
+  //     Shape::from(Triangle::new([35, 80].into(), [30, 89].into(), [120, 110].into())),
+  //     Shape::from(Triangle::new([18, 102].into(), [30, 89].into(), [120, 110].into())),
+  //     Shape::from(Triangle::new([18, 102].into(), [122, 122].into(), [120, 110].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([16, 114].into(), [120, 131].into(), [22, 139].into())),
+  //     Shape::from(Triangle::new([83, 169].into(), [120, 131].into(), [22, 139].into())),
+  //     Shape::from(Triangle::new([83, 169].into(), [24, 156].into(), [22, 139].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::from(Triangle::new([27, 167].into(), [77, 175].into(), [39, 197].into())), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([115, 147].into(), [119, 147].into(), [122, 161].into())),
+  //     Shape::from(Triangle::new([115, 147].into(), [92, 170].into(), [122, 161].into())),
+  //     Shape::from(Triangle::new([121, 175].into(), [92, 170].into(), [122, 161].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([53, 201].into(), [89, 180].into(), [90, 205].into())),
+  //     Shape::from(Triangle::new([125, 184].into(), [89, 180].into(), [90, 205].into())),
+  //     Shape::from(Triangle::new([125, 184].into(), [117, 210].into(), [90, 205].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([53, 201].into(), [89, 180].into(), [90, 205].into())),
+  //     Shape::from(Triangle::new([125, 184].into(), [89, 180].into(), [90, 205].into())),
+  //     Shape::from(Triangle::new([125, 184].into(), [117, 210].into(), [90, 205].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([51, 213].into(), [51, 220].into(), [81, 216].into())),
+  //     Shape::from(Triangle::new([53, 226].into(), [51, 220].into(), [81, 216].into())),
+  //     Shape::from(Triangle::new([53, 226].into(), [56, 231].into(), [81, 216].into())),
+  //     Shape::from(Triangle::new([61, 234].into(), [56, 231].into(), [81, 216].into())),
+  //     Shape::from(Triangle::new([61, 234].into(), [73, 238].into(), [81, 216].into())),
+  //     Shape::from(Triangle::new([117, 240].into(), [73, 238].into(), [81, 216].into())),
+  //     Shape::from(Triangle::new([117, 240].into(), [118, 218].into(), [81, 216].into())),
+  //   ])), ());
+  //
+  //   // Right
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([255 - 26, 25].into(), [255 - 64, 15].into(), [255 - 71, 27].into())),
+  //     Shape::from(Triangle::new([255 - 26, 25].into(), [255 - 71, 27].into(), [255 - 31, 36].into())),
+  //     Shape::from(Triangle::new([255 - 81, 39].into(), [255 - 71, 27].into(), [255 - 31, 36].into())),
+  //     Shape::from(Triangle::new([255 - 81, 39].into(), [255 - 36, 52].into(), [255 - 31, 36].into())),
+  //     Shape::from(Triangle::new([255 - 81, 39].into(), [255 - 36, 52].into(), [255 - 37, 66].into())),
+  //     Shape::from(Triangle::new([255 - 81, 39].into(), [255 - 36, 52].into(), [255 - 35, 80].into())),
+  //     Shape::from(Triangle::new([255 - 81, 39].into(), [255 - 120, 110].into(), [255 - 35, 80].into())),
+  //     Shape::from(Triangle::new([255 - 81, 39].into(), [255 - 120, 110].into(), [255 - 119, 72].into())),
+  //     Shape::from(Triangle::new([255 - 81, 39].into(), [255 - 98, 48].into(), [255 - 119, 72].into())),
+  //     Shape::from(Triangle::new([255 - 121, 53].into(), [255 - 98, 48].into(), [255 - 119, 72].into())),
+  //     Shape::from(Triangle::new([255 - 35, 80].into(), [255 - 30, 89].into(), [255 - 120, 110].into())),
+  //     Shape::from(Triangle::new([255 - 18, 102].into(), [255 - 30, 89].into(), [255 - 120, 110].into())),
+  //     Shape::from(Triangle::new([255 - 18, 102].into(), [255 - 122, 122].into(), [255 - 120, 110].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([255 - 16, 114].into(), [255 - 120, 131].into(), [255 - 22, 139].into())),
+  //     Shape::from(Triangle::new([255 - 83, 169].into(), [255 - 120, 131].into(), [255 - 22, 139].into())),
+  //     Shape::from(Triangle::new([255 - 83, 169].into(), [255 - 24, 156].into(), [255 - 22, 139].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::from(Triangle::new([255 - 27, 167].into(), [255 - 77, 175].into(), [255 - 39, 197].into())), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([255 - 115, 147].into(), [255 - 119, 147].into(), [255 - 122, 161].into())),
+  //     Shape::from(Triangle::new([255 - 115, 147].into(), [255 - 92, 170].into(), [255 - 122, 161].into())),
+  //     Shape::from(Triangle::new([255 - 121, 175].into(), [255 - 92, 170].into(), [255 - 122, 161].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([255 - 53, 201].into(), [255 - 89, 180].into(), [255 - 90, 205].into())),
+  //     Shape::from(Triangle::new([255 - 125, 184].into(), [255 - 89, 180].into(), [255 - 90, 205].into())),
+  //     Shape::from(Triangle::new([255 - 125, 184].into(), [255 - 117, 210].into(), [255 - 90, 205].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([255 - 53, 201].into(), [255 - 89, 180].into(), [255 - 90, 205].into())),
+  //     Shape::from(Triangle::new([255 - 125, 184].into(), [255 - 89, 180].into(), [255 - 90, 205].into())),
+  //     Shape::from(Triangle::new([255 - 125, 184].into(), [255 - 117, 210].into(), [255 - 90, 205].into())),
+  //   ])), ());
+  //
+  //   plane.insert_no_recalc(Shape::Collection(ShapeCollection::new(vec![
+  //     Shape::from(Triangle::new([255 - 51, 213].into(), [255 - 51, 220].into(), [255 - 81, 216].into())),
+  //     Shape::from(Triangle::new([255 - 53, 226].into(), [255 - 51, 220].into(), [255 - 81, 216].into())),
+  //     Shape::from(Triangle::new([255 - 53, 226].into(), [255 - 56, 231].into(), [255 - 81, 216].into())),
+  //     Shape::from(Triangle::new([255 - 61, 234].into(), [255 - 56, 231].into(), [255 - 81, 216].into())),
+  //     Shape::from(Triangle::new([255 - 61, 234].into(), [255 - 73, 238].into(), [255 - 81, 216].into())),
+  //     Shape::from(Triangle::new([255 - 117, 240].into(), [255 - 73, 238].into(), [255 - 81, 216].into())),
+  //     Shape::from(Triangle::new([255 - 117, 240].into(), [255 - 118, 218].into(), [255 - 81, 216].into())),
+  //   ])), ());
   // }
 
-  plane.insert(Shape::from(Circle::new([10 , 10 ].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([10 , 245].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([245, 10 ].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([245, 245].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([10 , 10 ].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([10 , 245].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([245, 10 ].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([245, 245].into(), 10)), ());
 
-  plane.insert(Shape::from(Circle::new([100, 100].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([100, 155].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([155, 100].into(), 10)), ());
-  plane.insert(Shape::from(Circle::new([155, 155].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([100, 100].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([100, 155].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([155, 100].into(), 10)), ());
+  // plane.insert_no_recalc(Shape::from(Circle::new([155, 155].into(), 10)), ());
 
   // // OWO Skin
   // {

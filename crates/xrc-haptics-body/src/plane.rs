@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::ops::{Index, IndexMut};
@@ -7,70 +6,11 @@ use anyhow::{anyhow, Context, Result};
 use dashmap::DashMap;
 use getset::Getters;
 use num::{Zero, traits::Num, Unsigned};
-use nalgebra::Scalar;
+use nalgebra::{Scalar};
 use num::traits::NumOps;
-use xrc_geometry::{Shape, Point2, distance_squared, Circle};
-use crate::{ActuatorEvent, ActuatorSender};
-
-#[repr(transparent)]
-pub struct PlaneState<T, const D: usize>(pub [[T; D]; D]);
-
-impl<T, const D: usize> Default for PlaneState<T, D>
-  where
-    T: Zero + Copy,
-{
-  fn default() -> Self {
-    Self([[T::zero(); D]; D])
-  }
-}
-
-impl<T, const D: usize> PlaneState<T, D>
-{
-  pub fn new(source: [[T; D]; D]) -> Self {
-    Self(source)
-  }
-}
-
-impl<T, const D: usize> PlaneState<T, D>
-  where
-    T: Scalar,
-    usize: From<T>,
-{
-  #[inline]
-  pub fn point_coords<B>(point: &Point2<B>) -> (usize, usize)
-    where
-      B: Scalar + Into<usize> + Copy,
-  {
-    let x: usize = point.x.into();
-    let y: usize = point.y.into();
-
-    return (x, y);
-  }
-
-  pub fn set<B>(&mut self, point: &Point2<B>, value: T)
-    where
-      B: Scalar + Into<usize> + Copy,
-  {
-    let (x, y) = Self::point_coords::<B>(point);
-    self[x][y] = value;
-  }
-}
-
-impl<T, const D: usize> Index<usize> for PlaneState<T, D>
-{
-  type Output = [T; D];
-
-  fn index(&self, index: usize) -> &Self::Output {
-    &self.0[index]
-  }
-}
-
-impl<T, const D: usize> IndexMut<usize> for PlaneState<T, D>
-{
-  fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-    &mut self.0[index]
-  }
-}
+use rayon::prelude::*;
+use xrc_geometry::{Shape, Point2, Circle};
+use crate::{ActuatorEvent, ActuatorSender, PlaneState};
 
 #[derive(Getters)]
 pub struct HapticPlane<T, I, const D: usize, A>
@@ -101,7 +41,7 @@ pub struct HapticPlane<T, I, const D: usize, A>
   centers: DashMap<Point2<T>, Shape<T, T>>,
 
   #[getset(get = "pub")]
-  closest: [[Point2<T>; D]; D],
+  closest: PlaneState<Point2<T>, D>,
 
   #[getset(get = "pub")]
   intensities: DashMap<Shape<T, T>, I>,
@@ -123,15 +63,15 @@ pub struct HapticPlane<T, I, const D: usize, A>
   ///   [12, 13, 14, 15],
   /// ]);
   ///
-  /// assert_eq!(plane[0][0], 0);
+  /// assert_eq!(plane[(0, 0)], 0);
   ///
-  /// assert_eq!(plane[0][1], 1);
-  /// assert_eq!(plane[1][0], 4);
-  /// assert_eq!(plane[1][1], 5);
+  /// assert_eq!(plane[(0, 1)], 1);
+  /// assert_eq!(plane[(1, 0)], 4);
+  /// assert_eq!(plane[(1, 1)], 5);
   ///
-  /// assert_eq!(plane[2][0], 8);
-  /// assert_eq!(plane[0][2], 2);
-  /// assert_eq!(plane[2][2], 10);
+  /// assert_eq!(plane[(2, 0)], 8);
+  /// assert_eq!(plane[(0, 2)], 2);
+  /// assert_eq!(plane[(2, 2)], 10);
   /// ```
   #[getset(get = "pub")]
   state: PlaneState<I, D>,
@@ -140,14 +80,14 @@ pub struct HapticPlane<T, I, const D: usize, A>
 impl<T, I, const D: usize, A> Default for HapticPlane<T, I, D, A>
   where
     T: Scalar + Num + Copy + Unsigned + Hash + Eq,
-    I: Num + Copy,
+    I: Num + Copy + Default + Zero,
 {
   fn default() -> Self {
     Self {
       actuators: DashMap::new(),
       centers: DashMap::new(),
       intensities: DashMap::new(),
-      closest: [[Point2::new(T::zero(), T::zero()); D]; D],
+      closest: PlaneState::new([[Point2::new(T::zero(), T::zero()); D]; D]),
       state: PlaneState::default(),
     }
   }
@@ -167,16 +107,15 @@ impl<T, I, const D: usize, A> HapticPlane<T, I, D, A>
     return (x, y);
   }
 
-  pub fn state_at(&self, point: &Point2<T>) -> I {
-    let (x, y) = Self::point_coords(point);
-    return self.state[x][y];
-  }
+  // pub fn state_at(&self, point: &Point2<T>) -> I {
+  //   return self.state[point.coords];
+  // }
 }
 
 /// A haptic plane with all 8-bit values (width, height, and intensity).
 pub type HapticPlaneU8<A = ActuatorSender> = HapticPlane<u8, u8, { u8::MAX as usize + 1 }, A>;
 
-impl<A> HapticPlaneU8<A>
+impl<A: Send + Sync> HapticPlaneU8<A>
 {
   /// Inserts an actuator into the plane.
   ///
@@ -214,31 +153,26 @@ impl<A> HapticPlaneU8<A>
     self.intensities.insert(geometry, 0);
   }
 
-  /// Get the center for the closest actuator to the given point.
-  pub fn get_closest(&self, point: &Point2<u8>) -> Point2<u8> {
-    let (x, y) = Self::point_coords(point);
-    return self.closest[x][y];
+  /// Removes an actuator from the plane.
+  pub fn remove(&mut self, geometry: &Shape<u8, u8>) {
+    self.remove_no_recalc(geometry);
+    self.recalc_closest();
   }
 
-  /// Get closest actuators for each point in the given circle.
+  /// **WARNING**: This method does not recalculate the closest actuator for each point.
+  /// You should call [`Self::recalc_closest`] after inserting all actuators.
   ///
-  /// Returns a vector of tuples, where the first element is the closest point and the second
-  /// element is the magnitude of the distance between the point and the closest actuator.
-  pub fn get_closest_circle(&self, circle: &Circle<u8, u8>) -> Vec<(Point2<u8>, f64)> {
-    let points: Vec<_> = circle.points_inside()
-      .into_iter()
-      .collect::<HashSet<_>>()
-      .into_iter()
-      .collect();
+  /// Removes an actuator from the plane without recalculating the closest actuator for each point.
+  /// This is useful when removing multiple actuators at once.
+  pub fn remove_no_recalc(&mut self, geometry: &Shape<u8, u8>) {
+    self.actuators.remove(geometry);
+    self.centers.remove(&geometry.center());
+    self.intensities.remove(geometry);
+  }
 
-    let len = points.len() as f64;
-
-    let mut closest = points
-      .into_iter()
-      .map(|point| (point, 1.0 / len))
-      .collect();
-
-    closest
+  /// Get the center for the closest actuator to the given point.
+  pub fn get_closest(&self, point: &Point2<u8>) -> Point2<u8> {
+    return self.closest[(point.x as usize, point.y as usize)];
   }
 
   /// Computes the center for the closest actuator to the given point.
@@ -270,12 +204,17 @@ impl<A> HapticPlaneU8<A>
   pub fn recalc_closest(&mut self) {
     let mut closest = self.closest.clone();
 
-    for (x, row) in self.closest.iter().enumerate() {
-      for (y, _) in row.iter().enumerate() {
-        let point = Point2::new(x as u8, y as u8);
-        closest[x][y] = self.search_closest(&point);
-      }
-    }
+    let _ = closest.iter_mut().enumerate().par_bridge().for_each(|(index, mut at_point)| {
+      let coords = PlaneState::<(), 256>::index_coords(index);
+      let point = Point2::new(coords.0 as u8, coords.1 as u8);
+      *at_point = self.search_closest(&point);
+    });
+
+    // for (index, _) in self.closest.iter().enumerate() {
+    //   let coords = PlaneState::<(), 256>::index_coords(index);
+    //   let point = Point2::new(coords.0 as u8, coords.1 as u8);
+    //   closest[coords] = self.search_closest(&point);
+    // }
 
     self.closest = closest;
   }
@@ -292,11 +231,9 @@ impl HapticPlaneU8<ActuatorSender>
       return Err(anyhow!("No actuators in the plane"));
     }
 
-    let (x, y) = Self::point_coords(point);
-
     return match effect {
       ActuatorEvent::Vibrate(intensity) => {
-        self.state.set(point, intensity);
+        self.state[point.coords] = intensity;
 
         let closest = self.search_closest(point);
         let geometry = self.centers.get(&closest)
@@ -322,15 +259,15 @@ mod tests {
   fn test_search_closest() {
     let mut plane = HapticPlaneU8::<()>::default();
 
-    plane.insert(Shape::from(Circle::new([10 , 10 ].into(), 10)), ());
-    plane.insert(Shape::from(Circle::new([10 , 245].into(), 10)), ());
-    plane.insert(Shape::from(Circle::new([245, 10 ].into(), 10)), ());
-    plane.insert(Shape::from(Circle::new([245, 245].into(), 10)), ());
+    plane.insert_no_recalc(Shape::from(Circle::new([10 , 10 ].into(), 10)), ());
+    plane.insert_no_recalc(Shape::from(Circle::new([10 , 245].into(), 10)), ());
+    plane.insert_no_recalc(Shape::from(Circle::new([245, 10 ].into(), 10)), ());
+    plane.insert_no_recalc(Shape::from(Circle::new([245, 245].into(), 10)), ());
 
-    plane.insert(Shape::from(Circle::new([100, 100].into(), 10)), ());
-    plane.insert(Shape::from(Circle::new([100, 155].into(), 10)), ());
-    plane.insert(Shape::from(Circle::new([155, 100].into(), 10)), ());
-    plane.insert(Shape::from(Circle::new([155, 155].into(), 10)), ());
+    plane.insert_no_recalc(Shape::from(Circle::new([100, 100].into(), 10)), ());
+    plane.insert_no_recalc(Shape::from(Circle::new([100, 155].into(), 10)), ());
+    plane.insert_no_recalc(Shape::from(Circle::new([155, 100].into(), 10)), ());
+    plane.insert_no_recalc(Shape::from(Circle::new([155, 155].into(), 10)), ());
 
     assert_eq!(plane.search_closest(&Point2::new(0  , 0  )), Point2::new(10 , 10 ));
     assert_eq!(plane.search_closest(&Point2::new(0  , 255)), Point2::new(10 , 245));

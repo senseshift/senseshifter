@@ -1,12 +1,15 @@
-use std::fmt::{Debug, Formatter};
-use std::hash::{Hash, Hasher};
-use crate::*;
+use std::fmt::Debug;
+use std::hash::Hash;
+use derivative::Derivative;
 use getset::Getters;
 use nalgebra::Vector2;
 use num::{Unsigned, Zero};
 
+use crate::*;
+
 #[cfg_attr(feature = "serde-serialize", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Getters)]
+#[derive(Getters, Derivative)]
+#[derivative(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Circle<T: Scalar, R: Scalar + Unsigned> {
   #[getset(get = "pub")]
   pub(crate) center: Point2<T>,
@@ -14,74 +17,16 @@ pub struct Circle<T: Scalar, R: Scalar + Unsigned> {
   pub(crate) radius: R,
 }
 
-impl<T, R> Debug for Circle<T, R>
-  where
-    T: Scalar + Debug,
-    R: Scalar + Unsigned + Debug,
-{
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("Circle")
-      .field("center", &self.center)
-      .field("radius", &self.radius)
-      .finish()
-  }
-}
-
 impl<T, R> Circle<T, R>
   where
     T: Scalar,
     R: Scalar + Unsigned,
 {
+  #[inline]
   pub fn new(center: Point2<T>, radius: R) -> Self {
     Self { center, radius }
   }
 }
-
-impl<T, R> Hash for Circle<T, R>
-  where
-    T: Scalar + Hash,
-    R: Scalar + Unsigned + Hash,
-{
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    self.center.hash(state);
-    self.radius.hash(state);
-  }
-}
-
-impl<T, R> Copy for Circle<T, R>
-  where
-    T: Scalar + Copy,
-    R: Scalar + Unsigned + Copy,
-{}
-
-impl<T, R> Clone for Circle<T, R>
-  where
-    T: Scalar + Clone,
-    R: Scalar + Unsigned + Clone,
-{
-  fn clone(&self) -> Self {
-    Self {
-      center: self.center.clone(),
-      radius: self.radius.clone(),
-    }
-  }
-}
-
-impl<T, R> PartialEq for Circle<T, R>
-  where
-    T: Scalar + PartialEq,
-    R: Scalar + Unsigned + PartialEq,
-{
-  fn eq(&self, other: &Self) -> bool {
-    self.center == other.center && self.radius == other.radius
-  }
-}
-
-impl<T, R> Eq for Circle<T, R>
-  where
-    T: Scalar + Eq,
-    R: Scalar + Unsigned + Eq,
-{}
 
 impl Circle<u8, u8> {
   pub fn bbox(&self) -> Rectangle<u8> {
@@ -109,10 +54,11 @@ impl Circle<u8, u8> {
 
 #[cfg(test)]
 mod tests {
-  use test_case::test_case;
-  use test_strategy::proptest;
   use crate::assert_vec_eq;
   use super::*;
+
+  use test_case::test_case;
+  use test_strategy::proptest;
 
   #[test_case(Circle::new(Point2::new(12 , 12 ), 10), Point2::new(2  , 2  ), Point2::new(22 , 22 ); "normal")]
   #[test_case(Circle::new(Point2::new(0  , 0  ), 10), Point2::new(0  , 0  ), Point2::new(10 , 10 ); "edge/top+start")]
@@ -190,5 +136,10 @@ mod tests {
     ];
 
     assert_vec_eq!(points, expected);
+  }
+
+  #[proptest]
+  fn circle_points_inside_u8_fuzz(circle: Circle<u8, u8>) {
+    let _out = circle.points_inside();
   }
 }

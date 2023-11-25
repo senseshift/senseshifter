@@ -28,17 +28,7 @@ impl Within<&Point2<u8>> for Circle<u8, u8>
       return other == &self.center;
     }
 
-    // manually calculate distance squared to avoid overflow
-    let dx: u16 = ((other.x as i16) - (self.center.x as i16)).abs() as u16;
-    let dx2: u16 = dx * dx;
-
-    let dy: u16 = ((other.y as i16) - (self.center.y as i16)).abs() as u16;
-    let dy2: u16 = dy * dy;
-
-    let distance_squared: u32 = dx2 as u32 + dy2 as u32;
-    let radius_squared: u32 = (self.radius as u32) * (self.radius as u32);
-
-    distance_squared <= radius_squared
+    return crate::distance_squared(&self.center, other) <= (self.radius as f64).powi(2);
   }
 }
 

@@ -436,4 +436,9 @@ mod tests {
   fn rectangle_distance_u8_fuzz(rectangle: Rectangle<u8>, point: PointView<u8, 2>) {
     let _out = rectangle.distance(&point.into());
   }
+
+  #[proptest]
+  fn triangle_distance_u8_fuzz(triangle: Triangle<u8>, point: PointView<u8, 2>) {
+    let _out = triangle.distance(&point.into());
+  }
 }

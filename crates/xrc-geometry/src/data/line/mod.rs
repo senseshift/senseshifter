@@ -1,9 +1,12 @@
-use std::fmt::{Debug, Formatter};
-use std::hash::{Hash, Hasher};
+use std::fmt::Debug;
+use std::hash::Hash;
+use derivative::Derivative;
 use crate::*;
-use num::{Num, Zero};
 use nalgebra::*;
 
+#[cfg_attr(feature = "serde-serialize", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Derivative)]
+#[derivative(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Line<T>
   where
     T: Scalar,
@@ -12,15 +15,13 @@ pub struct Line<T>
   pub end: Point2<T>,
 }
 
-impl<T> Debug for Line<T>
+impl<T> Line<T>
   where
-    T: Scalar + Debug,
+    T: Scalar,
 {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("Line")
-      .field("start", &self.start)
-      .field("end", &self.end)
-      .finish()
+  #[inline]
+  pub fn new_unchecked(start: Point2<T>, end: Point2<T>) -> Self {
+    Self { start, end }
   }
 }
 
@@ -34,14 +35,5 @@ impl<T> Line<T>
     } else {
       Self { start: b, end: a }
     }
-  }
-}
-
-impl<T> Line<T>
-  where
-    T: Scalar,
-{
-  pub fn new_unchecked(start: Point2<T>, end: Point2<T>) -> Self {
-    Self { start, end }
   }
 }

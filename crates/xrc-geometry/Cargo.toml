@@ -17,6 +17,7 @@ array-init = "2"
 nalgebra = "^0.32.3"
 simba = "^0.8.1"
 serde = { workspace = true, features = ["derive"], optional = true }
+derivative = "2.2.0"
 
 [dev-dependencies]
 test-case = "3"

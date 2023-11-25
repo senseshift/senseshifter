@@ -46,6 +46,11 @@ serde = ["dep:serde", "xrconnect-proto/serde", "xrc-transport-btle/serde"]
 grpc = ["tonic"]
 tonic = ["xrconnect-proto/tonic-server", "dep:tonic"]
 
+[[example]]
+name = "grpc-server"
+required-features = ["tonic", "proto-v1alpha1", "transport-full", "devices-full", "serde"]
+test = false
+
 [dependencies]
 xrconnect-proto = { workspace = true }
 xrc-transport = { workspace = true }
@@ -74,7 +79,3 @@ tonic = { version = "^0.10", optional = true }
 
 [dev-dependencies]
 tracing-subscriber = "^0.3.17"
-
-[[example]]
-name = "grpc-server"
-required-features = ["tonic", "proto-v1alpha1", "transport-full", "devices-full", "serde"]
