@@ -1,9 +1,11 @@
+use std::sync::Arc;
 use anyhow::Context;
 
 use btleplug::{
   api::{Central, CentralEvent, Manager as _, Peripheral as _, ScanFilter},
   platform::{Adapter, Manager, Peripheral, PeripheralId},
 };
+use dashmap::DashMap;
 
 use crate::{
   Result,
@@ -12,7 +14,8 @@ use tokio::sync::{
   oneshot, mpsc,
 };
 use futures::{future::FutureExt, StreamExt};
-use tracing::{error, info};
+use tracing::{error, info, instrument};
+use crate::transport::btle::manager::peripheral::{BtlePlugPeripheral};
 use crate::transport::TransportManagerEvent;
 
 pub enum BtlePlugManagerCommand {
@@ -23,16 +26,19 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
+  scanned_peripherals: Arc<DashMap<PeripheralId, BtlePlugPeripheral>>,
 }
 
 impl BtlePlugDeviceManagerTask {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
+    scanned_peripherals: Arc<DashMap<PeripheralId, BtlePlugPeripheral>>,
   ) -> Self {
     Self {
       command_receiver,
       event_sender,
+      scanned_peripherals,
     }
   }
 
@@ -66,7 +72,7 @@ impl BtlePlugDeviceManagerTask {
         event = events.next().fuse() => {
           match event {
             Some(event) => {
-              info!("Received btleplug event: {:?}", event);
+              self.handle_btle_event(event, &central).await;
             },
             None => {
               error!("btleplug event stream ended");
@@ -81,5 +87,49 @@ impl BtlePlugDeviceManagerTask {
     }
 
     Ok(())
+  }
+
+  async fn handle_btle_event(&self, event: CentralEvent, adapter: &Adapter) {
+    match event {
+      CentralEvent::DeviceDiscovered(peripheral_id) | CentralEvent::DeviceUpdated(peripheral_id) => {
+        self.handle_peripheral_event(&peripheral_id, adapter).await;
+      },
+      _ => {}
+    }
+  }
+
+  #[instrument(skip(self, adapter))]
+  async fn handle_peripheral_event(&self, peripheral_id: &PeripheralId, adapter: &Adapter) {
+    let entry = match self.scanned_peripherals.get_mut(peripheral_id) {
+      Some(entry) => {
+        let peripheral = entry.value();
+        if let Err(err) = self.event_sender.send(TransportManagerEvent::DeviceUpdated(Box::new(peripheral.clone()))).await {
+          error!("Unable to send device updated event: {}", err);
+        }
+
+        peripheral.clone()
+      },
+      None => {
+        let peripheral = match adapter.peripheral(peripheral_id).await {
+          Ok(peripheral) => peripheral,
+          Err(err) => {
+            error!("Unable to fetch peripheral: {}", err);
+            return;
+          }
+        };
+
+        let peripheral = BtlePlugPeripheral {
+          peripheral,
+        };
+
+        self.scanned_peripherals.insert(peripheral_id.clone(), peripheral.clone());
+
+        if let Err(err) = self.event_sender.send(TransportManagerEvent::DeviceDiscovered(Box::new(peripheral.clone()))).await {
+          error!("Unable to send device discovered event: {}", err);
+        }
+
+        peripheral
+      }
+    };
   }
 }

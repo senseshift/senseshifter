@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+use std::sync::Arc;
 use crate::Result;
 
 use tokio::sync::mpsc;
@@ -16,6 +18,11 @@ pub trait TransportManager: Send + Sync {
   fn name(&self) -> &'static str;
 }
 
+
+pub trait Device: Send + Sync + Debug {
+  fn id(&self) -> String;
+}
+
 #[derive(Debug)]
 pub enum TransportManagerEvent {
   /// Scan started
@@ -24,4 +31,7 @@ pub enum TransportManagerEvent {
   ScanStopped,
   /// Scan successfully finished (for periodic scans)
   ScanFinished,
+
+  DeviceDiscovered(Box<dyn Device>),
+  DeviceUpdated(Box<dyn Device>),
 }

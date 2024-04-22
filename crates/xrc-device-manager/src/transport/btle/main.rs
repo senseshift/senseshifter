@@ -12,7 +12,7 @@ async fn main() {
 
     let builder = BtlePlugDeviceManagerBuilder::default();
 
-    let manager = builder.finish(event_sender).unwrap();
+    let _manager = builder.finish(event_sender).unwrap();
 
     pin_mut!(event_receiver);
     while let Some(event) = event_receiver.recv().await {

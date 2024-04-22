@@ -16,7 +16,8 @@ edition = "2021"
 # Workspace members
 
 # Common dependencies
-btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }
+# btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }
+btleplug = { path = "../btleplug" }
 rshapes = { git = "https://github.com/senseshift/rshapes.git" }
 
 dashmap = "5"

@@ -1,5 +1,8 @@
 mod task;
+mod peripheral;
 
+use std::sync::Arc;
+use dashmap::DashMap;
 use futures::pin_mut;
 use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 
@@ -21,9 +24,12 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
   ) -> Result<Box<dyn TransportManager>> {
     let (task_command_sender, task_command_receiver) = mpsc::channel(256);
 
+    let scanned_peripherals = Arc::new(DashMap::new());
+
     let task = BtlePlugDeviceManagerTask::new(
       task_command_receiver,
       event_sender.clone(),
+      scanned_peripherals.clone(),
     );
 
     let task_handle: JoinHandle<_> = tokio::spawn(async move {
@@ -37,6 +43,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
     Ok(Box::new(BtlePlugDeviceManager {
       task_handle,
       task_command_sender,
+      scanned_peripherals,
     }))
   }
 }
@@ -44,6 +51,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 pub struct BtlePlugDeviceManager {
   task_handle: JoinHandle<()>,
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
+  scanned_peripherals: Arc<DashMap<btleplug::platform::PeripheralId, peripheral::BtlePlugPeripheral>>,
 }
 
 #[async_trait::async_trait]

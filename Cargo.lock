@@ -106,7 +106,6 @@ dependencies = [
 [[package]]
 name = "btleplug"
 version = "0.11.5"
-source = "git+https://github.com/senseshift/btleplug.git?branch=appearance#9570b1c00582bea98776ccccbe145a8b469040e2"
 dependencies = [
  "async-trait",
  "bitflags 2.5.0",
