@@ -3,5 +3,9 @@
 version = 3
 
 [[package]]
-name = "senseshifter-refreshed"
+name = "xrc-core"
+version = "0.1.0"
+
+[[package]]
+name = "xrc-device-transport-btleplug"
 version = "0.1.0"
