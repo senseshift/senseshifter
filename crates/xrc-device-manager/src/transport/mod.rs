@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use std::sync::Arc;
+
 use crate::Result;
 
 use tokio::sync::mpsc;
@@ -21,7 +21,6 @@ pub trait TransportManager: Send + Sync {
 
   async fn stop_scanning(&self) -> Result<()>;
 }
-
 
 pub trait Device: Send + Sync + Debug {
   fn id(&self) -> String;

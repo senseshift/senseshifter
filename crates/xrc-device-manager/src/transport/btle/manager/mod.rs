@@ -1,22 +1,20 @@
-mod task;
 mod peripheral;
+mod task;
 
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+
 use dashmap::DashMap;
 use futures::pin_mut;
 use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 
+use crate::transport::{TransportManager, TransportManagerBuilder, TransportManagerEvent};
+use crate::Result;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
 use tracing::{error, warn};
-use crate::Result;
-use crate::transport::{TransportManager, TransportManagerBuilder, TransportManagerEvent};
 
 #[derive(Default)]
-pub struct BtlePlugDeviceManagerBuilder {
-
-}
+pub struct BtlePlugDeviceManagerBuilder {}
 
 impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
   fn finish(
@@ -52,7 +50,8 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 pub struct BtlePlugDeviceManager {
   task_handle: JoinHandle<()>,
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
-  scanned_peripherals: Arc<DashMap<btleplug::platform::PeripheralId, peripheral::BtlePlugPeripheral>>,
+  scanned_peripherals:
+    Arc<DashMap<btleplug::platform::PeripheralId, peripheral::BtlePlugPeripheral>>,
 }
 
 #[async_trait::async_trait]
@@ -68,7 +67,8 @@ impl TransportManager for BtlePlugDeviceManager {
     let _ = match self
       .task_command_sender
       .send(BtlePlugManagerCommand::ScanStart(sender))
-      .await {
+      .await
+    {
       Ok(_) => (),
       Err(err) => {
         error!("Failed to send scan start command: {:?}", err);
@@ -90,7 +90,8 @@ impl TransportManager for BtlePlugDeviceManager {
     let _ = match self
       .task_command_sender
       .send(BtlePlugManagerCommand::ScanStop(sender))
-      .await {
+      .await
+    {
       Ok(_) => (),
       Err(err) => {
         error!("Failed to send scan stop command: {:?}", err);

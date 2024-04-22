@@ -1,6 +1,5 @@
-use std::sync::Arc;
-use btleplug::api::Peripheral;
 use crate::transport::Device;
+use btleplug::api::Peripheral;
 
 #[derive(Debug, Clone)]
 pub(super) struct BtlePlugPeripheral {

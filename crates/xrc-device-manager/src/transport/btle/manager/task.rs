@@ -1,35 +1,25 @@
-use std::sync::Arc;
 use anyhow::Context;
+use std::sync::Arc;
 
 use btleplug::{
-  api::{Central, CentralEvent, Manager as _, Peripheral as _, ScanFilter},
-  platform::{Adapter, Manager, Peripheral, PeripheralId},
+  api::{Central, CentralEvent, Manager as _, ScanFilter},
+  platform::{Adapter, Manager, PeripheralId},
 };
 use dashmap::DashMap;
 use derivative::Derivative;
 
-use crate::{
-  Result,
-};
-use tokio::sync::{
-  oneshot, mpsc,
-};
-use futures::{future::FutureExt, StreamExt};
-use tracing::{error, info, instrument};
-use crate::transport::btle::manager::peripheral::{BtlePlugPeripheral};
+use crate::transport::btle::manager::peripheral::BtlePlugPeripheral;
 use crate::transport::TransportManagerEvent;
+use crate::Result;
+use futures::{future::FutureExt, StreamExt};
+use tokio::sync::{mpsc, oneshot};
+use tracing::{error, info, instrument};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub enum BtlePlugManagerCommand {
-  ScanStart(
-    #[derivative(Debug="ignore")]
-    oneshot::Sender<Result<()>>
-  ),
-  ScanStop(
-    #[derivative(Debug="ignore")]
-    oneshot::Sender<Result<()>>
-  ),
+  ScanStart(#[derivative(Debug = "ignore")] oneshot::Sender<Result<()>>),
+  ScanStop(#[derivative(Debug = "ignore")] oneshot::Sender<Result<()>>),
 }
 
 pub(crate) struct BtlePlugDeviceManagerTask {
@@ -117,7 +107,7 @@ impl BtlePlugDeviceManagerTask {
         if let Err(_err) = result {
           error!("Unable to send scanning started reply");
         }
-      },
+      }
       BtlePlugManagerCommand::ScanStop(sender) => {
         info!("Stopping Bluetooth LE scanning");
         let result = central.stop_scan().await;
@@ -131,24 +121,31 @@ impl BtlePlugDeviceManagerTask {
 
   async fn handle_btle_event(&self, event: CentralEvent, adapter: &Adapter) {
     match event {
-      CentralEvent::DeviceDiscovered(peripheral_id) | CentralEvent::DeviceUpdated(peripheral_id) => {
+      CentralEvent::DeviceDiscovered(peripheral_id)
+      | CentralEvent::DeviceUpdated(peripheral_id) => {
         self.handle_peripheral_event(&peripheral_id, adapter).await;
-      },
+      }
       _ => {}
     }
   }
 
   #[instrument(skip(self, adapter))]
   async fn handle_peripheral_event(&self, peripheral_id: &PeripheralId, adapter: &Adapter) {
-    let entry = match self.scanned_peripherals.get_mut(peripheral_id) {
+    let _entry = match self.scanned_peripherals.get_mut(peripheral_id) {
       Some(entry) => {
         let peripheral = entry.value();
-        if let Err(err) = self.event_sender.send(TransportManagerEvent::DeviceUpdated(Box::new(peripheral.clone()))).await {
+        if let Err(err) = self
+          .event_sender
+          .send(TransportManagerEvent::DeviceUpdated(Box::new(
+            peripheral.clone(),
+          )))
+          .await
+        {
           error!("Unable to send device updated event: {}", err);
         }
 
         peripheral.clone()
-      },
+      }
       None => {
         let peripheral = match adapter.peripheral(peripheral_id).await {
           Ok(peripheral) => peripheral,
@@ -158,20 +155,24 @@ impl BtlePlugDeviceManagerTask {
           }
         };
 
-        let peripheral = BtlePlugPeripheral {
-          peripheral,
-        };
+        let peripheral = BtlePlugPeripheral { peripheral };
 
-        self.scanned_peripherals.insert(peripheral_id.clone(), peripheral.clone());
+        self
+          .scanned_peripherals
+          .insert(*peripheral_id, peripheral.clone());
 
-        if let Err(err) = self.event_sender.send(TransportManagerEvent::DeviceDiscovered(Box::new(peripheral.clone()))).await {
+        if let Err(err) = self
+          .event_sender
+          .send(TransportManagerEvent::DeviceDiscovered(Box::new(
+            peripheral.clone(),
+          )))
+          .await
+        {
           error!("Unable to send device discovered event: {}", err);
         }
 
         peripheral
       }
     };
-
-
   }
 }
