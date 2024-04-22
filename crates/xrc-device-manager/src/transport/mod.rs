@@ -16,6 +16,10 @@ pub trait TransportManagerBuilder: Send {
 #[async_trait::async_trait]
 pub trait TransportManager: Send + Sync {
   fn name(&self) -> &'static str;
+
+  async fn start_scanning(&self) -> Result<()>;
+
+  async fn stop_scanning(&self) -> Result<()>;
 }
 
 

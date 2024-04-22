@@ -16,10 +16,11 @@ required-features = ["serde", "tracing_subscriber"]
 btleplug = { workspace = true }
 
 anyhow = { workspace = true }
-thiserror = { workspace = true }
-tracing = { workspace = true }
+derivative = { workspace = true }
 getset = { workspace = true }
 serde = { workspace = true, optional = true, features = ["derive"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }
 
 async-trait = { workspace = true }
 futures = { workspace = true }

@@ -6,6 +6,7 @@ use btleplug::{
   platform::{Adapter, Manager, Peripheral, PeripheralId},
 };
 use dashmap::DashMap;
+use derivative::Derivative;
 
 use crate::{
   Result,
@@ -18,9 +19,17 @@ use tracing::{error, info, instrument};
 use crate::transport::btle::manager::peripheral::{BtlePlugPeripheral};
 use crate::transport::TransportManagerEvent;
 
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub enum BtlePlugManagerCommand {
-  ScanStart(oneshot::Sender<Result<()>>),
-  ScanStop(oneshot::Sender<Result<()>>),
+  ScanStart(
+    #[derivative(Debug="ignore")]
+    oneshot::Sender<Result<()>>
+  ),
+  ScanStop(
+    #[derivative(Debug="ignore")]
+    oneshot::Sender<Result<()>>
+  ),
 }
 
 pub(crate) struct BtlePlugDeviceManagerTask {
@@ -58,8 +67,6 @@ impl BtlePlugDeviceManagerTask {
       .nth(0)
       .context("Unable to find adapters.")?;
 
-    central.start_scan(ScanFilter::default()).await;
-
     info!("Adapter found: {:?}", central.adapter_info().await?);
 
     let mut events = central
@@ -82,11 +89,44 @@ impl BtlePlugDeviceManagerTask {
               break;
             }
           }
+        },
+        command = self.command_receiver.recv().fuse() => {
+          match command {
+            Some(command) => {
+              self.handle_command(command, &central).await;
+            },
+            None => {
+              error!("Command channel closed");
+              break;
+            }
+          }
         }
       }
     }
 
     Ok(())
+  }
+
+  #[instrument(skip(self, central))]
+  async fn handle_command(&self, command: BtlePlugManagerCommand, central: &Adapter) {
+    match command {
+      BtlePlugManagerCommand::ScanStart(sender) => {
+        info!("Starting Bluetooth LE scanning");
+        let result = central.start_scan(ScanFilter::default()).await;
+        let result = sender.send(result.map_err(|err| err.into()));
+        if let Err(_err) = result {
+          error!("Unable to send scanning started reply");
+        }
+      },
+      BtlePlugManagerCommand::ScanStop(sender) => {
+        info!("Stopping Bluetooth LE scanning");
+        let result = central.stop_scan().await;
+        let result = sender.send(result.map_err(|err| err.into()));
+        if let Err(_err) = result {
+          error!("Unable to send scanning stopped reply");
+        }
+      }
+    }
   }
 
   async fn handle_btle_event(&self, event: CentralEvent, adapter: &Adapter) {
@@ -131,5 +171,7 @@ impl BtlePlugDeviceManagerTask {
         peripheral
       }
     };
+
+
   }
 }

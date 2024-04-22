@@ -2,11 +2,12 @@ mod task;
 mod peripheral;
 
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use dashmap::DashMap;
 use futures::pin_mut;
 use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
 use tracing::{error, warn};
 use crate::Result;
@@ -58,5 +59,49 @@ pub struct BtlePlugDeviceManager {
 impl TransportManager for BtlePlugDeviceManager {
   fn name(&self) -> &'static str {
     "BtlePlug"
+  }
+
+  async fn start_scanning(&self) -> Result<()> {
+    let (sender, receiver) = oneshot::channel();
+
+    // Send the command to the task
+    let _ = match self
+      .task_command_sender
+      .send(BtlePlugManagerCommand::ScanStart(sender))
+      .await {
+      Ok(_) => (),
+      Err(err) => {
+        error!("Failed to send scan start command: {:?}", err);
+        return Err(err.into());
+      }
+    };
+
+    // wait for the result
+    receiver.await.unwrap_or_else(|err| {
+      error!("Failed to receive scan start result: {:?}", err);
+      Err(err.into())
+    })
+  }
+
+  async fn stop_scanning(&self) -> Result<()> {
+    let (sender, receiver) = oneshot::channel();
+
+    // Send the command to the task
+    let _ = match self
+      .task_command_sender
+      .send(BtlePlugManagerCommand::ScanStop(sender))
+      .await {
+      Ok(_) => (),
+      Err(err) => {
+        error!("Failed to send scan stop command: {:?}", err);
+        return Err(err.into());
+      }
+    };
+
+    // wait for the result
+    receiver.await.unwrap_or_else(|err| {
+      error!("Failed to receive scan stop result: {:?}", err);
+      Err(err.into())
+    })
   }
 }
