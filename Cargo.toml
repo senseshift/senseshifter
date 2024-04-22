@@ -16,11 +16,18 @@ edition = "2021"
 # Workspace members
 
 # Common dependencies
+btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }
 rshapes = { git = "https://github.com/senseshift/rshapes.git" }
 
+dashmap = "5"
+uuid = "^1.8.0"
+tokio-serial = "^5.4.4"
+
 anyhow = "1"
+derivative = "^2.2.0"
 serde = "1"
 serde_json = "1"
+thiserror = "1"
 tracing = "^0.1.37"
 getset = "^0.1.2"
 
@@ -29,12 +36,13 @@ async-stream = "^0.3.5"
 futures = "^0.3.26"
 futures-util = "^0.3.26"
 tokio = "1"
-tokio-util = "^0.7.9"
 tokio-stream = "^0.1.14"
+tokio-util = "^0.7.9"
 
 # Common Dev dependencies
 criterion = { version = "^0.5", features = ["html_reports"] }
 flaky_test = "^0.2.2"
+mockall = "^0.12.1"
 mutants = "^0.0.3"
 test-case = "3"
 test-strategy = "^0.3.1"

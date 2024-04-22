@@ -1,0 +1,29 @@
+[package]
+name = "xrc-device-manager"
+version.workspace = true
+edition.workspace = true
+
+[features]
+serde = ["dep:serde", "btleplug/serde"]
+tracing_subscriber = ["dep:tracing-subscriber"]
+
+[[bin]]
+name = "xrc-device-manager-btle"
+path = "src/transport/btle/main.rs"
+required-features = ["serde", "tracing_subscriber"]
+
+[dependencies]
+btleplug = { workspace = true }
+
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+getset = { workspace = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
+
+async-trait = { workspace = true }
+futures = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+dashmap = { workspace = true }
+
+tracing-subscriber = { version = "0.3.18", optional = true }
