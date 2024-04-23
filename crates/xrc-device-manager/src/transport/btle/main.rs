@@ -1,6 +1,7 @@
 use futures::pin_mut;
 use tokio::sync::mpsc;
 
+use xrc_device_manager::transport::btle::protocol::bhaptics::BhapticsProtocolHandlerBuilder;
 use xrc_device_manager::transport::btle::BtlePlugDeviceManagerBuilder;
 use xrc_device_manager::transport::TransportManagerBuilder;
 
@@ -10,7 +11,8 @@ async fn main() {
 
   let (event_sender, event_receiver) = mpsc::channel(256);
 
-  let builder = BtlePlugDeviceManagerBuilder::default();
+  let builder = BtlePlugDeviceManagerBuilder::default()
+    .with_protocol(Box::<BhapticsProtocolHandlerBuilder>::default());
 
   let manager = builder.finish(event_sender).unwrap();
 

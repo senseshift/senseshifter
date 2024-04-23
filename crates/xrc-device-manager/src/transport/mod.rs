@@ -6,7 +6,7 @@ use tokio::sync::mpsc;
 
 pub mod btle;
 
-pub trait TransportManagerBuilder: Send {
+pub trait TransportManagerBuilder: Default + Send {
   fn finish(
     &self,
     event_sender: mpsc::Sender<TransportManagerEvent>,
@@ -22,9 +22,19 @@ pub trait TransportManager: Send + Sync {
   async fn stop_scanning(&self) -> Result<()>;
 }
 
-pub trait Device: Send + Sync + Debug {
+pub trait DeviceCandidate: Send + Sync + Debug {
   fn id(&self) -> String;
+
+  fn display_name(&self) -> String {
+    self.id()
+  }
+
+  fn connectible(&self) -> bool {
+    false
+  }
 }
+
+pub trait Device: DeviceCandidate {}
 
 #[derive(Debug)]
 pub enum TransportManagerEvent {
@@ -35,6 +45,6 @@ pub enum TransportManagerEvent {
   /// Scan successfully finished (for periodic scans)
   ScanFinished,
 
-  DeviceDiscovered(Box<dyn Device>),
-  DeviceUpdated(Box<dyn Device>),
+  DeviceDiscovered(Box<dyn DeviceCandidate>),
+  DeviceUpdated(Box<dyn DeviceCandidate>),
 }

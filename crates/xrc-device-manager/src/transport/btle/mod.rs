@@ -1,4 +1,4 @@
 mod manager;
-mod protocol;
+pub mod protocol;
 
 pub use manager::*;

@@ -7,6 +7,7 @@ use dashmap::DashMap;
 use futures::pin_mut;
 use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 
+use crate::transport::btle::protocol::{BtlePlugProtocolHandler, BtlePlugProtocolHandlerBuilder};
 use crate::transport::{TransportManager, TransportManagerBuilder, TransportManagerEvent};
 use crate::Result;
 use tokio::sync::{mpsc, oneshot};
@@ -14,7 +15,19 @@ use tokio::task::JoinHandle;
 use tracing::{error, warn};
 
 #[derive(Default)]
-pub struct BtlePlugDeviceManagerBuilder {}
+pub struct BtlePlugDeviceManagerBuilder {
+  protocol_handlers: Vec<Box<dyn BtlePlugProtocolHandlerBuilder>>,
+}
+
+impl BtlePlugDeviceManagerBuilder {
+  pub fn with_protocol(
+    mut self,
+    protocol_handler: Box<dyn BtlePlugProtocolHandlerBuilder>,
+  ) -> Self {
+    self.protocol_handlers.push(protocol_handler);
+    self
+  }
+}
 
 impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
   fn finish(
@@ -25,12 +38,22 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 
     let scanned_peripherals = Arc::new(DashMap::new());
 
+    // Create the protocol handlers
+    let protocol_handlers = Arc::new(DashMap::new());
+    for handler_builder in &self.protocol_handlers {
+      let handler = handler_builder.finish();
+      protocol_handlers.insert(handler.name().to_string(), handler);
+    }
+
+    // Create the task
     let task = BtlePlugDeviceManagerTask::new(
       task_command_receiver,
       event_sender.clone(),
       scanned_peripherals.clone(),
+      protocol_handlers.clone(),
     );
 
+    // Spawn the task
     let task_handle: JoinHandle<_> = tokio::spawn(async move {
       pin_mut!(task);
       if let Err(err) = task.run().await {
@@ -43,6 +66,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
       task_handle,
       task_command_sender,
       scanned_peripherals,
+      protocol_handlers,
     }))
   }
 }
@@ -52,6 +76,7 @@ pub struct BtlePlugDeviceManager {
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
   scanned_peripherals:
     Arc<DashMap<btleplug::platform::PeripheralId, peripheral::BtlePlugPeripheral>>,
+  protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
 }
 
 #[async_trait::async_trait]
