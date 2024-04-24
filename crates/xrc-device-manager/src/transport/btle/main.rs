@@ -1,9 +1,10 @@
 use futures::pin_mut;
 use tokio::sync::mpsc;
+use tracing::{error, info};
 
 use xrc_device_manager::transport::btle::protocol::bhaptics::BhapticsProtocolHandlerBuilder;
 use xrc_device_manager::transport::btle::BtlePlugDeviceManagerBuilder;
-use xrc_device_manager::transport::TransportManagerBuilder;
+use xrc_device_manager::transport::{TransportManagerBuilder, TransportManagerEvent};
 
 #[tokio::main]
 async fn main() {
@@ -23,6 +24,28 @@ async fn main() {
 
   pin_mut!(event_receiver);
   while let Some(event) = event_receiver.recv().await {
-    println!("Event: {:?}", event);
+    info!("Got event: {:?}", event);
+
+    match event {
+      TransportManagerEvent::DeviceDiscovered {
+        device,
+        id: _id,
+      } | TransportManagerEvent::DeviceUpdated {
+        device,
+        id: _id,
+      } => {
+        let connect_result = device.connect().await;
+
+        match connect_result {
+          Ok(_) => {
+            info!("Connected to device: {:?}", device);
+          },
+          Err(err) => {
+            error!("Error connecting to device: {:?}", err);
+          }
+        };
+      }
+      _ => {}
+    }
   }
 }

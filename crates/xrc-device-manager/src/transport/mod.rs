@@ -39,4 +39,9 @@ pub enum TransportManagerEvent {
     id: String,
     device: Box<dyn Device>,
   },
+  DeviceConnected {
+    id: String,
+    device: Box<dyn Device>,
+  },
+  DeviceDisconnected(String),
 }

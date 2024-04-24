@@ -121,7 +121,7 @@ impl BtlePlugDeviceManagerTask {
         if let Err(_err) = result {
           error!("Unable to send scanning stopped reply");
         }
-      }
+      },
     }
   }
 
@@ -130,6 +130,18 @@ impl BtlePlugDeviceManagerTask {
       CentralEvent::DeviceDiscovered(peripheral_id)
       | CentralEvent::DeviceUpdated(peripheral_id) => {
         self.handle_peripheral_event(&peripheral_id, adapter).await;
+      }
+      CentralEvent::DeviceConnected(peripheral_id) => {
+        self.event_sender.send(TransportManagerEvent::DeviceConnected {
+          id: peripheral_id.to_string(),
+          device: dyn_clone::clone(self.scanned_peripherals.get(&peripheral_id).unwrap().value()),
+        }).await.unwrap()
+      }
+      CentralEvent::DeviceDisconnected(peripheral_id) => {
+        self.scanned_peripherals.remove(&peripheral_id);
+        self.event_sender.send(TransportManagerEvent::DeviceDisconnected(peripheral_id.to_string())).await.unwrap_or_else(|err| {
+          error!("Unable to send device disconnected event: {}", err);
+        });
       }
       _ => {}
     }
