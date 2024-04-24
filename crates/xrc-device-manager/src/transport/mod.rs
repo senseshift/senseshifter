@@ -4,6 +4,7 @@ use crate::Result;
 
 use tokio::sync::mpsc;
 use dyn_clone::DynClone;
+use crate::transport::btle::api::Device;
 
 pub mod btle;
 
@@ -23,29 +24,19 @@ pub trait TransportManager: Send + Sync {
   async fn stop_scanning(&self) -> Result<()>;
 }
 
-pub trait DeviceCandidate: Send + Sync + Debug + DynClone {
-  fn id(&self) -> String;
-
-  fn display_name(&self) -> String {
-    self.id()
-  }
-
-  fn connectible(&self) -> bool {
-    false
-  }
-}
-
-pub trait Device: DeviceCandidate {}
-
 #[derive(Debug)]
 pub enum TransportManagerEvent {
   /// Scan started
   ScanStarted,
   /// Continuous scan stopped
   ScanStopped,
-  /// Scan successfully finished (for periodic scans)
-  ScanFinished,
 
-  DeviceDiscovered(String),
-  DeviceUpdated(String),
+  DeviceDiscovered {
+    id: String,
+    device: Box<dyn Device>,
+  },
+  DeviceUpdated {
+    id: String,
+    device: Box<dyn Device>,
+  },
 }

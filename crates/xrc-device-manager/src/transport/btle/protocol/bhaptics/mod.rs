@@ -3,8 +3,7 @@ use btleplug::api::{Peripheral as _, PeripheralProperties};
 use btleplug::platform::Peripheral;
 use tracing::{info, instrument};
 use crate::Result;
-use crate::transport::DeviceCandidate;
-use super::{BtlePlugDeviceCandidate, BtlePlugProtocolHandler, BtlePlugProtocolHandlerBuilder};
+use crate::transport::btle::api::*;
 
 #[derive(Debug, Clone)]
 pub(super) struct BhapticsDevice {
@@ -12,23 +11,17 @@ pub(super) struct BhapticsDevice {
   name: String,
 }
 
-impl DeviceCandidate for BhapticsDevice {
+impl Device for BhapticsDevice {
   fn id(&self) -> String {
-    self.peripheral.address().to_string()
+    self.peripheral.id().to_string()
   }
 
-  fn display_name(&self) -> String {
-    // Here we assume that device was specified correctly and local_name is not None
+  fn name(&self) -> String {
     self.name.clone()
   }
-}
 
-#[async_trait::async_trait]
-impl BtlePlugDeviceCandidate for BhapticsDevice {
-  #[instrument(skip(self))]
-  async fn update_properties(&mut self) -> Result<()> {
-    info!("Updating properties for bhaptics device");
-    Ok(())
+  fn connectible(&self) -> bool {
+    true
   }
 }
 
@@ -50,7 +43,7 @@ impl BtlePlugProtocolHandler for BhapticsProtocolHandler {
   }
 
   #[instrument(skip(self, peripheral))]
-  fn specify_protocol(&self, peripheral: Peripheral, properties: Option<PeripheralProperties>) -> Result<Option<Box<dyn BtlePlugDeviceCandidate>>> {
+  fn specify_protocol(&self, peripheral: Peripheral, properties: Option<PeripheralProperties>) -> Result<Option<Box<dyn Device>>> {
     let properties = match properties {
       Some(properties) => properties,
       None => return Ok(None),

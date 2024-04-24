@@ -7,10 +7,11 @@ use btleplug::{
   platform::{Adapter, Manager, PeripheralId},
 };
 use dashmap::DashMap;
+use dyn_clone::DynClone;
 use derivative::Derivative;
 
-use crate::transport::btle::protocol::{BtlePlugDeviceCandidate, BtlePlugProtocolHandler};
-use crate::transport::{DeviceCandidate, TransportManagerEvent};
+use crate::transport::btle::api::*;
+use crate::transport::{TransportManagerEvent};
 use crate::Result;
 use futures::{future::FutureExt, StreamExt};
 use tokio::sync::{mpsc, oneshot};
@@ -26,7 +27,7 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
-  scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn BtlePlugDeviceCandidate>>>,
+  scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn Device>>>,
   protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
 }
 
@@ -34,7 +35,7 @@ impl BtlePlugDeviceManagerTask {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
-    scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn BtlePlugDeviceCandidate>>>,
+    scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn Device>>>,
     protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
   ) -> Self {
     Self {
@@ -141,17 +142,12 @@ impl BtlePlugDeviceManagerTask {
     if let Some(mut existing) = existing {
       let mut peripheral = existing.value_mut();
 
-      match peripheral.update_properties().await {
-        Ok(_) => {}
-        Err(err) => {
-          error!("Unable to update properties: {}", err);
-          return;
-        }
-      }
-
       if let Err(err) = self
         .event_sender
-        .send(TransportManagerEvent::DeviceUpdated(peripheral.id().to_string()))
+        .send(TransportManagerEvent::DeviceUpdated {
+          id: peripheral.id().to_string(),
+          device: dyn_clone::clone(peripheral),
+        })
         .await
       {
         error!("Unable to send device updated event: {}", err);
@@ -195,16 +191,14 @@ impl BtlePlugDeviceManagerTask {
       }
     };
 
-    if let Err(err) = candidate.update_properties().await {
-      error!("Unable to initially update properties: {}", err);
-      return;
-    }
-
-    self.scanned_peripherals.insert(*peripheral_id, candidate);
+    self.scanned_peripherals.insert(*peripheral_id, dyn_clone::clone_box(&*candidate));
 
     if let Err(err) = self
       .event_sender
-      .send(TransportManagerEvent::DeviceDiscovered(peripheral_id.to_string()))
+      .send(TransportManagerEvent::DeviceDiscovered {
+        id: candidate.id(),
+        device: candidate,
+      })
       .await
     {
       error!("Unable to send device discovered event: {}", err);
