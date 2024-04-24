@@ -3,6 +3,7 @@ use std::fmt::Debug;
 use crate::Result;
 
 use tokio::sync::mpsc;
+use dyn_clone::DynClone;
 
 pub mod btle;
 
@@ -22,7 +23,7 @@ pub trait TransportManager: Send + Sync {
   async fn stop_scanning(&self) -> Result<()>;
 }
 
-pub trait DeviceCandidate: Send + Sync + Debug {
+pub trait DeviceCandidate: Send + Sync + Debug + DynClone {
   fn id(&self) -> String;
 
   fn display_name(&self) -> String {
@@ -45,6 +46,6 @@ pub enum TransportManagerEvent {
   /// Scan successfully finished (for periodic scans)
   ScanFinished,
 
-  DeviceDiscovered(Box<dyn DeviceCandidate>),
-  DeviceUpdated(Box<dyn DeviceCandidate>),
+  DeviceDiscovered(String),
+  DeviceUpdated(String),
 }

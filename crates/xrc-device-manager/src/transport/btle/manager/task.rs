@@ -9,9 +9,8 @@ use btleplug::{
 use dashmap::DashMap;
 use derivative::Derivative;
 
-use crate::transport::btle::manager::peripheral::BtlePlugPeripheral;
 use crate::transport::btle::protocol::{BtlePlugDeviceCandidate, BtlePlugProtocolHandler};
-use crate::transport::TransportManagerEvent;
+use crate::transport::{DeviceCandidate, TransportManagerEvent};
 use crate::Result;
 use futures::{future::FutureExt, StreamExt};
 use tokio::sync::{mpsc, oneshot};
@@ -27,7 +26,7 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
-  scanned_peripherals: Arc<DashMap<PeripheralId, BtlePlugPeripheral>>,
+  scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn BtlePlugDeviceCandidate>>>,
   protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
 }
 
@@ -35,7 +34,7 @@ impl BtlePlugDeviceManagerTask {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
-    scanned_peripherals: Arc<DashMap<PeripheralId, BtlePlugPeripheral>>,
+    scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn BtlePlugDeviceCandidate>>>,
     protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
   ) -> Self {
     Self {
@@ -137,49 +136,28 @@ impl BtlePlugDeviceManagerTask {
 
   #[instrument(skip(self, adapter))]
   async fn handle_peripheral_event(&self, peripheral_id: &PeripheralId, adapter: &Adapter) {
-    // let entry = match self.scanned_peripherals.get_mut(peripheral_id) {
-    //   Some(entry) => {
-    //     let peripheral = entry.value();
-    //     if let Err(err) = self
-    //       .event_sender
-    //       .send(TransportManagerEvent::DeviceUpdated(Box::new(
-    //         peripheral.clone(),
-    //       )))
-    //       .await
-    //     {
-    //       error!("Unable to send device updated event: {}", err);
-    //     }
-    //
-    //     peripheral.clone()
-    //   }
-    //   None => {
-    //     let peripheral = match adapter.peripheral(peripheral_id).await {
-    //       Ok(peripheral) => peripheral,
-    //       Err(err) => {
-    //         error!("Unable to fetch peripheral: {}", err);
-    //         return;
-    //       }
-    //     };
-    //
-    //     let peripheral = BtlePlugPeripheral { peripheral };
-    //
-    //     self
-    //       .scanned_peripherals
-    //       .insert(*peripheral_id, peripheral.clone());
-    //
-    //     if let Err(err) = self
-    //       .event_sender
-    //       .send(TransportManagerEvent::DeviceDiscovered(Box::new(
-    //         peripheral.clone(),
-    //       )))
-    //       .await
-    //     {
-    //       error!("Unable to send device discovered event: {}", err);
-    //     }
-    //
-    //     peripheral
-    //   }
-    // };
+    let existing = self.scanned_peripherals.get_mut(peripheral_id);
+
+    if let Some(mut existing) = existing {
+      let mut peripheral = existing.value_mut();
+
+      match peripheral.update_properties().await {
+        Ok(_) => {}
+        Err(err) => {
+          error!("Unable to update properties: {}", err);
+          return;
+        }
+      }
+
+      if let Err(err) = self
+        .event_sender
+        .send(TransportManagerEvent::DeviceUpdated(peripheral.id().to_string()))
+        .await
+      {
+        error!("Unable to send device updated event: {}", err);
+      }
+      return;
+    }
 
     let peripheral = match adapter.peripheral(peripheral_id).await {
       Ok(peripheral) => peripheral,
@@ -197,11 +175,39 @@ impl BtlePlugDeviceManagerTask {
       }
     };
 
-    let candidate: Option<Box<dyn BtlePlugDeviceCandidate>> = self.protocol_handlers.iter().find_map(move |entry| {
-      entry.value().specify_protocol(peripheral.clone(), peripheral_properties.clone()).unwrap_or_else(|err| {
+    let mut candidate = None;
+    for entry in self.protocol_handlers.iter() {
+      let handler = entry.value();
+      candidate = handler.specify_protocol(peripheral.clone(), peripheral_properties.clone()).unwrap_or_else(|err| {
         error!("Unable to specify protocol: {}", err);
         None
-      })
-    });
+      });
+
+      if candidate.is_some() {
+        break;
+      }
+    }
+
+    let mut candidate = match candidate {
+      Some(candidate) => candidate,
+      None => {
+        return;
+      }
+    };
+
+    if let Err(err) = candidate.update_properties().await {
+      error!("Unable to initially update properties: {}", err);
+      return;
+    }
+
+    self.scanned_peripherals.insert(*peripheral_id, candidate);
+
+    if let Err(err) = self
+      .event_sender
+      .send(TransportManagerEvent::DeviceDiscovered(peripheral_id.to_string()))
+      .await
+    {
+      error!("Unable to send device discovered event: {}", err);
+    }
   }
 }

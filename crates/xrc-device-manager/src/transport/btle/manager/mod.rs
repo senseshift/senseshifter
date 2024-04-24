@@ -7,8 +7,8 @@ use dashmap::DashMap;
 use futures::pin_mut;
 use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 
-use crate::transport::btle::protocol::{BtlePlugProtocolHandler, BtlePlugProtocolHandlerBuilder};
-use crate::transport::{TransportManager, TransportManagerBuilder, TransportManagerEvent};
+use crate::transport::btle::protocol::{BtlePlugDeviceCandidate, BtlePlugProtocolHandler, BtlePlugProtocolHandlerBuilder};
+use crate::transport::{DeviceCandidate, TransportManager, TransportManagerBuilder, TransportManagerEvent};
 use crate::Result;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
@@ -75,7 +75,7 @@ pub struct BtlePlugDeviceManager {
   task_handle: JoinHandle<()>,
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
   scanned_peripherals:
-    Arc<DashMap<btleplug::platform::PeripheralId, peripheral::BtlePlugPeripheral>>,
+    Arc<DashMap<btleplug::platform::PeripheralId, Box<dyn BtlePlugDeviceCandidate>>>,
   protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
 }
 

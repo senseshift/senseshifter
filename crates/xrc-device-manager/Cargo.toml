@@ -26,5 +26,6 @@ async-trait = { workspace = true }
 futures = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 dashmap = { workspace = true }
+dyn-clone = "1"
 
 tracing-subscriber = { version = "0.3.18", optional = true }
