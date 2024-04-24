@@ -10,7 +10,7 @@ use dashmap::DashMap;
 use derivative::Derivative;
 
 use crate::transport::btle::manager::peripheral::BtlePlugPeripheral;
-use crate::transport::btle::protocol::BtlePlugProtocolHandler;
+use crate::transport::btle::protocol::{BtlePlugDeviceCandidate, BtlePlugProtocolHandler};
 use crate::transport::TransportManagerEvent;
 use crate::Result;
 use futures::{future::FutureExt, StreamExt};
@@ -189,12 +189,19 @@ impl BtlePlugDeviceManagerTask {
       }
     };
 
-    let _peripheral_properties = match peripheral.properties().await {
+    let peripheral_properties = match peripheral.properties().await {
       Ok(properties) => properties,
       Err(err) => {
         error!("Unable to fetch peripheral properties: {}", err);
         return;
       }
     };
+
+    let candidate: Option<Box<dyn BtlePlugDeviceCandidate>> = self.protocol_handlers.iter().find_map(move |entry| {
+      entry.value().specify_protocol(peripheral.clone(), peripheral_properties.clone()).unwrap_or_else(|err| {
+        error!("Unable to specify protocol: {}", err);
+        None
+      })
+    });
   }
 }
