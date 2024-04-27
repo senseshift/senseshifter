@@ -16,6 +16,7 @@ use crate::api::*;
 use crate::Result;
 use futures::{future::FutureExt, StreamExt};
 use tokio::sync::{mpsc, oneshot};
+use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
 
 #[derive(Derivative)]
@@ -35,6 +36,7 @@ pub(crate) struct BtlePlugDeviceManagerTask {
   scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
   protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
   adapter_ready: Arc<AtomicBool>,
+  cancel_token: CancellationToken,
 }
 
 impl BtlePlugDeviceManagerTask {
@@ -44,6 +46,7 @@ impl BtlePlugDeviceManagerTask {
     scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
     protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
     adapter_connected: Arc<AtomicBool>,
+    cancel_token: CancellationToken,
   ) -> Self {
     Self {
       command_receiver,
@@ -51,6 +54,7 @@ impl BtlePlugDeviceManagerTask {
       scanned_peripherals,
       protocol_handlers,
       adapter_ready: adapter_connected,
+      cancel_token,
     }
   }
 
@@ -124,6 +128,10 @@ impl BtlePlugDeviceManagerTask {
               break;
             }
           }
+        },
+        _ = self.cancel_token.cancelled().fuse() => {
+          info!("Task cancelled");
+          break;
         }
       }
     }

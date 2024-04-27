@@ -12,8 +12,9 @@ use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 use crate::api::*;
 use crate::Result;
 use tokio::sync::{mpsc, oneshot};
+use tokio_util::sync::CancellationToken;
 
-use tracing::{error, instrument, warn};
+use tracing::{error, info, instrument};
 
 #[derive(Default)]
 pub struct BtlePlugDeviceManagerBuilder {
@@ -49,12 +50,14 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
     let discovered_devices = Arc::new(DashMap::new());
 
     // Create the task
+    let cancel_token = CancellationToken::new();
     let mut task = BtlePlugDeviceManagerTask::new(
       task_command_receiver,
       event_sender.clone(),
       discovered_devices.clone(),
       protocol_handlers,
       adapter_ready.clone(),
+      cancel_token.clone(),
     );
 
     // Spawn the task
@@ -62,13 +65,14 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
       if let Err(err) = task.run().await {
         error!("BtlePlug Device Manager Task failed: {:?}", err);
       }
-      warn!("BtlePlug Device Manager Task exited.");
+      info!("BtlePlug Device Manager Task exited.");
     });
 
     Ok(Box::new(BtlePlugDeviceManager {
       task_command_sender,
       discovered_devices,
       adapter_ready,
+      cancel_token,
     }))
   }
 }
@@ -77,6 +81,7 @@ pub struct BtlePlugDeviceManager {
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
   discovered_devices: Arc<DashMap<DeviceId, Box<dyn Device>>>,
   adapter_ready: Arc<AtomicBool>,
+  cancel_token: CancellationToken,
 }
 
 #[async_trait::async_trait]
@@ -156,5 +161,11 @@ impl TransportManager for BtlePlugDeviceManager {
       error!("Failed to receive connect result: {:?}", err);
       Err(err.into())
     })
+  }
+}
+
+impl Drop for BtlePlugDeviceManager {
+  fn drop(&mut self) {
+    self.cancel_token.cancel();
   }
 }
