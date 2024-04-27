@@ -1,8 +1,8 @@
 mod task;
 
-use std::sync::Arc;
 use anyhow::Context;
 use btleplug::platform::PeripheralId;
+use std::sync::Arc;
 
 use dashmap::DashMap;
 use futures::pin_mut;
@@ -12,7 +12,7 @@ use crate::transport::btle::api::*;
 use crate::transport::{TransportManager, TransportManagerBuilder, TransportManagerEvent};
 use crate::Result;
 use tokio::sync::{mpsc, oneshot};
-use tokio::task::JoinHandle;
+
 use tracing::{error, info, instrument, warn};
 
 #[derive(Default)]
@@ -133,7 +133,10 @@ impl TransportManager for BtlePlugDeviceManager {
   async fn connect(&self, device_id: PeripheralId) -> Result<()> {
     info!("Connecting to device: {:?}", device_id);
 
-    let device = self.discovered_devices.get_mut(&device_id).context("Device not found")?;
+    let device = self
+      .discovered_devices
+      .get_mut(&device_id)
+      .context("Device not found")?;
 
     device.connect().await
   }

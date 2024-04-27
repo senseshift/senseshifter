@@ -1,7 +1,7 @@
-use std::fmt::Debug;
+use crate::Result;
 use anyhow::anyhow;
 use dyn_clone::DynClone;
-use crate::Result;
+use std::fmt::Debug;
 
 // todo: use a more specific type for device id? Uuid?
 pub type DeviceId = String;

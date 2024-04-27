@@ -7,11 +7,11 @@ use btleplug::{
   platform::{Adapter, Manager, PeripheralId},
 };
 use dashmap::DashMap;
-use dyn_clone::DynClone;
+
 use derivative::Derivative;
 
 use crate::transport::btle::api::*;
-use crate::transport::{TransportManagerEvent};
+use crate::transport::TransportManagerEvent;
 use crate::Result;
 use futures::{future::FutureExt, StreamExt};
 use tokio::sync::{mpsc, oneshot};
@@ -121,7 +121,7 @@ impl BtlePlugDeviceManagerTask {
         if let Err(_err) = result {
           error!("Unable to send scanning stopped reply");
         }
-      },
+      }
     }
   }
 
@@ -131,17 +131,31 @@ impl BtlePlugDeviceManagerTask {
       | CentralEvent::DeviceUpdated(peripheral_id) => {
         self.handle_peripheral_event(&peripheral_id, adapter).await;
       }
-      CentralEvent::DeviceConnected(peripheral_id) => {
-        self.event_sender.send(TransportManagerEvent::DeviceConnected {
+      CentralEvent::DeviceConnected(peripheral_id) => self
+        .event_sender
+        .send(TransportManagerEvent::DeviceConnected {
           id: peripheral_id.to_string(),
-          device: dyn_clone::clone(self.scanned_peripherals.get(&peripheral_id).unwrap().value()),
-        }).await.unwrap()
-      }
+          device: dyn_clone::clone(
+            self
+              .scanned_peripherals
+              .get(&peripheral_id)
+              .unwrap()
+              .value(),
+          ),
+        })
+        .await
+        .unwrap(),
       CentralEvent::DeviceDisconnected(peripheral_id) => {
         self.scanned_peripherals.remove(&peripheral_id);
-        self.event_sender.send(TransportManagerEvent::DeviceDisconnected(peripheral_id.to_string())).await.unwrap_or_else(|err| {
-          error!("Unable to send device disconnected event: {}", err);
-        });
+        self
+          .event_sender
+          .send(TransportManagerEvent::DeviceDisconnected(
+            peripheral_id.to_string(),
+          ))
+          .await
+          .unwrap_or_else(|err| {
+            error!("Unable to send device disconnected event: {}", err);
+          });
       }
       _ => {}
     }
@@ -152,7 +166,7 @@ impl BtlePlugDeviceManagerTask {
     let existing = self.scanned_peripherals.get_mut(peripheral_id);
 
     if let Some(mut existing) = existing {
-      let mut peripheral = existing.value_mut();
+      let peripheral = existing.value_mut();
 
       if let Err(err) = self
         .event_sender
@@ -186,24 +200,28 @@ impl BtlePlugDeviceManagerTask {
     let mut candidate = None;
     for entry in self.protocol_handlers.iter() {
       let handler = entry.value();
-      candidate = handler.specify_protocol(peripheral.clone(), peripheral_properties.clone()).unwrap_or_else(|err| {
-        error!("Unable to specify protocol: {}", err);
-        None
-      });
+      candidate = handler
+        .specify_protocol(peripheral.clone(), peripheral_properties.clone())
+        .unwrap_or_else(|err| {
+          error!("Unable to specify protocol: {}", err);
+          None
+        });
 
       if candidate.is_some() {
         break;
       }
     }
 
-    let mut candidate = match candidate {
+    let candidate = match candidate {
       Some(candidate) => candidate,
       None => {
         return;
       }
     };
 
-    self.scanned_peripherals.insert(*peripheral_id, dyn_clone::clone_box(&*candidate));
+    self
+      .scanned_peripherals
+      .insert(*peripheral_id, dyn_clone::clone_box(&*candidate));
 
     if let Err(err) = self
       .event_sender

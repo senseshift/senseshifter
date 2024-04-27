@@ -1,10 +1,10 @@
-use std::fmt::Debug;
 use btleplug::platform::PeripheralId;
+use std::fmt::Debug;
 
 use crate::Result;
 
 use tokio::sync::mpsc;
-use dyn_clone::DynClone;
+
 use crate::transport::btle::api::{Device, DeviceId};
 
 pub mod btle;

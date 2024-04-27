@@ -11,5 +11,9 @@ pub trait BtlePlugProtocolHandlerBuilder: Send {
 pub trait BtlePlugProtocolHandler: Send + Sync {
   fn name(&self) -> &'static str;
 
-  fn specify_protocol(&self, peripheral: Peripheral, peripheral_properties: Option<PeripheralProperties>) -> crate::Result<Option<Box<dyn Device>>>;
+  fn specify_protocol(
+    &self,
+    peripheral: Peripheral,
+    peripheral_properties: Option<PeripheralProperties>,
+  ) -> crate::Result<Option<Box<dyn Device>>>;
 }

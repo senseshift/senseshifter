@@ -1,11 +1,11 @@
 use anyhow::{anyhow, Context};
-use async_trait::async_trait;
+
+use crate::transport::btle::api::*;
+use crate::Result;
 use btleplug::api::{Peripheral as _, PeripheralProperties};
 use btleplug::platform::Peripheral;
-use futures::{pin_mut, StreamExt};
+use futures::StreamExt;
 use tracing::{error, info, instrument, warn};
-use crate::Result;
-use crate::transport::btle::api::*;
 use uuid::Uuid;
 
 pub const CHAR_BATTERY: Uuid = Uuid::from_u128(0x6e400008_b5a3_f393_e0a9_e50e24dcca9e);
@@ -37,17 +37,27 @@ impl Device for BhapticsDevice {
       return Ok(());
     }
 
-    self.peripheral.connect().await.context("Unable to connect")?;
+    self
+      .peripheral
+      .connect()
+      .await
+      .context("Unable to connect")?;
 
-    self.peripheral.discover_services().await.context("Unable to discover services")?;
+    self
+      .peripheral
+      .discover_services()
+      .await
+      .context("Unable to discover services")?;
 
     // TODO: do not abort connection, just warn
-    let battery_char = match self.peripheral
+    let battery_char = match self
+      .peripheral
       .characteristics()
       .iter()
-      .find(|c| c.uuid == CHAR_BATTERY) {
+      .find(|c| c.uuid == CHAR_BATTERY)
+    {
       Some(c) => c.clone(),
-      None => return Err(anyhow!("Battery characteristic not present"))
+      None => return Err(anyhow!("Battery characteristic not present")),
     };
 
     match self.peripheral.subscribe(&battery_char).await {
@@ -58,7 +68,7 @@ impl Device for BhapticsDevice {
     let mut stream = self.peripheral.notifications().await?;
 
     tokio::spawn(async move {
-      while let Some(event) = stream.next().await {
+      while let Some(_event) = stream.next().await {
         // self.handle_notification(event);
       }
     });
@@ -91,7 +101,11 @@ impl BtlePlugProtocolHandler for BhapticsProtocolHandler {
   }
 
   #[instrument(skip(self, peripheral))]
-  fn specify_protocol(&self, peripheral: Peripheral, properties: Option<PeripheralProperties>) -> Result<Option<Box<dyn Device>>> {
+  fn specify_protocol(
+    &self,
+    peripheral: Peripheral,
+    properties: Option<PeripheralProperties>,
+  ) -> Result<Option<Box<dyn Device>>> {
     let properties = match properties {
       Some(properties) => properties,
       None => return Ok(None),
@@ -108,10 +122,7 @@ impl BtlePlugProtocolHandler for BhapticsProtocolHandler {
     };
 
     if appearance == 508 {
-      return Ok(Some(Box::new(BhapticsDevice {
-        peripheral,
-        name,
-      })));
+      return Ok(Some(Box::new(BhapticsDevice { peripheral, name })));
     }
 
     Ok(None)
