@@ -1,7 +1,7 @@
 mod task;
 
-use anyhow::Context;
 use btleplug::platform::PeripheralId;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use dashmap::DashMap;
@@ -37,6 +37,8 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
   ) -> Result<Box<dyn TransportManager>> {
     let (task_command_sender, task_command_receiver) = mpsc::channel(256);
 
+    let adapter_ready = Arc::new(AtomicBool::new(false));
+
     // Create the protocol handlers
     let protocol_handlers = Arc::new(DashMap::new());
     for handler_builder in &self.protocol_handlers {
@@ -52,6 +54,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
       event_sender.clone(),
       discovered_devices.clone(),
       protocol_handlers.clone(),
+      adapter_ready.clone(),
     );
 
     // Spawn the task
@@ -67,6 +70,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
       task_command_sender,
       protocol_handlers,
       discovered_devices,
+      adapter_ready,
     }))
   }
 }
@@ -75,6 +79,7 @@ pub struct BtlePlugDeviceManager {
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
   protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
   discovered_devices: Arc<DashMap<PeripheralId, Box<dyn Device>>>,
+  adapter_ready: Arc<AtomicBool>,
 }
 
 #[async_trait::async_trait]
@@ -130,14 +135,15 @@ impl TransportManager for BtlePlugDeviceManager {
   }
 
   #[instrument(skip(self))]
-  async fn connect(&self, device_id: PeripheralId) -> Result<()> {
+  async fn connect(&self, device_id: &DeviceId) -> Result<()> {
     info!("Connecting to device: {:?}", device_id);
 
-    let device = self
-      .discovered_devices
-      .get_mut(&device_id)
-      .context("Device not found")?;
-
-    device.connect().await
+    // let device = self
+    //   .discovered_devices
+    //   .get_mut(PeripheralId::from(device_id))
+    //   .context("Device not found")?;
+    //
+    // device.connect().await
+    todo!()
   }
 }

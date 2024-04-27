@@ -1,10 +1,13 @@
+mod device_task;
+
 use anyhow::{anyhow, Context};
 
 use crate::transport::btle::api::*;
 use crate::Result;
 use btleplug::api::{Peripheral as _, PeripheralProperties};
 use btleplug::platform::Peripheral;
-use futures::StreamExt;
+
+use crate::transport::btle::protocol::bhaptics::device_task::BhapticsDeviceTask;
 use tracing::{error, info, instrument, warn};
 use uuid::Uuid;
 
@@ -65,13 +68,11 @@ impl Device for BhapticsDevice {
       Err(err) => error!("Error subscribing to battery characteristic: {:?}", err),
     }
 
-    let mut stream = self.peripheral.notifications().await?;
+    let notification_stream = self.peripheral.notifications().await?;
 
-    tokio::spawn(async move {
-      while let Some(_event) = stream.next().await {
-        // self.handle_notification(event);
-      }
-    });
+    let device_task = BhapticsDeviceTask::new(self.peripheral.clone(), notification_stream);
+
+    tokio::spawn(device_task.run());
 
     Ok(())
   }

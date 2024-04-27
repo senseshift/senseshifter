@@ -1,4 +1,3 @@
-use btleplug::platform::PeripheralId;
 use std::fmt::Debug;
 
 use crate::Result;
@@ -23,7 +22,8 @@ pub trait TransportManager: Send + Sync {
   async fn start_scanning(&self) -> Result<()>;
 
   async fn stop_scanning(&self) -> Result<()>;
-  async fn connect(&self, device_id: PeripheralId) -> Result<()>;
+
+  async fn connect(&self, device_id: &DeviceId) -> Result<()>;
 }
 
 #[derive(Debug)]

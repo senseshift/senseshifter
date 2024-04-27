@@ -1,4 +1,5 @@
 use anyhow::Context;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use btleplug::api::Peripheral;
@@ -29,6 +30,7 @@ pub(crate) struct BtlePlugDeviceManagerTask {
   event_sender: mpsc::Sender<TransportManagerEvent>,
   scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn Device>>>,
   protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
+  adapter_ready: Arc<AtomicBool>,
 }
 
 impl BtlePlugDeviceManagerTask {
@@ -37,12 +39,14 @@ impl BtlePlugDeviceManagerTask {
     event_sender: mpsc::Sender<TransportManagerEvent>,
     scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn Device>>>,
     protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
+    adapter_connected: Arc<AtomicBool>,
   ) -> Self {
     Self {
       command_receiver,
       event_sender,
       scanned_peripherals,
       protocol_handlers,
+      adapter_ready: adapter_connected,
     }
   }
 
@@ -63,6 +67,7 @@ impl BtlePlugDeviceManagerTask {
       .nth(0)
       .context("Unable to find adapters.")?;
 
+    self.adapter_ready.store(true, Ordering::SeqCst);
     info!("Adapter found: {:?}", central.adapter_info().await?);
 
     let mut events = central
@@ -144,7 +149,9 @@ impl BtlePlugDeviceManagerTask {
           ),
         })
         .await
-        .unwrap(),
+        .unwrap_or_else(|err| {
+          error!("Unable to send device connected event: {}", err);
+        }),
       CentralEvent::DeviceDisconnected(peripheral_id) => {
         self.scanned_peripherals.remove(&peripheral_id);
         self

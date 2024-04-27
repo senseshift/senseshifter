@@ -1,6 +1,6 @@
 use futures::pin_mut;
 use tokio::sync::mpsc;
-use tracing::error;
+use tracing::{error, info};
 
 use xrc_device_manager::transport::btle::protocol::bhaptics::BhapticsProtocolHandlerBuilder;
 use xrc_device_manager::transport::btle::BtlePlugDeviceManagerBuilder;
@@ -29,16 +29,16 @@ async fn main() {
     match event {
       TransportManagerEvent::DeviceDiscovered { device, id: _ }
       | TransportManagerEvent::DeviceUpdated { device, id: _ } => {
-        let connect_result = device.connect().await;
-
-        match connect_result {
-          Ok(_) => {
-            // info!("Connected to device: {:?}", device);
-          }
-          Err(err) => {
-            error!("Error connecting to device: {:?}", err);
-          }
-        };
+        if device.connectible() {
+          match device.connect().await {
+            Ok(_) => {
+              info!("Connected to device: {:?}", device);
+            }
+            Err(err) => {
+              error!("Error connecting to device: {:?}", err);
+            }
+          };
+        }
       }
       _ => {}
     }
