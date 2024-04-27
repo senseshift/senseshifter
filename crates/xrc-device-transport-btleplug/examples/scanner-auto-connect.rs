@@ -24,30 +24,40 @@ async fn main() {
     .expect("Failed to start scanning");
 
   pin_mut!(event_receiver);
-  while let Some(event) = event_receiver.recv().await {
-    // info!("Got event: {:?}", event);
 
-    match event {
-      TransportManagerEvent::DeviceDiscovered {
-        device,
-        id: device_id,
-      }
-      | TransportManagerEvent::DeviceUpdated {
-        device,
-        id: device_id,
-      } => {
-        if device.connectible() {
-          match manager.connect(&device_id).await {
-            Ok(_) => {
-              info!("Connected to device: {:?}", device.name());
+  loop {
+    tokio::select! {
+      Some(event) = event_receiver.recv() => {
+        // info!("Got event: {:?}", event);
+
+        match event {
+          TransportManagerEvent::DeviceDiscovered {
+            device,
+            id: device_id,
+          }
+          | TransportManagerEvent::DeviceUpdated {
+            device,
+            id: device_id,
+          } => {
+            if device.connectible() {
+              match manager.connect(&device_id).await {
+                Ok(_) => {
+                  info!("Connected to device: {:?}", device.name());
+                }
+                Err(err) => {
+                  error!("Error connecting to device: {:?}", err);
+                }
+              };
             }
-            Err(err) => {
-              error!("Error connecting to device: {:?}", err);
-            }
-          };
+          }
+          _ => {}
         }
+      },
+      _ = tokio::signal::ctrl_c() => {
+        info!("Received Ctrl-C, stopping scanning.");
+        manager.stop_scanning().await.expect("Failed to stop scanning");
+        break;
       }
-      _ => {}
     }
   }
 }
