@@ -36,7 +36,9 @@ impl Device for BhapticsDevice {
   #[instrument(skip(self))]
   async fn connect(&self) -> Result<()> {
     if self.peripheral.is_connected().await? {
-      return Err(anyhow!("Already connected"));
+      // todo: return a more specific error type
+      return Ok(());
+      // return Err(anyhow!("Already connected"));
     }
 
     self
@@ -67,11 +69,14 @@ impl Device for BhapticsDevice {
       Err(err) => error!("Error subscribing to battery characteristic: {:?}", err),
     }
 
-    let notification_stream = self.peripheral.notifications().await?;
+    let device_task = BhapticsDeviceTask::new(self.peripheral.clone());
 
-    let device_task = BhapticsDeviceTask::new(self.peripheral.clone(), notification_stream);
-
-    tokio::spawn(device_task.run());
+    tokio::spawn(async move {
+      if let Err(err) = device_task.run().await {
+        error!("Device Task failed: {:?}", err);
+      }
+      warn!("Device Task exited.");
+    });
 
     Ok(())
   }

@@ -5,7 +5,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use futures::pin_mut;
+
 use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 
 use crate::transport::btle::api::*;
@@ -49,7 +49,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
     let discovered_devices = Arc::new(DashMap::new());
 
     // Create the task
-    let task = BtlePlugDeviceManagerTask::new(
+    let mut task = BtlePlugDeviceManagerTask::new(
       task_command_receiver,
       event_sender.clone(),
       discovered_devices.clone(),
@@ -59,7 +59,6 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 
     // Spawn the task
     tokio::spawn(async move {
-      pin_mut!(task);
       if let Err(err) = task.run().await {
         error!("BtlePlug Device Manager Task failed: {:?}", err);
       }
