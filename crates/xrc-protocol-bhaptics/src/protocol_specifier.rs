@@ -1,7 +1,9 @@
+use crate::connector::BhapticsDeviceConnector;
 use crate::device_config::{load_device_identifiers, BHapticsDeviceIdentifier};
 use crate::BhapticsDevice;
 use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use tracing::instrument;
 use xrc_device_transport_btleplug::api::{
@@ -47,13 +49,21 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
       None => return Ok(None),
     };
 
-    let product = self.get_product(&name, &properties.appearance);
+    let _product = match self.get_product(&name, &properties.appearance) {
+      Some(product) => product,
+      None => return Ok(None),
+    };
 
-    if product.is_some() {
-      return Ok(Some(Box::new(BhapticsDevice { peripheral, name })));
-    }
+    let connector = BhapticsDeviceConnector {
+      peripheral: peripheral.clone(),
+    };
 
-    Ok(None)
+    Ok(Some(Box::new(BhapticsDevice {
+      peripheral,
+      name,
+      connected: Arc::new(AtomicBool::new(false)),
+      connector,
+    })))
   }
 
   #[instrument(skip(self))]

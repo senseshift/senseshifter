@@ -39,7 +39,7 @@ async fn main() {
             device,
             id: device_id,
           } => {
-            if device.connectible() {
+            if device.connectible() && !device.connected() {
               match manager.connect(&device_id).await {
                 Ok(_) => {
                   info!("Connected to device: {:?}", device.name());

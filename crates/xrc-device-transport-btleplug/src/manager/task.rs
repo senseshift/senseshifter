@@ -269,6 +269,10 @@ impl BtlePlugDeviceManagerTask {
       None => return Err(anyhow!("Device not found")),
     };
 
+    if device.connected() {
+      return Err(anyhow!("Device already connected"));
+    }
+
     device.connect().await
   }
 }

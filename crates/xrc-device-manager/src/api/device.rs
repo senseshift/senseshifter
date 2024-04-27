@@ -16,6 +16,10 @@ pub trait Device: Send + Sync + DynClone + Debug {
     false
   }
 
+  fn connected(&self) -> bool {
+    false
+  }
+
   async fn connect(&self) -> Result<()> {
     Err(anyhow!("Cannot connect to this device"))
   }
