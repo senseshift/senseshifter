@@ -1,6 +1,7 @@
 mod task;
 
-use anyhow::{anyhow, Context};
+use std::collections::HashMap;
+
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
@@ -13,7 +14,7 @@ use crate::transport::{TransportManager, TransportManagerBuilder, TransportManag
 use crate::Result;
 use tokio::sync::{mpsc, oneshot};
 
-use tracing::{error, info, instrument, warn};
+use tracing::{error, instrument, warn};
 
 #[derive(Default)]
 pub struct BtlePlugDeviceManagerBuilder {
@@ -40,7 +41,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
     let adapter_ready = Arc::new(AtomicBool::new(false));
 
     // Create the protocol handlers
-    let protocol_handlers = Arc::new(DashMap::new());
+    let mut protocol_handlers = HashMap::new();
     for handler_builder in &self.protocol_handlers {
       let handler = handler_builder.finish();
       protocol_handlers.insert(handler.name().to_string(), handler);
@@ -53,7 +54,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
       task_command_receiver,
       event_sender.clone(),
       discovered_devices.clone(),
-      protocol_handlers.clone(),
+      protocol_handlers,
       adapter_ready.clone(),
     );
 
@@ -67,7 +68,6 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 
     Ok(Box::new(BtlePlugDeviceManager {
       task_command_sender,
-      protocol_handlers,
       discovered_devices,
       adapter_ready,
     }))
@@ -76,7 +76,6 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 
 pub struct BtlePlugDeviceManager {
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
-  protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
   discovered_devices: Arc<DashMap<DeviceId, Box<dyn Device>>>,
   adapter_ready: Arc<AtomicBool>,
 }
@@ -135,17 +134,28 @@ impl TransportManager for BtlePlugDeviceManager {
 
   #[instrument(skip(self))]
   async fn connect(&self, device_id: &DeviceId) -> Result<()> {
-    info!("Connecting to device: {:?}", device_id);
+    let (sender, receiver) = oneshot::channel();
 
-    let device = self
-      .discovered_devices
-      .get_mut(device_id)
-      .context("Device not found")?;
+    // Send the command to the task
+    let _ = match self
+      .task_command_sender
+      .send(BtlePlugManagerCommand::ConnectDevice(
+        device_id.clone(),
+        sender,
+      ))
+      .await
+    {
+      Ok(_) => (),
+      Err(err) => {
+        error!("Failed to send connect command: {:?}", err);
+        return Err(err.into());
+      }
+    };
 
-    if !device.connectible() {
-      return Err(anyhow!("Device is not connectible"));
-    }
-
-    device.connect().await
+    // wait for the result
+    receiver.await.unwrap_or_else(|err| {
+      error!("Failed to receive connect result: {:?}", err);
+      Err(err.into())
+    })
   }
 }

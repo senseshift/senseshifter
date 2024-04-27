@@ -1,3 +1,4 @@
+use crate::Result;
 use btleplug::api::PeripheralProperties;
 use btleplug::platform::Peripheral;
 
@@ -11,9 +12,11 @@ pub trait BtlePlugProtocolHandlerBuilder: Send {
 pub trait BtlePlugProtocolHandler: Send + Sync {
   fn name(&self) -> &'static str;
 
-  fn specify_protocol(
+  async fn specify_protocol(
     &self,
     peripheral: Peripheral,
     peripheral_properties: Option<PeripheralProperties>,
-  ) -> crate::Result<Option<Box<dyn Device>>>;
+  ) -> Result<Option<Box<dyn Device>>>;
+
+  async fn connect_peripheral(&self, peripheral: Peripheral) -> Result<()>;
 }

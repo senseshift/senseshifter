@@ -37,6 +37,7 @@ impl Device for BhapticsDevice {
   async fn connect(&self) -> Result<()> {
     if self.peripheral.is_connected().await? {
       // todo: return a more specific error type
+      warn!("Already connected");
       return Ok(());
       // return Err(anyhow!("Already connected"));
     }
@@ -106,7 +107,7 @@ impl BtlePlugProtocolHandler for BhapticsProtocolHandler {
   }
 
   #[instrument(skip(self, peripheral))]
-  fn specify_protocol(
+  async fn specify_protocol(
     &self,
     peripheral: Peripheral,
     properties: Option<PeripheralProperties>,
@@ -131,5 +132,10 @@ impl BtlePlugProtocolHandler for BhapticsProtocolHandler {
     }
 
     Ok(None)
+  }
+
+  #[instrument(skip(self))]
+  async fn connect_peripheral(&self, _peripheral: Peripheral) -> Result<()> {
+    Ok(())
   }
 }

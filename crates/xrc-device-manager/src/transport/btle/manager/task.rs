@@ -1,4 +1,5 @@
 use anyhow::Context;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -23,13 +24,17 @@ use tracing::{error, info, instrument};
 pub enum BtlePlugManagerCommand {
   ScanStart(#[derivative(Debug = "ignore")] oneshot::Sender<Result<()>>),
   ScanStop(#[derivative(Debug = "ignore")] oneshot::Sender<Result<()>>),
+  ConnectDevice(
+    DeviceId,
+    #[derivative(Debug = "ignore")] oneshot::Sender<Result<()>>,
+  ),
 }
 
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
   scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
-  protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
+  protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolHandler>>,
   adapter_ready: Arc<AtomicBool>,
 }
 
@@ -38,7 +43,7 @@ impl BtlePlugDeviceManagerTask {
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
     scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
-    protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
+    protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolHandler>>,
     adapter_connected: Arc<AtomicBool>,
   ) -> Self {
     Self {
@@ -123,8 +128,13 @@ impl BtlePlugDeviceManagerTask {
         info!("Stopping Bluetooth LE scanning");
         let result = central.stop_scan().await;
         let result = sender.send(result.map_err(|err| err.into()));
-        if let Err(_err) = result {
+        if let Err(_) = result {
           error!("Unable to send scanning stopped reply");
+        }
+      }
+      BtlePlugManagerCommand::ConnectDevice(device_id, sender) => {
+        if let Err(_) = sender.send(self.connect_device(&device_id).await) {
+          error!("Unable to send connect device reply");
         }
       }
     }
@@ -205,10 +215,10 @@ impl BtlePlugDeviceManagerTask {
     };
 
     let mut candidate = None;
-    for entry in self.protocol_handlers.iter() {
-      let handler = entry.value();
+    for (_, handler) in self.protocol_handlers.iter() {
       candidate = handler
         .specify_protocol(peripheral.clone(), peripheral_properties.clone())
+        .await
         .unwrap_or_else(|err| {
           error!("Unable to specify protocol: {}", err);
           None
@@ -240,5 +250,13 @@ impl BtlePlugDeviceManagerTask {
     {
       error!("Unable to send device discovered event: {}", err);
     }
+  }
+
+  #[instrument(skip(self))]
+  async fn connect_device(&self, device_id: &DeviceId) -> Result<()> {
+    info!("Connecting device: {}", device_id);
+    let device = self.scanned_peripherals.get(device_id).unwrap();
+    let device = device.value();
+    device.connect().await
   }
 }
