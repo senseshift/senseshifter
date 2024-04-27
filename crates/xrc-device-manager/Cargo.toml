@@ -28,3 +28,6 @@ dashmap = { workspace = true }
 dyn-clone = { workspace = true }
 
 tracing-subscriber = { version = "0.3.18", optional = true }
+
+[dev-dependencies]
+xrc-device-transport-btleplug = { workspace = true }

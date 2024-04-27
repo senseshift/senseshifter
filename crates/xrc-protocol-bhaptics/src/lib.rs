@@ -1,4 +1,10 @@
+mod constants;
+mod device_config;
 mod device_task;
+mod protocol_specifier;
+
+use constants::*;
+pub use protocol_specifier::*;
 
 use anyhow::{anyhow, Context};
 
@@ -8,11 +14,8 @@ use xrc_device_transport_btleplug::api::*;
 
 use crate::device_task::BhapticsDeviceTask;
 use tracing::{error, info, instrument, warn};
-use uuid::Uuid;
 
 pub type Result<T> = anyhow::Result<T>;
-
-pub const CHAR_BATTERY: Uuid = Uuid::from_u128(0x6e400008_b5a3_f393_e0a9_e50e24dcca9e);
 
 #[derive(Debug, Clone)]
 pub(crate) struct BhapticsDevice {
@@ -37,10 +40,7 @@ impl Device for BhapticsDevice {
   #[instrument(skip(self))]
   async fn connect(&self) -> Result<()> {
     if self.peripheral.is_connected().await? {
-      // todo: return a more specific error type
-      warn!("Already connected");
-      return Ok(());
-      // return Err(anyhow!("Already connected"));
+      return Err(anyhow!("Already connected"));
     }
 
     self
@@ -80,53 +80,6 @@ impl Device for BhapticsDevice {
       warn!("Device Task exited.");
     });
 
-    Ok(())
-  }
-}
-
-#[derive(Default)]
-pub struct BhapticsProtocolHandlerBuilder {}
-
-impl BtlePlugProtocolHandlerBuilder for BhapticsProtocolHandlerBuilder {
-  fn finish(&self) -> Box<dyn BtlePlugProtocolHandler> {
-    Box::new(BhapticsProtocolHandler {})
-  }
-}
-
-pub struct BhapticsProtocolHandler {}
-
-#[async_trait::async_trait]
-impl BtlePlugProtocolHandler for BhapticsProtocolHandler {
-  fn name(&self) -> &'static str {
-    "bhaptics"
-  }
-
-  #[instrument(skip(self, peripheral))]
-  async fn specify_protocol(&self, peripheral: Peripheral) -> Result<Option<Box<dyn Device>>> {
-    let properties = match peripheral.properties().await? {
-      Some(properties) => properties,
-      None => return Ok(None),
-    };
-
-    let name = match properties.local_name {
-      Some(ref name) => name.clone(),
-      None => return Ok(None),
-    };
-
-    let appearance = match properties.appearance {
-      Some(appearance) => appearance,
-      None => return Ok(None),
-    };
-
-    if appearance == 508 {
-      return Ok(Some(Box::new(BhapticsDevice { peripheral, name })));
-    }
-
-    Ok(None)
-  }
-
-  #[instrument(skip(self))]
-  async fn connect_peripheral(&self, _peripheral: Peripheral) -> Result<()> {
     Ok(())
   }
 }

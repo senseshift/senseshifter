@@ -33,7 +33,7 @@ pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
   scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
-  protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolHandler>>,
+  protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
   adapter_ready: Arc<AtomicBool>,
 }
 
@@ -42,7 +42,7 @@ impl BtlePlugDeviceManagerTask {
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
     scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
-    protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolHandler>>,
+    protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
     adapter_connected: Arc<AtomicBool>,
   ) -> Self {
     Self {

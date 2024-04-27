@@ -5,7 +5,7 @@ use tracing::{error, info};
 use xrc_device_manager::api::*;
 use xrc_device_transport_btleplug::api::*;
 use xrc_device_transport_btleplug::BtlePlugDeviceManagerBuilder;
-use xrc_protocol_bhaptics::BhapticsProtocolHandlerBuilder;
+use xrc_protocol_bhaptics::BhapticsProtocolSpecifierBuilder;
 
 #[tokio::main]
 async fn main() {
@@ -14,7 +14,7 @@ async fn main() {
   let (event_sender, event_receiver) = mpsc::channel(256);
 
   let builder = BtlePlugDeviceManagerBuilder::default()
-    .with_protocol(Box::<BhapticsProtocolHandlerBuilder>::default());
+    .with_protocol(Box::<BhapticsProtocolSpecifierBuilder>::default());
 
   let manager = builder.finish(event_sender).unwrap();
 

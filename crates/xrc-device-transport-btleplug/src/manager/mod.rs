@@ -17,13 +17,13 @@ use tracing::{error, instrument, warn};
 
 #[derive(Default)]
 pub struct BtlePlugDeviceManagerBuilder {
-  protocol_handlers: Vec<Box<dyn BtlePlugProtocolHandlerBuilder>>,
+  protocol_handlers: Vec<Box<dyn BtlePlugProtocolSpecifierBuilder>>,
 }
 
 impl BtlePlugDeviceManagerBuilder {
   pub fn with_protocol(
     mut self,
-    protocol_handler: Box<dyn BtlePlugProtocolHandlerBuilder>,
+    protocol_handler: Box<dyn BtlePlugProtocolSpecifierBuilder>,
   ) -> Self {
     self.protocol_handlers.push(protocol_handler);
     self
