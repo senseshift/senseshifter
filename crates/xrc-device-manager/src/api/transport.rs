@@ -1,12 +1,6 @@
-use std::fmt::Debug;
-
+use crate::api::*;
 use crate::Result;
-
 use tokio::sync::mpsc;
-
-use crate::transport::btle::api::{Device, DeviceId};
-
-pub mod btle;
 
 pub trait TransportManagerBuilder: Default + Send {
   fn finish(

@@ -2,19 +2,20 @@ mod device_task;
 
 use anyhow::{anyhow, Context};
 
-use crate::transport::btle::api::*;
-use crate::Result;
 use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
+use xrc_device_transport_btleplug::api::*;
 
-use crate::transport::btle::protocol::bhaptics::device_task::BhapticsDeviceTask;
+use crate::device_task::BhapticsDeviceTask;
 use tracing::{error, info, instrument, warn};
 use uuid::Uuid;
+
+pub type Result<T> = anyhow::Result<T>;
 
 pub const CHAR_BATTERY: Uuid = Uuid::from_u128(0x6e400008_b5a3_f393_e0a9_e50e24dcca9e);
 
 #[derive(Debug, Clone)]
-pub(super) struct BhapticsDevice {
+pub(crate) struct BhapticsDevice {
   peripheral: Peripheral,
   name: String,
 }

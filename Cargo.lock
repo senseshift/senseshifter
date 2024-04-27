@@ -120,8 +120,6 @@ dependencies = [
  "log",
  "objc",
  "once_cell",
- "serde",
- "serde_bytes",
  "static_assertions",
  "thiserror",
  "tokio",
@@ -741,15 +739,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_bytes"
-version = "0.11.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b8497c313fd43ab992087548117643f6fcd935cbf36f176ffda0aacf9591734"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "serde_derive"
 version = "1.0.198"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -984,9 +973,6 @@ name = "uuid"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a183cf7feeba97b4dd1c0d46788634f6221d87fa961b305bed08c851829efcc0"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "valuable"
@@ -1221,6 +1207,25 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "dashmap",
+ "derivative",
+ "dyn-clone",
+ "futures",
+ "getset",
+ "serde",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "xrc-device-transport-btleplug"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
  "btleplug",
  "dashmap",
  "derivative",
@@ -1233,4 +1238,20 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+ "xrc-device-manager",
+ "xrc-protocol-bhaptics",
+]
+
+[[package]]
+name = "xrc-protocol-bhaptics"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "btleplug",
+ "futures",
+ "tokio",
+ "tracing",
+ "uuid",
+ "xrc-device-transport-btleplug",
 ]

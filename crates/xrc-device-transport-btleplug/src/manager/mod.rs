@@ -9,8 +9,7 @@ use dashmap::DashMap;
 
 use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 
-use crate::transport::btle::api::*;
-use crate::transport::{TransportManager, TransportManagerBuilder, TransportManagerEvent};
+use crate::api::*;
 use crate::Result;
 use tokio::sync::{mpsc, oneshot};
 

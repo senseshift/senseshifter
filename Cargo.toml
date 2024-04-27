@@ -14,11 +14,16 @@ edition = "2021"
 
 [workspace.dependencies]
 # Workspace members
+xrc-device-manager = { path = "crates/xrc-device-manager" }
+xrc-device-transport-btleplug = { path = "crates/xrc-device-transport-btleplug" }
+xrc-protocol-bhaptics = { path = "crates/xrc-protocol-bhaptics" }
 
 # Common dependencies
 # btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }
 btleplug = { path = "../btleplug" }
 rshapes = { git = "https://github.com/senseshift/rshapes.git" }
+
+tracing-subscriber = "^0.3.18"
 
 dashmap = "5"
 uuid = "^1.8.0"
@@ -31,6 +36,7 @@ serde_json = "1"
 thiserror = "1"
 tracing = "^0.1.37"
 getset = "^0.1.2"
+dyn-clone = "1"
 
 async-trait = "^0.1.73"
 async-stream = "^0.3.5"

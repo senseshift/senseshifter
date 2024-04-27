@@ -1,4 +1,4 @@
-use crate::transport::btle::api::DeviceId;
+use crate::api::*;
 
 pub trait DeviceDescriptor {
   fn id(&self) -> &DeviceId;

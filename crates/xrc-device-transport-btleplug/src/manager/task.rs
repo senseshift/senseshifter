@@ -12,8 +12,7 @@ use dashmap::DashMap;
 
 use derivative::Derivative;
 
-use crate::transport::btle::api::*;
-use crate::transport::TransportManagerEvent;
+use crate::api::*;
 use crate::Result;
 use futures::{future::FutureExt, StreamExt};
 use tokio::sync::{mpsc, oneshot};

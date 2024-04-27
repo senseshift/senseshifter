@@ -1,17 +1,23 @@
 [package]
-name = "xrc-device-manager"
+name = "xrc-device-transport-btleplug"
 version.workspace = true
 edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
 default = ["manager"]
 
+serde = ["dep:serde"]
+
 manager = []
 
-serde = ["dep:serde"]
-tracing_subscriber = ["dep:tracing-subscriber"]
+# protocol-bhaptics = ["dep:xrc-protocol-bhaptics"]
 
 [dependencies]
+xrc-device-manager = { workspace = true, default-features = false }
+
+btleplug = { workspace = true }
 uuid = { workspace = true }
 
 anyhow = { workspace = true }
@@ -27,4 +33,12 @@ tokio = { workspace = true, features = ["full"] }
 dashmap = { workspace = true }
 dyn-clone = { workspace = true }
 
-tracing-subscriber = { version = "0.3.18", optional = true }
+[dev-dependencies]
+xrc-protocol-bhaptics = { workspace = true }
+
+tracing-subscriber = { workspace = true }
+
+[[example]]
+name = "scanner-auto-connect"
+path = "examples/scanner-auto-connect.rs"
+required-features = ["manager"]

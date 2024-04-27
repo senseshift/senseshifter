@@ -2,9 +2,10 @@ use futures::pin_mut;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 
-use xrc_device_manager::transport::btle::protocol::bhaptics::BhapticsProtocolHandlerBuilder;
-use xrc_device_manager::transport::btle::BtlePlugDeviceManagerBuilder;
-use xrc_device_manager::transport::{TransportManagerBuilder, TransportManagerEvent};
+use xrc_device_manager::api::*;
+use xrc_device_transport_btleplug::api::*;
+use xrc_device_transport_btleplug::BtlePlugDeviceManagerBuilder;
+use xrc_protocol_bhaptics::BhapticsProtocolHandlerBuilder;
 
 #[tokio::main]
 async fn main() {
