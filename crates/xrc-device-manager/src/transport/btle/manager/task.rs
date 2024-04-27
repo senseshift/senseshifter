@@ -28,7 +28,7 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
-  scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn Device>>>,
+  scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
   protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
   adapter_ready: Arc<AtomicBool>,
 }
@@ -37,7 +37,7 @@ impl BtlePlugDeviceManagerTask {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
-    scanned_peripherals: Arc<DashMap<PeripheralId, Box<dyn Device>>>,
+    scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
     protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
     adapter_connected: Arc<AtomicBool>,
   ) -> Self {
@@ -143,7 +143,7 @@ impl BtlePlugDeviceManagerTask {
           device: dyn_clone::clone(
             self
               .scanned_peripherals
-              .get(&peripheral_id)
+              .get(&peripheral_id.to_string())
               .unwrap()
               .value(),
           ),
@@ -153,7 +153,7 @@ impl BtlePlugDeviceManagerTask {
           error!("Unable to send device connected event: {}", err);
         }),
       CentralEvent::DeviceDisconnected(peripheral_id) => {
-        self.scanned_peripherals.remove(&peripheral_id);
+        self.scanned_peripherals.remove(&peripheral_id.to_string());
         self
           .event_sender
           .send(TransportManagerEvent::DeviceDisconnected(
@@ -170,7 +170,7 @@ impl BtlePlugDeviceManagerTask {
 
   #[instrument(skip(self, adapter))]
   async fn handle_peripheral_event(&self, peripheral_id: &PeripheralId, adapter: &Adapter) {
-    let existing = self.scanned_peripherals.get_mut(peripheral_id);
+    let existing = self.scanned_peripherals.get_mut(&peripheral_id.to_string());
 
     if let Some(mut existing) = existing {
       let peripheral = existing.value_mut();
@@ -228,7 +228,7 @@ impl BtlePlugDeviceManagerTask {
 
     self
       .scanned_peripherals
-      .insert(*peripheral_id, dyn_clone::clone_box(&*candidate));
+      .insert(peripheral_id.to_string(), dyn_clone::clone_box(&*candidate));
 
     if let Err(err) = self
       .event_sender

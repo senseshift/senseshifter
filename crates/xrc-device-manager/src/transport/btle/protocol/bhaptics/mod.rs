@@ -36,8 +36,7 @@ impl Device for BhapticsDevice {
   #[instrument(skip(self))]
   async fn connect(&self) -> Result<()> {
     if self.peripheral.is_connected().await? {
-      warn!("Peripheral already connected");
-      return Ok(());
+      return Err(anyhow!("Already connected"));
     }
 
     self
