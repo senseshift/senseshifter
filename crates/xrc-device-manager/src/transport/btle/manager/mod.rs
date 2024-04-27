@@ -1,6 +1,8 @@
 mod task;
 
 use std::sync::Arc;
+use anyhow::Context;
+use btleplug::platform::PeripheralId;
 
 use dashmap::DashMap;
 use futures::pin_mut;
@@ -11,7 +13,7 @@ use crate::transport::{TransportManager, TransportManagerBuilder, TransportManag
 use crate::Result;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
-use tracing::{error, warn};
+use tracing::{error, info, instrument, warn};
 
 #[derive(Default)]
 pub struct BtlePlugDeviceManagerBuilder {
@@ -42,11 +44,13 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
       protocol_handlers.insert(handler.name().to_string(), handler);
     }
 
+    let discovered_devices = Arc::new(DashMap::new());
+
     // Create the task
     let task = BtlePlugDeviceManagerTask::new(
       task_command_receiver,
       event_sender.clone(),
-      Arc::new(DashMap::new()),
+      discovered_devices.clone(),
       protocol_handlers.clone(),
     );
 
@@ -62,6 +66,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
     Ok(Box::new(BtlePlugDeviceManager {
       task_command_sender,
       protocol_handlers,
+      discovered_devices,
     }))
   }
 }
@@ -69,6 +74,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 pub struct BtlePlugDeviceManager {
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
   protocol_handlers: Arc<DashMap<String, Box<dyn BtlePlugProtocolHandler>>>,
+  discovered_devices: Arc<DashMap<PeripheralId, Box<dyn Device>>>,
 }
 
 #[async_trait::async_trait]
@@ -121,5 +127,14 @@ impl TransportManager for BtlePlugDeviceManager {
       error!("Failed to receive scan stop result: {:?}", err);
       Err(err.into())
     })
+  }
+
+  #[instrument(skip(self))]
+  async fn connect(&self, device_id: PeripheralId) -> Result<()> {
+    info!("Connecting to device: {:?}", device_id);
+
+    let device = self.discovered_devices.get_mut(&device_id).context("Device not found")?;
+
+    device.connect().await
   }
 }

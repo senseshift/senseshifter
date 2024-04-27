@@ -1,10 +1,11 @@
 use std::fmt::Debug;
+use btleplug::platform::PeripheralId;
 
 use crate::Result;
 
 use tokio::sync::mpsc;
 use dyn_clone::DynClone;
-use crate::transport::btle::api::Device;
+use crate::transport::btle::api::{Device, DeviceId};
 
 pub mod btle;
 
@@ -22,6 +23,7 @@ pub trait TransportManager: Send + Sync {
   async fn start_scanning(&self) -> Result<()>;
 
   async fn stop_scanning(&self) -> Result<()>;
+  async fn connect(&self, device_id: PeripheralId) -> Result<()>;
 }
 
 #[derive(Debug)]
@@ -32,16 +34,16 @@ pub enum TransportManagerEvent {
   ScanStopped,
 
   DeviceDiscovered {
-    id: String,
+    id: DeviceId,
     device: Box<dyn Device>,
   },
   DeviceUpdated {
-    id: String,
+    id: DeviceId,
     device: Box<dyn Device>,
   },
   DeviceConnected {
-    id: String,
+    id: DeviceId,
     device: Box<dyn Device>,
   },
-  DeviceDisconnected(String),
+  DeviceDisconnected(DeviceId),
 }

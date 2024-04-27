@@ -3,9 +3,12 @@ use anyhow::anyhow;
 use dyn_clone::DynClone;
 use crate::Result;
 
+// todo: use a more specific type for device id? Uuid?
+pub type DeviceId = String;
+
 #[async_trait::async_trait]
 pub trait Device: Send + Sync + DynClone + Debug {
-  fn id(&self) -> String;
+  fn id(&self) -> DeviceId;
 
   fn name(&self) -> String;
 

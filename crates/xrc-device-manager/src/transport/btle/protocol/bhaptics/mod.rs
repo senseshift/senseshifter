@@ -18,7 +18,7 @@ pub(super) struct BhapticsDevice {
 
 #[async_trait::async_trait]
 impl Device for BhapticsDevice {
-  fn id(&self) -> String {
+  fn id(&self) -> DeviceId {
     self.peripheral.id().to_string()
   }
 
@@ -30,6 +30,7 @@ impl Device for BhapticsDevice {
     true
   }
 
+  #[instrument(skip(self))]
   async fn connect(&self) -> Result<()> {
     if self.peripheral.is_connected().await? {
       warn!("Peripheral already connected");
@@ -58,7 +59,7 @@ impl Device for BhapticsDevice {
 
     tokio::spawn(async move {
       while let Some(event) = stream.next().await {
-        info!("Event: {:?}", event);
+        // self.handle_notification(event);
       }
     });
 
@@ -72,6 +73,12 @@ pub struct BhapticsProtocolHandlerBuilder {}
 impl BtlePlugProtocolHandlerBuilder for BhapticsProtocolHandlerBuilder {
   fn finish(&self) -> Box<dyn BtlePlugProtocolHandler> {
     Box::new(BhapticsProtocolHandler {})
+  }
+}
+
+impl BhapticsDevice {
+  fn handle_notification(&self, event: btleplug::api::ValueNotification) {
+    info!("Notification: {:?}", event);
   }
 }
 

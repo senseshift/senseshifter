@@ -24,21 +24,21 @@ async fn main() {
 
   pin_mut!(event_receiver);
   while let Some(event) = event_receiver.recv().await {
-    info!("Got event: {:?}", event);
+    // info!("Got event: {:?}", event);
 
     match event {
       TransportManagerEvent::DeviceDiscovered {
         device,
-        id: _id,
+        id: _,
       } | TransportManagerEvent::DeviceUpdated {
         device,
-        id: _id,
+        id: _,
       } => {
         let connect_result = device.connect().await;
 
         match connect_result {
           Ok(_) => {
-            info!("Connected to device: {:?}", device);
+            // info!("Connected to device: {:?}", device);
           },
           Err(err) => {
             error!("Error connecting to device: {:?}", err);
