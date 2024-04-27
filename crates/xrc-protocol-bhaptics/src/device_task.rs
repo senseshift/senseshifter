@@ -37,6 +37,13 @@ impl BhapticsDeviceTask {
 
   #[instrument(skip(self))]
   fn handle_notification(&self, event: ValueNotification) {
-    info!("Notification: {:?}", event);
+    match event.uuid {
+      uuid if uuid == crate::constants::CHAR_BATTERY => {
+        info!("Received battery level notification: {:?}", event);
+      }
+      _ => {
+        info!("Received notification: {:?}", event);
+      }
+    }
   }
 }

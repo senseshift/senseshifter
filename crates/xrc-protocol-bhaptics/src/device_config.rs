@@ -1,5 +1,5 @@
 use getset::Getters;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 static DEVICE_CONFIGURATION_JSON: &str = include_str!("device-config.json");
 
@@ -22,7 +22,7 @@ pub enum Position {
   FootL,
 }
 
-#[derive(Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BHapticsDeviceType {
   TactBelt,
   Tactosy2,
@@ -43,6 +43,12 @@ pub enum BHapticsDeviceType {
   TactThermoHR,
   TactThermoFL,
   TactThermoFR,
+}
+
+impl From<BHapticsDeviceType> for String {
+  fn from(val: BHapticsDeviceType) -> Self {
+    serde_json::to_string(&val).expect("Always valid JSON string")
+  }
 }
 
 impl BHapticsDeviceType {
