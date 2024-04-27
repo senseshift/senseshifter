@@ -4,7 +4,7 @@ use anyhow::{anyhow, Context};
 
 use crate::transport::btle::api::*;
 use crate::Result;
-use btleplug::api::{Peripheral as _, PeripheralProperties};
+use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
 
 use crate::transport::btle::protocol::bhaptics::device_task::BhapticsDeviceTask;
@@ -92,12 +92,6 @@ impl BtlePlugProtocolHandlerBuilder for BhapticsProtocolHandlerBuilder {
   }
 }
 
-impl BhapticsDevice {
-  fn handle_notification(&self, event: btleplug::api::ValueNotification) {
-    info!("Notification: {:?}", event);
-  }
-}
-
 pub struct BhapticsProtocolHandler {}
 
 #[async_trait::async_trait]
@@ -107,12 +101,8 @@ impl BtlePlugProtocolHandler for BhapticsProtocolHandler {
   }
 
   #[instrument(skip(self, peripheral))]
-  async fn specify_protocol(
-    &self,
-    peripheral: Peripheral,
-    properties: Option<PeripheralProperties>,
-  ) -> Result<Option<Box<dyn Device>>> {
-    let properties = match properties {
+  async fn specify_protocol(&self, peripheral: Peripheral) -> Result<Option<Box<dyn Device>>> {
+    let properties = match peripheral.properties().await? {
       Some(properties) => properties,
       None => return Ok(None),
     };

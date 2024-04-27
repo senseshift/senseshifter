@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -119,21 +119,19 @@ impl BtlePlugDeviceManagerTask {
       BtlePlugManagerCommand::ScanStart(sender) => {
         info!("Starting Bluetooth LE scanning");
         let result = central.start_scan(ScanFilter::default()).await;
-        let result = sender.send(result.map_err(|err| err.into()));
-        if let Err(_err) = result {
+        if sender.send(result.map_err(|err| err.into())).is_err() {
           error!("Unable to send scanning started reply");
         }
       }
       BtlePlugManagerCommand::ScanStop(sender) => {
         info!("Stopping Bluetooth LE scanning");
         let result = central.stop_scan().await;
-        let result = sender.send(result.map_err(|err| err.into()));
-        if let Err(_) = result {
+        if sender.send(result.map_err(|err| err.into())).is_err() {
           error!("Unable to send scanning stopped reply");
         }
       }
       BtlePlugManagerCommand::ConnectDevice(device_id, sender) => {
-        if let Err(_) = sender.send(self.connect_device(&device_id).await) {
+        if sender.send(self.connect_device(&device_id).await).is_err() {
           error!("Unable to send connect device reply");
         }
       }
@@ -206,18 +204,10 @@ impl BtlePlugDeviceManagerTask {
       }
     };
 
-    let peripheral_properties = match peripheral.properties().await {
-      Ok(properties) => properties,
-      Err(err) => {
-        error!("Unable to fetch peripheral properties: {}", err);
-        return;
-      }
-    };
-
     let mut candidate = None;
     for (_, handler) in self.protocol_handlers.iter() {
       candidate = handler
-        .specify_protocol(peripheral.clone(), peripheral_properties.clone())
+        .specify_protocol(peripheral.clone())
         .await
         .unwrap_or_else(|err| {
           error!("Unable to specify protocol: {}", err);
@@ -255,8 +245,12 @@ impl BtlePlugDeviceManagerTask {
   #[instrument(skip(self))]
   async fn connect_device(&self, device_id: &DeviceId) -> Result<()> {
     info!("Connecting device: {}", device_id);
-    let device = self.scanned_peripherals.get(device_id).unwrap();
-    let device = device.value();
+
+    let device = match self.scanned_peripherals.get(device_id) {
+      Some(device) => device,
+      None => return Err(anyhow!("Device not found")),
+    };
+
     device.connect().await
   }
 }
