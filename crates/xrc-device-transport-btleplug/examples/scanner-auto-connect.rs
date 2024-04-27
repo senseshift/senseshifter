@@ -5,7 +5,7 @@ use tracing::{error, info};
 use xrc_device_manager::api::*;
 use xrc_device_transport_btleplug::api::*;
 use xrc_device_transport_btleplug::BtlePlugDeviceManagerBuilder;
-use xrc_protocol_bhaptics::BhapticsProtocolSpecifierBuilder;
+use xrc_protocol_bhaptics::btleplug::BhapticsProtocolSpecifierBuilder;
 
 #[tokio::main]
 async fn main() {

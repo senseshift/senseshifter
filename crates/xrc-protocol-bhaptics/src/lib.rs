@@ -1,14 +1,8 @@
-mod connector;
-mod constants;
-mod device;
 mod device_config;
-mod device_task;
-mod protocol_specifier;
 
-pub(crate) use device::*;
+#[cfg(feature = "btleplug")]
+pub mod btleplug;
 
-pub(crate) use connector::*;
-
-pub use protocol_specifier::*;
+pub use device_config::*;
 
 pub type Result<T> = anyhow::Result<T>;

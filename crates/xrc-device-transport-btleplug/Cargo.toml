@@ -38,7 +38,7 @@ dyn-clone = { workspace = true }
 windows = { version = "^0.56.0", features = ["Devices_Bluetooth", "Foundation"] }
 
 [dev-dependencies]
-xrc-protocol-bhaptics = { workspace = true }
+xrc-protocol-bhaptics = { workspace = true, features = ["btleplug"] }
 
 tracing-subscriber = { workspace = true }
 

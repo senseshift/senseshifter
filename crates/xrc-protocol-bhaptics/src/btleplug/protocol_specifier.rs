@@ -1,6 +1,6 @@
-use crate::connector::BhapticsDeviceConnector;
+use super::BhapticsDevice;
+use super::BhapticsDeviceConnector;
 use crate::device_config::{load_device_identifiers, BHapticsDeviceIdentifier};
-use crate::BhapticsDevice;
 use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
 use std::sync::atomic::AtomicBool;

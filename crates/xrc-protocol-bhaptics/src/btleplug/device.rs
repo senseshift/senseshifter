@@ -6,7 +6,7 @@ use btleplug::platform::Peripheral;
 use tracing::instrument;
 use xrc_device_transport_btleplug::api::*;
 
-use crate::BhapticsDeviceConnector;
+use super::BhapticsDeviceConnector;
 
 #[derive(Debug, Clone)]
 pub(crate) struct BhapticsDevice {

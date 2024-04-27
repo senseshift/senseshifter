@@ -7,7 +7,7 @@ use futures::StreamExt;
 use anyhow::Context;
 use tracing::{info, instrument};
 
-pub(super) struct BhapticsDeviceTask {
+pub(crate) struct BhapticsDeviceTask {
   peripheral: Peripheral,
 }
 
@@ -38,7 +38,7 @@ impl BhapticsDeviceTask {
   #[instrument(skip(self))]
   fn handle_notification(&self, event: ValueNotification) {
     match event.uuid {
-      uuid if uuid == crate::constants::CHAR_BATTERY => {
+      uuid if uuid == super::constants::CHAR_BATTERY => {
         info!("Received battery level notification: {:?}", event);
       }
       _ => {

@@ -5,10 +5,13 @@ edition.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-xrc-device-transport-btleplug = { workspace = true, default-features = false }
+[features]
+btleplug = ["dep:xrc-device-transport-btleplug", "dep:btleplug"]
 
-btleplug = { workspace = true }
+[dependencies]
+xrc-device-transport-btleplug = { workspace = true, default-features = false, optional = true }
+
+btleplug = { workspace = true, optional = true }
 uuid = { workspace = true }
 
 serde_json = { workspace = true }

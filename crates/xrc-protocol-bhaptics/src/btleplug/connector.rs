@@ -1,5 +1,5 @@
-use crate::constants::{CHAR_BATTERY, CHAR_SN, CHAR_VERSION};
-use crate::device_task::BhapticsDeviceTask;
+use super::constants::{CHAR_BATTERY, CHAR_SN, CHAR_VERSION};
+use super::device_task::BhapticsDeviceTask;
 use crate::Result;
 use anyhow::{anyhow, Context};
 use btleplug::api::Peripheral as _;
@@ -42,7 +42,7 @@ impl BhapticsDeviceConnector {
     let is_senseshift = firmware_version.as_deref() == Some("255.255");
 
     match self.subscribe_battery_level().await {
-      Ok(_) => info!("Subscribed to battery level notifications"),
+      Ok(_) => {}
       Err(err) => warn!(
         "Unable to subscribe to battery level notifications: {:?}",
         err
@@ -50,7 +50,7 @@ impl BhapticsDeviceConnector {
     };
 
     info!(
-      "Connected to {} bHaptics device: \"{}\" (SN: \"{}\", Firmware: \"{}\")",
+      "Connected to {} bHaptics device: {:?} (SN: {:?}, Firmware: {:?})",
       if is_senseshift {
         "SenseShift"
       } else {
