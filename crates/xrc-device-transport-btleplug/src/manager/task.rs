@@ -74,6 +74,25 @@ impl BtlePlugDeviceManagerTask {
     self.adapter_ready.store(true, Ordering::SeqCst);
     info!("Adapter found: {:?}", central.adapter_info().await?);
 
+    // Credit: https://github.com/buttplugio/buttplug/blob/master/buttplug/src/server/device/hardware/communication/btleplug/btleplug_adapter_task.rs
+    #[cfg(target_os = "windows")]
+    {
+      use windows::Devices::Bluetooth::BluetoothAdapter;
+      let adapter_result = BluetoothAdapter::GetDefaultAsync()
+        .expect("If we're here, we got an adapter")
+        .await;
+      let adapter = adapter_result.expect("Considering infallible at this point");
+      let device_id = adapter
+        .DeviceId()
+        .expect("Considering infallible at this point")
+        .to_string();
+      info!("Windows Bluetooth Adapter ID: {:?}", device_id);
+      info!(
+        "Windows Bluetooth Adapter Manufacturer: {}",
+        device_manufacturer(device_id.as_str())
+      );
+    }
+
     let mut events = central
       .events()
       .await
@@ -251,5 +270,27 @@ impl BtlePlugDeviceManagerTask {
     };
 
     device.connect().await
+  }
+}
+
+/// Get the manufacturer of a Bluetooth device from its device ID.
+///
+/// Credit: https://github.com/buttplugio/buttplug/blob/master/buttplug/src/server/device/hardware/communication/btleplug/btleplug_adapter_task.rs
+#[cfg(target_os = "windows")]
+fn device_manufacturer(device_id: &str) -> &'static str {
+  if device_id.contains("VID_0A12") {
+    "Cambridge Silicon Radio (CSR)"
+  } else if device_id.contains("VID_0A5C") {
+    "Broadcom"
+  } else if device_id.contains("VID_8087") {
+    "Intel"
+  } else if device_id.contains("VID_0BDA") {
+    "RealTek"
+  } else if device_id.contains("VID_0B05") {
+    "Asus"
+  } else if device_id.contains("VID_13D3") {
+    "IMC"
+  } else {
+    "Unknown Manufacturer"
   }
 }
