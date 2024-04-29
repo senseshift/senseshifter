@@ -1,5 +1,5 @@
 [package]
-name = "xrc-protocol-bhaptics"
+name = "xrc-device-protocol-bhaptics"
 version.workspace = true
 edition.workspace = true
 

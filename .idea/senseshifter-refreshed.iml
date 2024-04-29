@@ -7,7 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-transport-btleplug/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-transport-btleplug/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-protocol-bhaptics/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-protocol-bhaptics/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

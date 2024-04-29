@@ -16,7 +16,7 @@ edition = "2021"
 # Workspace members
 xrc-device-manager = { path = "crates/xrc-device-manager" }
 xrc-device-transport-btleplug = { path = "crates/xrc-device-transport-btleplug" }
-xrc-protocol-bhaptics = { path = "crates/xrc-protocol-bhaptics" }
+xrc-device-protocol-bhaptics = { path = "crates/xrc-device-protocol-bhaptics" }
 
 # Common dependencies
 # btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }

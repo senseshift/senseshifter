@@ -12,7 +12,7 @@ serde = ["dep:serde"]
 
 manager = []
 
-# protocol-bhaptics = ["dep:xrc-protocol-bhaptics"]
+# protocol-bhaptics = ["dep:xrc-device-protocol-bhaptics"]
 
 [dependencies]
 xrc-device-manager = { workspace = true, default-features = false }
@@ -38,7 +38,7 @@ dyn-clone = { workspace = true }
 windows = { version = "^0.56.0", features = ["Devices_Bluetooth", "Foundation"] }
 
 [dev-dependencies]
-xrc-protocol-bhaptics = { workspace = true, features = ["btleplug"] }
+xrc-device-protocol-bhaptics = { workspace = true, features = ["btleplug"] }
 
 tracing-subscriber = { workspace = true }
 

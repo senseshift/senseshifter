@@ -1301,6 +1301,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "xrc-device-protocol-bhaptics"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "btleplug",
+ "futures",
+ "getset",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "uuid",
+ "xrc-device-transport-btleplug",
+]
+
+[[package]]
 name = "xrc-device-transport-btleplug"
 version = "0.1.0"
 dependencies = [
@@ -1321,22 +1338,5 @@ dependencies = [
  "uuid",
  "windows 0.56.0",
  "xrc-device-manager",
- "xrc-protocol-bhaptics",
-]
-
-[[package]]
-name = "xrc-protocol-bhaptics"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "btleplug",
- "futures",
- "getset",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "uuid",
- "xrc-device-transport-btleplug",
+ "xrc-device-protocol-bhaptics",
 ]
