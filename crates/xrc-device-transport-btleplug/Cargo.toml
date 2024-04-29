@@ -18,7 +18,7 @@ manager = []
 xrc-device-manager = { workspace = true, default-features = false }
 
 btleplug = { workspace = true }
-uuid = { workspace = true }
+uuid = { workspace = true, features = ["v8"] }
 
 anyhow = { workspace = true }
 derivative = { workspace = true }

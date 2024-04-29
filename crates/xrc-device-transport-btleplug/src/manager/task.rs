@@ -170,29 +170,29 @@ impl BtlePlugDeviceManagerTask {
       | CentralEvent::DeviceUpdated(peripheral_id) => {
         self.handle_peripheral_event(&peripheral_id, adapter).await;
       }
-      CentralEvent::DeviceConnected(peripheral_id) => self
-        .event_sender
-        .send(TransportManagerEvent::DeviceConnected {
-          id: peripheral_id.to_string(),
-          device: dyn_clone::clone(
-            self
-              .scanned_peripherals
-              .get(&peripheral_id.to_string())
-              .unwrap()
-              .value(),
-          ),
-        })
-        .await
-        .unwrap_or_else(|err| {
-          error!("Unable to send device connected event: {}", err);
-        }),
-      CentralEvent::DeviceDisconnected(peripheral_id) => {
-        self.scanned_peripherals.remove(&peripheral_id.to_string());
+      CentralEvent::DeviceConnected(peripheral_id) => {
+        let device_id = address_to_id(&peripheral_id.address());
+
+        let device = dyn_clone::clone(self.scanned_peripherals.get(&device_id).unwrap().value());
+
         self
           .event_sender
-          .send(TransportManagerEvent::DeviceDisconnected(
-            peripheral_id.to_string(),
-          ))
+          .send(TransportManagerEvent::DeviceConnected {
+            id: device_id,
+            device,
+          })
+          .await
+          .unwrap_or_else(|err| {
+            error!("Unable to send device connected event: {}", err);
+          })
+      }
+      CentralEvent::DeviceDisconnected(peripheral_id) => {
+        let device_id = address_to_id(&peripheral_id.address());
+
+        self.scanned_peripherals.remove(&device_id);
+        self
+          .event_sender
+          .send(TransportManagerEvent::DeviceDisconnected(device_id))
           .await
           .unwrap_or_else(|err| {
             error!("Unable to send device disconnected event: {}", err);
@@ -204,7 +204,8 @@ impl BtlePlugDeviceManagerTask {
 
   #[instrument(skip(self, adapter))]
   async fn handle_peripheral_event(&self, peripheral_id: &PeripheralId, adapter: &Adapter) {
-    let existing = self.scanned_peripherals.get_mut(&peripheral_id.to_string());
+    let device_id = address_to_id(&peripheral_id.address());
+    let existing = self.scanned_peripherals.get_mut(&device_id);
 
     if let Some(mut existing) = existing {
       let peripheral = existing.value_mut();
@@ -212,7 +213,7 @@ impl BtlePlugDeviceManagerTask {
       if let Err(err) = self
         .event_sender
         .send(TransportManagerEvent::DeviceUpdated {
-          id: peripheral.id().to_string(),
+          id: device_id,
           device: dyn_clone::clone(peripheral),
         })
         .await
@@ -254,7 +255,7 @@ impl BtlePlugDeviceManagerTask {
 
     self
       .scanned_peripherals
-      .insert(peripheral_id.to_string(), dyn_clone::clone_box(&*candidate));
+      .insert(device_id, dyn_clone::clone_box(&*candidate));
 
     if let Err(err) = self
       .event_sender
@@ -270,7 +271,7 @@ impl BtlePlugDeviceManagerTask {
 
   #[instrument(skip(self))]
   async fn connect_device(&self, device_id: &DeviceId) -> Result<()> {
-    info!("Connecting device: {}", device_id);
+    info!("Connecting device: {:?}", device_id);
 
     let device = match self.scanned_peripherals.get(device_id) {
       Some(device) => device,

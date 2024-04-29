@@ -1,10 +1,21 @@
 use crate::Result;
 use anyhow::anyhow;
+use derivative::Derivative;
 use dyn_clone::DynClone;
 use std::fmt::Debug;
+use uuid::Uuid;
 
-// todo: use a more specific type for device id? Uuid?
-pub type DeviceId = String;
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Derivative, Clone, PartialEq, Eq, Hash)]
+#[derivative(Debug = "transparent")]
+pub struct DeviceId(#[cfg_attr(feature = "serde", serde(with = "uuid::serde::urn"))] Uuid);
+
+impl DeviceId {
+  #[inline(always)]
+  pub fn new(uuid: Uuid) -> Self {
+    Self(uuid)
+  }
+}
 
 #[async_trait::async_trait]
 pub trait Device: Send + Sync + DynClone + Debug {

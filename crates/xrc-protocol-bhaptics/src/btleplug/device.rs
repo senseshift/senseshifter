@@ -21,7 +21,7 @@ pub(crate) struct BhapticsDevice {
 #[async_trait::async_trait]
 impl Device for BhapticsDevice {
   fn id(&self) -> DeviceId {
-    self.peripheral.id().to_string()
+    address_to_id(&self.peripheral.id().address())
   }
 
   fn name(&self) -> String {

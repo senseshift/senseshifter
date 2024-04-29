@@ -8,7 +8,7 @@ default = ["manager"]
 
 manager = []
 
-serde = ["dep:serde"]
+serde = ["dep:serde", "uuid/serde"]
 
 [dependencies]
 uuid = { workspace = true }
