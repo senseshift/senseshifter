@@ -14,6 +14,7 @@ xrc-device-transport-btleplug = { workspace = true, default-features = false, op
 btleplug = { workspace = true, optional = true }
 uuid = { workspace = true }
 
+# always required to parse dynamic device configuration
 serde_json = { workspace = true }
 
 anyhow = { workspace = true }

@@ -1,8 +1,11 @@
+use crate::api::*;
 use crate::Result;
-use anyhow::anyhow;
+
 use derivative::Derivative;
-use dyn_clone::DynClone;
+
+use async_trait::async_trait;
 use std::fmt::Debug;
+use std::sync::Arc;
 use uuid::Uuid;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -17,23 +20,56 @@ impl DeviceId {
   }
 }
 
-#[async_trait::async_trait]
-pub trait Device: Send + Sync + DynClone + Debug {
-  fn id(&self) -> DeviceId;
+#[async_trait]
+pub trait Device<Descriptor, Properties>
+where
+  Descriptor: DeviceDescriptor,
+  Properties: DeviceProperties,
+{
+  fn descriptor(&self) -> &Descriptor;
 
-  fn name(&self) -> String;
+  async fn properties(&self) -> Result<Option<Properties>>;
 
-  fn connectible(&self) -> bool {
-    false
-  }
+  async fn connect(&self) -> Result<()>;
+}
 
-  fn connected(&self) -> bool {
-    false
-  }
+#[derive(Derivative, Debug, Clone)]
+#[derivative(PartialEq, Hash)]
+pub struct GenericDevice {
+  descriptor: GenericDeviceDescriptor,
 
-  async fn connect(&self) -> Result<()> {
-    Err(anyhow!("Cannot connect to this device"))
+  #[derivative(PartialEq = "ignore")]
+  #[derivative(Hash = "ignore")]
+  internal: Arc<dyn DeviceInternal<GenericDeviceProperties>>,
+}
+
+impl GenericDevice {
+  #[inline(always)]
+  pub fn new(
+    descriptor: GenericDeviceDescriptor,
+    internal: Arc<dyn DeviceInternal<GenericDeviceProperties>>,
+  ) -> Self {
+    Self {
+      descriptor,
+      internal,
+    }
   }
 }
 
-dyn_clone::clone_trait_object!(Device);
+#[async_trait]
+impl Device<GenericDeviceDescriptor, GenericDeviceProperties> for GenericDevice {
+  #[inline(always)]
+  fn descriptor(&self) -> &GenericDeviceDescriptor {
+    &self.descriptor
+  }
+
+  #[inline(always)]
+  async fn properties(&self) -> Result<Option<GenericDeviceProperties>> {
+    self.internal.properties().await
+  }
+
+  #[inline(always)]
+  async fn connect(&self) -> Result<()> {
+    self.internal.connect().await
+  }
+}

@@ -33,7 +33,7 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
-  scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
+  scanned_peripherals: Arc<DashMap<DeviceId, GenericDevice>>,
   protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
@@ -43,7 +43,7 @@ impl BtlePlugDeviceManagerTask {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
-    scanned_peripherals: Arc<DashMap<DeviceId, Box<dyn Device>>>,
+    scanned_peripherals: Arc<DashMap<DeviceId, GenericDevice>>,
     protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
     adapter_connected: Arc<AtomicBool>,
     cancel_token: CancellationToken,
@@ -177,10 +177,7 @@ impl BtlePlugDeviceManagerTask {
 
         self
           .event_sender
-          .send(TransportManagerEvent::DeviceConnected {
-            id: device_id,
-            device,
-          })
+          .send(TransportManagerEvent::DeviceConnected { device })
           .await
           .unwrap_or_else(|err| {
             error!("Unable to send device connected event: {}", err);
@@ -190,6 +187,9 @@ impl BtlePlugDeviceManagerTask {
         let device_id = address_to_id(&peripheral_id.address());
 
         self.scanned_peripherals.remove(&device_id);
+        self
+          .scanned_peripherals
+          .remove(&address_to_id(&peripheral_id.address()));
         self
           .event_sender
           .send(TransportManagerEvent::DeviceDisconnected(device_id))
@@ -213,8 +213,7 @@ impl BtlePlugDeviceManagerTask {
       if let Err(err) = self
         .event_sender
         .send(TransportManagerEvent::DeviceUpdated {
-          id: device_id,
-          device: dyn_clone::clone(peripheral),
+          device: peripheral.clone(),
         })
         .await
       {
@@ -255,14 +254,11 @@ impl BtlePlugDeviceManagerTask {
 
     self
       .scanned_peripherals
-      .insert(device_id, dyn_clone::clone_box(&*candidate));
+      .insert(address_to_id(&peripheral_id.address()), candidate.clone());
 
     if let Err(err) = self
       .event_sender
-      .send(TransportManagerEvent::DeviceDiscovered {
-        id: candidate.id(),
-        device: candidate,
-      })
+      .send(TransportManagerEvent::DeviceDiscovered { device: candidate })
       .await
     {
       error!("Unable to send device discovered event: {}", err);
@@ -278,9 +274,9 @@ impl BtlePlugDeviceManagerTask {
       None => return Err(anyhow!("Device not found")),
     };
 
-    if device.connected() {
-      return Err(anyhow!("Device already connected"));
-    }
+    // if device.connected() {
+    //   return Err(anyhow!("Device already connected"));
+    // }
 
     device.connect().await
   }

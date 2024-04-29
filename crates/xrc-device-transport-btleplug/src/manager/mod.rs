@@ -61,7 +61,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
     );
 
     // Spawn the task
-    tokio::spawn(async move {
+    let _join_token = tokio::spawn(async move {
       if let Err(err) = task.run().await {
         error!("BtlePlug Device Manager Task failed: {:?}", err);
       }
@@ -79,7 +79,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 
 pub struct BtlePlugDeviceManager {
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
-  discovered_devices: Arc<DashMap<DeviceId, Box<dyn Device>>>,
+  discovered_devices: Arc<DashMap<DeviceId, GenericDevice>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
 }

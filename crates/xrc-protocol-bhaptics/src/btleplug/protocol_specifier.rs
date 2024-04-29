@@ -1,14 +1,13 @@
-use super::BhapticsDevice;
-use super::BhapticsDeviceConnector;
+use super::BhapticsDeviceInternal;
+
 use crate::device_config::{load_device_identifiers, BHapticsDeviceIdentifier};
 use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
-use std::sync::atomic::AtomicBool;
+
+use async_trait::async_trait;
 use std::sync::Arc;
-use tracing::instrument;
-use xrc_device_transport_btleplug::api::{
-  BtlePlugProtocolSpecifier, BtlePlugProtocolSpecifierBuilder, Device,
-};
+use tracing::{info, instrument};
+use xrc_device_transport_btleplug::api::*;
 
 #[derive(Default)]
 pub struct BhapticsProtocolSpecifierBuilder {}
@@ -28,17 +27,14 @@ pub struct BhapticsProtocolSpecifier {
   device_identifiers: Vec<Arc<BHapticsDeviceIdentifier>>,
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
   fn name(&self) -> &'static str {
     "bhaptics"
   }
 
   #[instrument(skip(self, peripheral))]
-  async fn specify_protocol(
-    &self,
-    peripheral: Peripheral,
-  ) -> crate::Result<Option<Box<dyn Device>>> {
+  async fn specify_protocol(&self, peripheral: Peripheral) -> crate::Result<Option<GenericDevice>> {
     let properties = match peripheral.properties().await? {
       Some(properties) => properties,
       None => return Ok(None),
@@ -49,21 +45,21 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
       None => return Ok(None),
     };
 
-    let _product = match self.get_product(&name, &properties.appearance) {
+    let product = match self.get_product(&name, &properties.appearance) {
       Some(product) => product,
       None => return Ok(None),
     };
 
-    let connector = BhapticsDeviceConnector {
+    info!("Found bHaptics device: {:?}", product.device());
+
+    let descriptor = GenericDeviceDescriptor::new(address_to_id(&peripheral.address()), name);
+
+    let internal = BhapticsDeviceInternal {
+      product: product.clone(),
       peripheral: peripheral.clone(),
     };
 
-    Ok(Some(Box::new(BhapticsDevice {
-      peripheral,
-      name,
-      connected: Arc::new(AtomicBool::new(false)),
-      connector,
-    })))
+    Ok(Some(GenericDevice::new(descriptor, Arc::new(internal))))
   }
 
   #[instrument(skip(self))]

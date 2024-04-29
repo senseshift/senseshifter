@@ -13,23 +13,20 @@ pub(crate) struct BhapticsDeviceConnector {
 
 impl BhapticsDeviceConnector {
   pub(crate) async fn connect(&self) -> Result<()> {
-    if self.peripheral.is_connected().await? {
+    let peripheral = &self.peripheral;
+
+    if peripheral.is_connected().await? {
       return Err(anyhow!("Already connected"));
     }
 
-    let properties = match self.peripheral.properties().await {
+    let properties = match peripheral.properties().await {
       Ok(Some(properties)) => properties,
       _ => return Err(anyhow!("Unable to get peripheral properties")),
     };
 
-    self
-      .peripheral
-      .connect()
-      .await
-      .context("Unable to connect")?;
+    peripheral.connect().await.context("Unable to connect")?;
 
-    self
-      .peripheral
+    peripheral
       .discover_services()
       .await
       .context("Unable to discover services")?;
@@ -61,7 +58,7 @@ impl BhapticsDeviceConnector {
       firmware_version.unwrap_or("<Unknown>".to_string()),
     );
 
-    let device_task = BhapticsDeviceTask::new(self.peripheral.clone());
+    let device_task = BhapticsDeviceTask::new(peripheral.clone());
 
     tokio::spawn(async move {
       if let Err(err) = device_task.run().await {

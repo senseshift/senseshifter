@@ -28,16 +28,14 @@ pub enum TransportManagerEvent {
   ScanStopped,
 
   DeviceDiscovered {
-    id: DeviceId,
-    device: Box<dyn Device>,
+    device: GenericDevice,
   },
   DeviceUpdated {
-    id: DeviceId,
-    device: Box<dyn Device>,
+    device: GenericDevice,
   },
+
   DeviceConnected {
-    id: DeviceId,
-    device: Box<dyn Device>,
+    device: GenericDevice,
   },
   DeviceDisconnected(DeviceId),
 }

@@ -33,22 +33,18 @@ async fn main() {
         match event {
           TransportManagerEvent::DeviceDiscovered {
             device,
-            id: device_id,
           }
           | TransportManagerEvent::DeviceUpdated {
             device,
-            id: device_id,
           } => {
-            if device.connectible() && !device.connected() {
-              match manager.connect(&device_id).await {
+            match manager.connect(device.descriptor().id()).await {
                 Ok(_) => {
-                  info!("Connected to device: {:?}", device.name());
+                  info!("Connected to device: {:?}", device.descriptor());
                 }
                 Err(err) => {
                   error!("Error connecting to device: {:?}", err);
                 }
               };
-            }
           }
           _ => {}
         }
