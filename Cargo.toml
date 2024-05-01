@@ -18,10 +18,14 @@ xrc-device-manager = { path = "crates/xrc-device-manager" }
 xrc-device-transport-btleplug = { path = "crates/xrc-device-transport-btleplug" }
 xrc-device-protocol-bhaptics = { path = "crates/xrc-device-protocol-bhaptics" }
 
+xrc-haptics-manager = { path = "crates/xrc-haptics-manager" }
+xrc-haptics-body = { path = "crates/xrc-haptics-body" }
+
 # Common dependencies
 # btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }
 btleplug = { path = "../btleplug" }
-rshapes = { git = "https://github.com/senseshift/rshapes.git" }
+# rshapes = { git = "https://github.com/senseshift/rshapes.git" }
+rshapes = { path = "../rshapes" }
 
 tracing-subscriber = "^0.3.18"
 
@@ -33,6 +37,7 @@ anyhow = "1"
 derivative = "^2.2.0"
 serde = "1"
 serde_json = "1"
+strum = "^0.26.2"
 thiserror = "1"
 tracing = "^0.1.37"
 getset = "^0.1.2"

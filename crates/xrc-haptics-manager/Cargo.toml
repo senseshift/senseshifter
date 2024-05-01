@@ -1,0 +1,23 @@
+[package]
+name = "xrc-haptics-manager"
+version.workspace = true
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+serde = ["xrc-haptics-body/serde"]
+
+mockall = ["dep:mockall"]
+
+[dependencies]
+xrc-haptics-body = { workspace = true }
+
+mockall = { workspace = true, optional = true }
+
+anyhow = { workspace = true }
+
+tokio = { workspace = true }
+
+[dev-dependencies]
+mockall = { workspace = true  }
