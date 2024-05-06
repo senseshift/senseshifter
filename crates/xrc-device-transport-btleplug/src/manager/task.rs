@@ -33,7 +33,8 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
-  scanned_peripherals: Arc<DashMap<DeviceId, GenericDevice>>,
+  scanned_peripherals:
+    Arc<DashMap<DeviceId, Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>>>,
   protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
@@ -43,7 +44,9 @@ impl BtlePlugDeviceManagerTask {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
-    scanned_peripherals: Arc<DashMap<DeviceId, GenericDevice>>,
+    scanned_peripherals: Arc<
+      DashMap<DeviceId, Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>>,
+    >,
     protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
     adapter_connected: Arc<AtomicBool>,
     cancel_token: CancellationToken,
@@ -252,6 +255,8 @@ impl BtlePlugDeviceManagerTask {
       }
     };
 
+    let candidate = Arc::new(candidate);
+
     self
       .scanned_peripherals
       .insert(address_to_id(&peripheral_id.address()), candidate.clone());
@@ -269,7 +274,7 @@ impl BtlePlugDeviceManagerTask {
   async fn connect_device(&self, device_id: &DeviceId) -> Result<()> {
     info!("Connecting device: {:?}", device_id);
 
-    let device = match self.scanned_peripherals.get(device_id) {
+    let _device = match self.scanned_peripherals.get(device_id) {
       Some(device) => device,
       None => return Err(anyhow!("Device not found")),
     };
@@ -278,7 +283,9 @@ impl BtlePlugDeviceManagerTask {
     //   return Err(anyhow!("Device already connected"));
     // }
 
-    device.connect().await
+    // device.connect().await
+
+    Ok(())
   }
 }
 

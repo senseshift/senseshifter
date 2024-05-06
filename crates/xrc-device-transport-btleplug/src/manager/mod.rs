@@ -79,7 +79,8 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 
 pub struct BtlePlugDeviceManager {
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
-  discovered_devices: Arc<DashMap<DeviceId, GenericDevice>>,
+  discovered_devices:
+    Arc<DashMap<DeviceId, Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
 }

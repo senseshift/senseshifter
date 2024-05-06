@@ -5,7 +5,7 @@ use derivative::Derivative;
 
 use async_trait::async_trait;
 use std::fmt::Debug;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use uuid::Uuid;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -26,30 +26,45 @@ where
   Descriptor: DeviceDescriptor,
   Properties: DeviceProperties,
 {
-  fn descriptor(&self) -> &Descriptor;
+  /// Returns the device's unique identifier.
+  fn id(&self) -> &DeviceId;
+
+  fn descriptor(&self) -> Descriptor;
 
   async fn properties(&self) -> Result<Option<Properties>>;
-
-  async fn connect(&self) -> Result<()>;
 }
 
 #[derive(Derivative, Debug, Clone)]
 #[derivative(PartialEq, Hash)]
-pub struct GenericDevice {
-  descriptor: GenericDeviceDescriptor,
+pub struct GenericDevice<Descriptor, Properties>
+where
+  Descriptor: DeviceDescriptor,
+  Properties: DeviceProperties,
+{
+  id: DeviceId,
 
   #[derivative(PartialEq = "ignore")]
   #[derivative(Hash = "ignore")]
-  internal: Arc<dyn DeviceInternal<GenericDeviceProperties>>,
+  descriptor: Arc<RwLock<Descriptor>>, // todo: use ArcSwap?
+
+  #[derivative(PartialEq = "ignore")]
+  #[derivative(Hash = "ignore")]
+  internal: Arc<dyn DeviceInternal<Properties>>,
 }
 
-impl GenericDevice {
+impl<Descriptor, Properties> GenericDevice<Descriptor, Properties>
+where
+  Descriptor: DeviceDescriptor,
+  Properties: DeviceProperties,
+{
   #[inline(always)]
   pub fn new(
-    descriptor: GenericDeviceDescriptor,
-    internal: Arc<dyn DeviceInternal<GenericDeviceProperties>>,
+    id: DeviceId,
+    descriptor: Arc<RwLock<Descriptor>>,
+    internal: Arc<dyn DeviceInternal<Properties>>,
   ) -> Self {
     Self {
+      id,
       descriptor,
       internal,
     }
@@ -57,19 +72,24 @@ impl GenericDevice {
 }
 
 #[async_trait]
-impl Device<GenericDeviceDescriptor, GenericDeviceProperties> for GenericDevice {
+impl<Descriptor, Properties> Device<Descriptor, Properties>
+  for GenericDevice<Descriptor, Properties>
+where
+  Descriptor: DeviceDescriptor + Send + Sync + Clone,
+  Properties: DeviceProperties + Send + Sync,
+{
   #[inline(always)]
-  fn descriptor(&self) -> &GenericDeviceDescriptor {
-    &self.descriptor
+  fn id(&self) -> &DeviceId {
+    &self.id
   }
 
   #[inline(always)]
-  async fn properties(&self) -> Result<Option<GenericDeviceProperties>> {
+  fn descriptor(&self) -> Descriptor {
+    self.descriptor.read().unwrap().clone()
+  }
+
+  #[inline(always)]
+  async fn properties(&self) -> Result<Option<Properties>> {
     self.internal.properties().await
-  }
-
-  #[inline(always)]
-  async fn connect(&self) -> Result<()> {
-    self.internal.connect().await
   }
 }

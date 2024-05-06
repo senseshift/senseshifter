@@ -5,7 +5,7 @@ use crate::Result;
 use async_trait::async_trait;
 
 #[cfg(any(feature = "mockall", test))]
-use mockall::{automock, mock, predicate::*};
+use mockall::{automock, predicate::*};
 
 #[cfg_attr(any(feature = "mockall", test), automock)]
 #[async_trait]

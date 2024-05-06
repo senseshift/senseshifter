@@ -12,7 +12,10 @@ pub trait BtlePlugProtocolSpecifierBuilder: Send {
 pub trait BtlePlugProtocolSpecifier: Send + Sync {
   fn name(&self) -> &'static str;
 
-  async fn specify_protocol(&self, peripheral: Peripheral) -> Result<Option<GenericDevice>>;
+  async fn specify_protocol(
+    &self,
+    peripheral: Peripheral,
+  ) -> Result<Option<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>>;
 
   async fn connect_peripheral(&self, peripheral: Peripheral) -> Result<()>;
 }

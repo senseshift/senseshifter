@@ -36,7 +36,7 @@ async fn main() {
           | TransportManagerEvent::DeviceUpdated {
             device,
           } => {
-            match manager.connect(device.descriptor().id()).await {
+            match manager.connect(device.id()).await {
                 Ok(_) => {
                   info!("Connected to device: {:?}", device.descriptor());
                 }
