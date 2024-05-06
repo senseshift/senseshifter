@@ -68,6 +68,7 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
     let internal = BhapticsDeviceInternal {
       product: product.clone(),
       peripheral: peripheral.clone(),
+      descriptor: descriptor.clone(),
     };
 
     Ok(Some(GenericDevice::new(

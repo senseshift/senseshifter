@@ -274,7 +274,7 @@ impl BtlePlugDeviceManagerTask {
   async fn connect_device(&self, device_id: &DeviceId) -> Result<()> {
     info!("Connecting device: {:?}", device_id);
 
-    let _device = match self.scanned_peripherals.get(device_id) {
+    let device = match self.scanned_peripherals.get(device_id) {
       Some(device) => device,
       None => return Err(anyhow!("Device not found")),
     };
@@ -283,9 +283,7 @@ impl BtlePlugDeviceManagerTask {
     //   return Err(anyhow!("Device already connected"));
     // }
 
-    // device.connect().await
-
-    Ok(())
+    device.connect().await
   }
 }
 

@@ -32,6 +32,8 @@ where
   fn descriptor(&self) -> Descriptor;
 
   async fn properties(&self) -> Result<Option<Properties>>;
+
+  async fn connect(&self) -> Result<()>;
 }
 
 #[derive(Derivative, Debug, Clone)]
@@ -91,5 +93,10 @@ where
   #[inline(always)]
   async fn properties(&self) -> Result<Option<Properties>> {
     self.internal.properties().await
+  }
+
+  #[inline(always)]
+  async fn connect(&self) -> Result<()> {
+    self.internal.connect().await
   }
 }
