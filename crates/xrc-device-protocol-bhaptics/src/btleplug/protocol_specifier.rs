@@ -74,6 +74,7 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
     Ok(Some(GenericDevice::new(
       device_id,
       descriptor,
+      true,
       Arc::new(internal),
     )))
   }

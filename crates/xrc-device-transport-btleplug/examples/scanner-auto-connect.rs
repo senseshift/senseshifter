@@ -1,4 +1,6 @@
+use dashmap::DashSet;
 use futures::pin_mut;
+use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 
@@ -24,6 +26,8 @@ async fn main() {
 
   pin_mut!(event_receiver);
 
+  let connected_devices = Arc::new(DashSet::<DeviceId>::new());
+
   loop {
     tokio::select! {
       Some(event) = event_receiver.recv() => {
@@ -36,14 +40,21 @@ async fn main() {
           | TransportManagerEvent::DeviceUpdated {
             device,
           } => {
-            match manager.connect(device.id()).await {
+            if connected_devices.insert(device.id().clone()) && device.connectible() {
+              match manager.connect(device.id()).await {
                 Ok(_) => {
-                  info!("Connected to device: {:?}", device.descriptor());
+                  // info!("Connected to device: {:?}", device.descriptor());
                 }
                 Err(err) => {
                   error!("Error connecting to device: {:?}", err);
                 }
               };
+            }
+          }
+          TransportManagerEvent::DeviceConnected {
+            device,
+          } => {
+            info!("Device connected: {:?}", device.descriptor());
           }
           _ => {}
         }

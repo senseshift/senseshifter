@@ -33,7 +33,7 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
-  scanned_peripherals:
+  discovered_devices:
     Arc<DashMap<DeviceId, Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>>>,
   protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
   adapter_ready: Arc<AtomicBool>,
@@ -54,7 +54,7 @@ impl BtlePlugDeviceManagerTask {
     Self {
       command_receiver,
       event_sender,
-      scanned_peripherals,
+      discovered_devices: scanned_peripherals,
       protocol_handlers,
       adapter_ready: adapter_connected,
       cancel_token,
@@ -176,7 +176,7 @@ impl BtlePlugDeviceManagerTask {
       CentralEvent::DeviceConnected(peripheral_id) => {
         let device_id = address_to_id(&peripheral_id.address());
 
-        let device = dyn_clone::clone(self.scanned_peripherals.get(&device_id).unwrap().value());
+        let device = dyn_clone::clone(self.discovered_devices.get(&device_id).unwrap().value());
 
         self
           .event_sender
@@ -189,9 +189,9 @@ impl BtlePlugDeviceManagerTask {
       CentralEvent::DeviceDisconnected(peripheral_id) => {
         let device_id = address_to_id(&peripheral_id.address());
 
-        self.scanned_peripherals.remove(&device_id);
+        self.discovered_devices.remove(&device_id);
         self
-          .scanned_peripherals
+          .discovered_devices
           .remove(&address_to_id(&peripheral_id.address()));
         self
           .event_sender
@@ -208,10 +208,10 @@ impl BtlePlugDeviceManagerTask {
   #[instrument(skip(self, adapter))]
   async fn handle_peripheral_event(&self, peripheral_id: &PeripheralId, adapter: &Adapter) {
     let device_id = address_to_id(&peripheral_id.address());
-    let existing = self.scanned_peripherals.get_mut(&device_id);
+    let existing = self.discovered_devices.get_mut(&device_id);
 
-    if let Some(mut existing) = existing {
-      let peripheral = existing.value_mut();
+    if let Some(existing) = existing {
+      let peripheral = existing.value();
 
       if let Err(err) = self
         .event_sender
@@ -233,9 +233,9 @@ impl BtlePlugDeviceManagerTask {
       }
     };
 
-    let mut candidate = None;
+    let mut device = None;
     for (_, handler) in self.protocol_handlers.iter() {
-      candidate = handler
+      device = handler
         .specify_protocol(peripheral.clone())
         .await
         .unwrap_or_else(|err| {
@@ -243,27 +243,27 @@ impl BtlePlugDeviceManagerTask {
           None
         });
 
-      if candidate.is_some() {
+      if device.is_some() {
         break;
       }
     }
 
-    let candidate = match candidate {
+    let device = match device {
       Some(candidate) => candidate,
       None => {
         return;
       }
     };
 
-    let candidate = Arc::new(candidate);
+    let devuce = Arc::new(device);
 
     self
-      .scanned_peripherals
-      .insert(address_to_id(&peripheral_id.address()), candidate.clone());
+      .discovered_devices
+      .insert(address_to_id(&peripheral_id.address()), devuce.clone());
 
     if let Err(err) = self
       .event_sender
-      .send(TransportManagerEvent::DeviceDiscovered { device: candidate })
+      .send(TransportManagerEvent::DeviceDiscovered { device: devuce })
       .await
     {
       error!("Unable to send device discovered event: {}", err);
@@ -274,10 +274,14 @@ impl BtlePlugDeviceManagerTask {
   async fn connect_device(&self, device_id: &DeviceId) -> Result<()> {
     info!("Connecting device: {:?}", device_id);
 
-    let device = match self.scanned_peripherals.get(device_id) {
+    let device = match self.discovered_devices.get(device_id) {
       Some(device) => device,
       None => return Err(anyhow!("Device not found")),
     };
+
+    if !device.connectible() {
+      return Err(anyhow!("Device is not connectible"));
+    }
 
     // if device.connected() {
     //   return Err(anyhow!("Device already connected"));

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
 
 use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 
@@ -14,7 +14,7 @@ use crate::Result;
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
-use tracing::{error, info, instrument};
+use tracing::{error, info, instrument, warn};
 
 #[derive(Default)]
 pub struct BtlePlugDeviceManagerBuilder {
@@ -73,6 +73,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
       discovered_devices,
       adapter_ready,
       cancel_token,
+      connecting_devices: Arc::new(DashSet::new()),
     }))
   }
 }
@@ -83,6 +84,7 @@ pub struct BtlePlugDeviceManager {
     Arc<DashMap<DeviceId, Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
+  connecting_devices: Arc<DashSet<DeviceId>>,
 }
 
 #[async_trait::async_trait]
@@ -139,6 +141,11 @@ impl TransportManager for BtlePlugDeviceManager {
 
   #[instrument(skip(self))]
   async fn connect(&self, device_id: &DeviceId) -> Result<()> {
+    if !self.connecting_devices.insert(device_id.clone()) {
+      warn!("Device is already connecting");
+      return Ok(());
+    }
+
     let (sender, receiver) = oneshot::channel();
 
     // Send the command to the task
@@ -161,7 +168,11 @@ impl TransportManager for BtlePlugDeviceManager {
     receiver.await.unwrap_or_else(|err| {
       error!("Failed to receive connect result: {:?}", err);
       Err(err.into())
-    })
+    })?;
+
+    self.connecting_devices.remove(device_id);
+
+    Ok(())
   }
 }
 

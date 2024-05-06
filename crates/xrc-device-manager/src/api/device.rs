@@ -3,6 +3,7 @@ use crate::Result;
 
 use derivative::Derivative;
 
+use anyhow::anyhow;
 use async_trait::async_trait;
 use std::fmt::Debug;
 use std::sync::{Arc, RwLock};
@@ -33,6 +34,10 @@ where
 
   async fn properties(&self) -> Result<Option<Properties>>;
 
+  fn connectible(&self) -> bool {
+    false
+  }
+
   async fn connect(&self) -> Result<()>;
 }
 
@@ -49,6 +54,8 @@ where
   #[derivative(Hash = "ignore")]
   descriptor: Arc<RwLock<Descriptor>>, // todo: use ArcSwap?
 
+  connectible: bool,
+
   #[derivative(PartialEq = "ignore")]
   #[derivative(Hash = "ignore")]
   internal: Arc<dyn DeviceInternal<Properties>>,
@@ -63,11 +70,13 @@ where
   pub fn new(
     id: DeviceId,
     descriptor: Arc<RwLock<Descriptor>>,
+    connectible: bool,
     internal: Arc<dyn DeviceInternal<Properties>>,
   ) -> Self {
     Self {
       id,
       descriptor,
+      connectible,
       internal,
     }
   }
@@ -96,7 +105,16 @@ where
   }
 
   #[inline(always)]
+  fn connectible(&self) -> bool {
+    self.connectible
+  }
+
+  #[inline(always)]
   async fn connect(&self) -> Result<()> {
+    if !self.connectible {
+      return Err(anyhow!("Device is not connectible"));
+    }
+
     self.internal.connect().await
   }
 }
