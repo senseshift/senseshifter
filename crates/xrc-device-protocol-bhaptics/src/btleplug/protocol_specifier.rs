@@ -65,11 +65,8 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
     );
     let descriptor = Arc::new(RwLock::new(descriptor));
 
-    let internal = BhapticsDeviceInternal {
-      product: product.clone(),
-      peripheral: peripheral.clone(),
-      descriptor: descriptor.clone(),
-    };
+    let internal =
+      BhapticsDeviceInternal::new(product.clone(), peripheral.clone(), descriptor.clone());
 
     Ok(Some(GenericDevice::new(
       device_id,

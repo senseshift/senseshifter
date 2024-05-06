@@ -176,11 +176,13 @@ impl BtlePlugDeviceManagerTask {
       CentralEvent::DeviceConnected(peripheral_id) => {
         let device_id = address_to_id(&peripheral_id.address());
 
-        let device = dyn_clone::clone(self.discovered_devices.get(&device_id).unwrap().value());
+        let device = self.discovered_devices.get(&device_id).unwrap();
 
         self
           .event_sender
-          .send(TransportManagerEvent::DeviceConnected { device })
+          .send(TransportManagerEvent::DeviceConnected {
+            device: device.clone(),
+          })
           .await
           .unwrap_or_else(|err| {
             error!("Unable to send device connected event: {}", err);
@@ -255,15 +257,15 @@ impl BtlePlugDeviceManagerTask {
       }
     };
 
-    let devuce = Arc::new(device);
+    let device = Arc::new(device);
 
     self
       .discovered_devices
-      .insert(address_to_id(&peripheral_id.address()), devuce.clone());
+      .insert(address_to_id(&peripheral_id.address()), device.clone());
 
     if let Err(err) = self
       .event_sender
-      .send(TransportManagerEvent::DeviceDiscovered { device: devuce })
+      .send(TransportManagerEvent::DeviceDiscovered { device })
       .await
     {
       error!("Unable to send device discovered event: {}", err);

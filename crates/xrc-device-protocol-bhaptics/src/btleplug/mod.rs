@@ -1,8 +1,7 @@
-mod connector;
 mod constants;
-mod device;
+mod device_internal;
 mod device_task;
 mod protocol_specifier;
 
-pub(crate) use device::*;
+pub(crate) use device_internal::*;
 pub use protocol_specifier::*;

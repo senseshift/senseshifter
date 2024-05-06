@@ -2,24 +2,54 @@ use anyhow::anyhow;
 use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
 use std::sync::{Arc, RwLock};
-use tracing::warn;
+use tracing::{instrument, warn};
 
+use crate::btleplug::device_task::BhapticsDeviceTask;
 use crate::BHapticsDeviceIdentifier;
 use xrc_device_transport_btleplug::api::*;
 
 #[derive(Debug, Clone)]
 pub(crate) struct BhapticsDeviceInternal {
-  pub(crate) product: Arc<BHapticsDeviceIdentifier>,
-  pub(crate) peripheral: Peripheral,
-  pub(crate) descriptor: Arc<RwLock<GenericDeviceDescriptor>>,
+  product: Arc<BHapticsDeviceIdentifier>,
+  peripheral: Peripheral,
+  descriptor: Arc<RwLock<GenericDeviceDescriptor>>,
+
+  firmware_version: Arc<RwLock<Option<String>>>,
+  battery_level: Arc<RwLock<Option<DeviceBatteryProperty>>>,
+}
+
+impl BhapticsDeviceInternal {
+  pub fn new(
+    product: Arc<BHapticsDeviceIdentifier>,
+    peripheral: Peripheral,
+    descriptor: Arc<RwLock<GenericDeviceDescriptor>>,
+  ) -> Self {
+    Self {
+      product,
+      peripheral,
+      descriptor,
+
+      firmware_version: Arc::new(RwLock::new(None)),
+      battery_level: Arc::new(RwLock::new(None)),
+    }
+  }
 }
 
 #[async_trait::async_trait]
 impl DeviceInternal<GenericDeviceProperties> for BhapticsDeviceInternal {
   async fn properties(&self) -> anyhow::Result<Option<GenericDeviceProperties>> {
-    return Ok(None);
+    // todo: do not panic
+    let result = self.battery_level.read().unwrap().clone();
+    let battery_levels = result.as_ref().map(|level| vec![level.clone()]);
+
+    return Ok(Some(GenericDeviceProperties::new(
+      self.firmware_version.read().unwrap().clone(),
+      None,
+      battery_levels,
+    )));
   }
 
+  #[instrument(skip(self))]
   async fn connect(&self) -> anyhow::Result<()> {
     if self.peripheral.is_connected().await? {
       return Ok(()); // todo: return error?
@@ -42,6 +72,14 @@ impl DeviceInternal<GenericDeviceProperties> for BhapticsDeviceInternal {
     } else {
       warn!("Could not read SN from device");
     }
+
+    *self.firmware_version.write().unwrap() = self.read_firmware_version().await.ok();
+
+    let task = BhapticsDeviceTask::new(self.peripheral.clone(), self.battery_level.clone());
+
+    tokio::spawn(async move {
+      task.run().await.ok();
+    });
 
     Ok(())
   }
@@ -75,5 +113,30 @@ impl BhapticsDeviceInternal {
       .join("-");
 
     Ok(sn)
+  }
+
+  async fn read_firmware_version(&self) -> crate::Result<String> {
+    let fw_char = self
+      .peripheral
+      .characteristics()
+      .into_iter()
+      .find(|c| c.uuid == super::constants::CHAR_VERSION);
+    let fw = match fw_char {
+      Some(fw_char) => self.peripheral.read(&fw_char).await?,
+      None => return Err(anyhow!("Could not find FW characteristic")),
+    };
+
+    if fw.len() % 2 != 0 {
+      return Err(anyhow!("FW length is not even"));
+    }
+
+    // [0x01, 0x0f] => "1.15"
+    let fw = fw
+      .iter()
+      .map(|&b| format!("{}", b))
+      .collect::<Vec<_>>()
+      .join(".");
+
+    Ok(fw)
   }
 }
