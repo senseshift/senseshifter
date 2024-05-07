@@ -13,6 +13,8 @@ serde = ["dep:serde", "uuid/serde", "xrc-haptics-manager/serde"]
 mockall = ["dep:mockall", "xrc-haptics-manager/mockall"]
 
 [dependencies]
+xrc-commons = { workspace = true }
+
 xrc-haptics-manager = { workspace = true, default-features = false }
 
 uuid = { workspace = true }

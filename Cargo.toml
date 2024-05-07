@@ -14,6 +14,8 @@ edition = "2021"
 
 [workspace.dependencies]
 # Workspace members
+xrc-commons = { path = "crates/xrc-commons" }
+
 xrc-device-manager = { path = "crates/xrc-device-manager" }
 xrc-device-transport-btleplug = { path = "crates/xrc-device-transport-btleplug" }
 xrc-device-protocol-bhaptics = { path = "crates/xrc-device-protocol-bhaptics" }

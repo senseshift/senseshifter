@@ -10,6 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-protocol-bhaptics/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-haptics-body/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-haptics-manager/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-commons/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

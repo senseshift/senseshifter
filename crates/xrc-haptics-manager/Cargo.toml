@@ -11,6 +11,8 @@ serde = ["xrc-haptics-body/serde"]
 mockall = ["dep:mockall"]
 
 [dependencies]
+xrc-commons = { workspace = true }
+
 xrc-haptics-body = { workspace = true }
 
 mockall = { workspace = true, optional = true }

@@ -9,6 +9,8 @@ edition.workspace = true
 btleplug = ["dep:xrc-device-transport-btleplug", "dep:btleplug"]
 
 [dependencies]
+xrc-commons = { workspace = true }
+
 xrc-device-transport-btleplug = { workspace = true, default-features = false, optional = true }
 
 btleplug = { workspace = true, optional = true }

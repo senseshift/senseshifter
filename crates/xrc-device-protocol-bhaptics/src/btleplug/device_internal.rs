@@ -37,7 +37,7 @@ impl BhapticsDeviceInternal {
 
 #[async_trait::async_trait]
 impl DeviceInternal<GenericDeviceProperties> for BhapticsDeviceInternal {
-  async fn properties(&self) -> anyhow::Result<Option<GenericDeviceProperties>> {
+  async fn properties(&self) -> crate::Result<Option<GenericDeviceProperties>> {
     // todo: do not panic
     let result = self.battery_level.read().unwrap().clone();
     let battery_levels = result.as_ref().map(|level| vec![level.clone()]);
@@ -50,7 +50,7 @@ impl DeviceInternal<GenericDeviceProperties> for BhapticsDeviceInternal {
   }
 
   #[instrument(skip(self))]
-  async fn connect(&self) -> anyhow::Result<()> {
+  async fn connect(&self) -> crate::Result<()> {
     if self.peripheral.is_connected().await? {
       return Ok(()); // todo: return error?
     }
@@ -73,6 +73,7 @@ impl DeviceInternal<GenericDeviceProperties> for BhapticsDeviceInternal {
       warn!("Could not read SN from device");
     }
 
+    // todo: do not panic
     *self.firmware_version.write().unwrap() = self.read_firmware_version().await.ok();
 
     let task = BhapticsDeviceTask::new(self.peripheral.clone(), self.battery_level.clone());

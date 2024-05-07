@@ -6,4 +6,4 @@ mod manager;
 #[cfg(feature = "manager")]
 pub use manager::*;
 
-pub type Result<T> = anyhow::Result<T>;
+pub type Result<T> = xrc_commons::Result<T>;

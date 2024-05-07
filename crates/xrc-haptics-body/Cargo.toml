@@ -9,6 +9,8 @@ edition.workspace = true
 serde = ["dep:serde"]
 
 [dependencies]
+xrc-commons = { workspace = true }
+
 rshapes = { workspace = true }
 
 anyhow = { workspace = true }

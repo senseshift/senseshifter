@@ -1592,6 +1592,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "791978798f0597cfc70478424c2b4fdc2b7a8024aaff78497ef00f24ef674193"
 
 [[package]]
+name = "xrc-commons"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
 name = "xrc-core"
 version = "0.1.0"
 
@@ -1613,6 +1620,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+ "xrc-commons",
  "xrc-device-transport-btleplug",
  "xrc-haptics-manager",
 ]
@@ -1631,6 +1639,7 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+ "xrc-commons",
  "xrc-device-transport-btleplug",
 ]
 
@@ -1654,6 +1663,7 @@ dependencies = [
  "tracing-subscriber",
  "uuid",
  "windows 0.56.0",
+ "xrc-commons",
  "xrc-device-manager",
  "xrc-device-protocol-bhaptics",
 ]
@@ -1670,6 +1680,7 @@ dependencies = [
  "strum",
  "thiserror",
  "tracing",
+ "xrc-commons",
 ]
 
 [[package]]
@@ -1679,5 +1690,6 @@ dependencies = [
  "anyhow",
  "mockall",
  "tokio",
+ "xrc-commons",
  "xrc-haptics-body",
 ]
