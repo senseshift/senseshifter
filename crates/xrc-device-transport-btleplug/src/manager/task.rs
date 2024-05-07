@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use btleplug::api::Peripheral;
 use btleplug::{
-  api::{Central, CentralEvent, Manager as _, ScanFilter},
+  api::{Central, CentralEvent, Manager as _, Peripheral as _, ScanFilter},
   platform::{Adapter, Manager, PeripheralId},
 };
 use dashmap::DashMap;

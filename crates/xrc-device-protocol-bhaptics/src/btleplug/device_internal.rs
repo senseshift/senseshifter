@@ -107,7 +107,7 @@ impl BhapticsDeviceInternal {
       .chunks(2)
       .map(|chunk| {
         let chunk = [chunk[0], chunk[1]];
-        let chunk = u16::from_be_bytes(chunk.try_into().unwrap());
+        let chunk = u16::from_be_bytes(chunk);
         format!("{:04x}", chunk)
       })
       .collect::<Vec<_>>()

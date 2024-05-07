@@ -81,7 +81,7 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
 impl BhapticsProtocolSpecifier {
   fn get_product(
     &self,
-    name: &String,
+    name: &str,
     appearance: &Option<u16>,
   ) -> Option<Arc<BHapticsDeviceIdentifier>> {
     if appearance.is_some() && (appearance.unwrap() == 509 || appearance.unwrap() == 510) {
@@ -108,8 +108,8 @@ impl BhapticsProtocolSpecifier {
       .cloned()
   }
 
-  fn get_product_by_name(&self, name: &String) -> Option<Arc<BHapticsDeviceIdentifier>> {
-    let lower_name = name.clone().to_lowercase();
+  fn get_product_by_name(&self, name: &str) -> Option<Arc<BHapticsDeviceIdentifier>> {
+    let lower_name = name.to_owned().to_lowercase();
 
     self
       .device_identifiers
