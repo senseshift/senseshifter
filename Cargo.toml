@@ -17,7 +17,10 @@ edition = "2021"
 xrc-commons = { path = "crates/xrc-commons" }
 
 xrc-device-manager = { path = "crates/xrc-device-manager" }
+
 xrc-device-transport-btleplug = { path = "crates/xrc-device-transport-btleplug" }
+xrc-device-transport-serialport = { path = "crates/xrc-device-transport-serialport" }
+
 xrc-device-protocol-bhaptics = { path = "crates/xrc-device-protocol-bhaptics" }
 
 xrc-haptics-manager = { path = "crates/xrc-haptics-manager" }
@@ -29,11 +32,12 @@ btleplug = { path = "../btleplug" }
 # rshapes = { git = "https://github.com/senseshift/rshapes.git" }
 rshapes = { path = "../rshapes" }
 
+tokio-serial = "^5.4.4"
+
 tracing-subscriber = "^0.3.18"
 
 dashmap = "5"
 uuid = "^1.8.0"
-tokio-serial = "^5.4.4"
 
 anyhow = "1"
 derivative = "^2.2.0"

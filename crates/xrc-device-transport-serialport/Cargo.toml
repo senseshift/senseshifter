@@ -1,0 +1,36 @@
+[package]
+name = "xrc-device-transport-serialport"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = ["manager"]
+
+manager = []
+
+[dependencies]
+xrc-commons = { workspace = true }
+
+xrc-device-manager = { workspace = true, default-features = false }
+
+tokio-serial = { workspace = true }
+
+uuid = { workspace = true, features = ["v8"] }
+
+anyhow = { workspace = true }
+derivative = { workspace = true }
+getset = { workspace = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+async-trait = { workspace = true }
+futures = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
+dashmap = { workspace = true }
+dyn-clone = { workspace = true }
+
+
+[dev-dependencies]
+tracing-subscriber = { workspace = true }

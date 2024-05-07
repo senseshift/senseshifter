@@ -11,6 +11,9 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-haptics-body/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-haptics-manager/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-commons/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-manager/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-transport-serialport/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/xrc-transport-serialport/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
