@@ -1,5 +1,6 @@
 use derivative::Derivative;
 use getset::{Getters, Setters};
+use std::fmt::Debug;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Derivative, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -36,7 +37,7 @@ impl DeviceBatteryProperty {
   }
 }
 
-pub trait DeviceProperties {
+pub trait DeviceProperties: Debug {
   fn hardware_version(&self) -> Option<&str>;
 
   fn firmware_version(&self) -> Option<&str>;

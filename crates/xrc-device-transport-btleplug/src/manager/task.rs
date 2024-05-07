@@ -33,8 +33,7 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
-  discovered_devices:
-    Arc<DashMap<DeviceId, Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>>>,
+  discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
   protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
@@ -44,9 +43,7 @@ impl BtlePlugDeviceManagerTask {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
-    scanned_peripherals: Arc<
-      DashMap<DeviceId, Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>>,
-    >,
+    scanned_peripherals: Arc<DashMap<DeviceId, ConcurrentDevice>>,
     protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
     adapter_connected: Arc<AtomicBool>,
     cancel_token: CancellationToken,
@@ -256,8 +253,6 @@ impl BtlePlugDeviceManagerTask {
         return;
       }
     };
-
-    let device = Arc::new(device);
 
     self
       .discovered_devices

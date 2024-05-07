@@ -37,7 +37,7 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
   async fn specify_protocol(
     &self,
     peripheral: Peripheral,
-  ) -> crate::Result<Option<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>> {
+  ) -> crate::Result<Option<ConcurrentDevice>> {
     let properties = match peripheral.properties().await? {
       Some(properties) => properties,
       None => return Ok(None),
@@ -68,12 +68,8 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
     let internal =
       BhapticsDeviceInternal::new(product.clone(), peripheral.clone(), descriptor.clone());
 
-    Ok(Some(GenericDevice::new(
-      device_id,
-      descriptor,
-      true,
-      Arc::new(internal),
-    )))
+    let device = GenericDevice::new(device_id, descriptor, true, Arc::new(internal));
+    Ok(Some(Arc::new(device)))
   }
 
   #[instrument(skip(self))]

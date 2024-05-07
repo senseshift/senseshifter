@@ -1,6 +1,6 @@
 use crate::api::*;
 use crate::Result;
-use std::sync::Arc;
+
 use tokio::sync::mpsc;
 
 pub trait TransportManagerBuilder: Default + Send {
@@ -29,14 +29,14 @@ pub enum TransportManagerEvent {
   ScanStopped,
 
   DeviceDiscovered {
-    device: Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>,
+    device: ConcurrentDevice,
   },
   DeviceUpdated {
-    device: Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>,
+    device: ConcurrentDevice,
   },
 
   DeviceConnected {
-    device: Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>,
+    device: ConcurrentDevice,
   },
   DeviceDisconnected(DeviceId),
 }

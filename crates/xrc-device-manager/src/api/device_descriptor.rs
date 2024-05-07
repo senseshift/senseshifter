@@ -1,7 +1,8 @@
 use crate::api::*;
 use derivative::Derivative;
+use std::fmt::Debug;
 
-pub trait DeviceDescriptor {
+pub trait DeviceDescriptor: Debug {
   fn name(&self) -> &str;
 
   fn manufacturer(&self) -> Option<&str>;

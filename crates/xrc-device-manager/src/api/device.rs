@@ -22,7 +22,7 @@ impl DeviceId {
 }
 
 #[async_trait]
-pub trait Device<Descriptor, Properties>
+pub trait Device<Descriptor, Properties>: Debug + Send + Sync
 where
   Descriptor: DeviceDescriptor,
   Properties: DeviceProperties,
@@ -40,6 +40,8 @@ where
 
   async fn connect(&self) -> Result<()>;
 }
+
+pub type ConcurrentDevice = Arc<dyn Device<GenericDeviceDescriptor, GenericDeviceProperties>>;
 
 #[derive(Derivative, Debug, Clone)]
 #[derivative(PartialEq, Hash)]

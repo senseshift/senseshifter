@@ -26,10 +26,7 @@ async fn main() {
 
   pin_mut!(event_receiver);
 
-  let connected_devices = Arc::new(DashMap::<
-    DeviceId,
-    Arc<GenericDevice<GenericDeviceDescriptor, GenericDeviceProperties>>,
-  >::new());
+  let connected_devices = Arc::new(DashMap::<DeviceId, ConcurrentDevice>::new());
 
   loop {
     tokio::select! {
