@@ -14,8 +14,9 @@ async fn main() {
 
   let (event_sender, event_receiver) = mpsc::channel(256);
 
-  let builder = BtlePlugDeviceManagerBuilder::default()
-    .with_protocol(Box::<BhapticsProtocolSpecifierBuilder>::default());
+  let mut builder = BtlePlugDeviceManagerBuilder::default();
+
+  builder.protocol(BhapticsProtocolSpecifierBuilder::default());
 
   let mut manager = builder.finish(event_sender).unwrap();
 

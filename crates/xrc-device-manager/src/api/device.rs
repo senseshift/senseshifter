@@ -6,6 +6,7 @@ use derivative::Derivative;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use std::fmt::Debug;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use uuid::Uuid;
 
@@ -53,7 +54,13 @@ pub struct GenericDevice {
   #[derivative(Hash = "ignore")]
   descriptor: Arc<RwLock<GenericDeviceDescriptor>>, // todo: use ArcSwap or keepcalm?
 
+  #[derivative(PartialEq = "ignore")]
+  #[derivative(Hash = "ignore")]
   connectible: bool,
+
+  #[derivative(PartialEq = "ignore")]
+  #[derivative(Hash = "ignore")]
+  connected: Arc<AtomicBool>,
 
   #[derivative(PartialEq = "ignore")]
   #[derivative(Hash = "ignore")]
@@ -72,6 +79,7 @@ impl GenericDevice {
       id,
       descriptor,
       connectible,
+      connected: Arc::new(AtomicBool::new(false)),
       internal,
     }
   }
@@ -105,6 +113,14 @@ impl Device<GenericDeviceDescriptor, GenericDeviceProperties> for GenericDevice 
       return Err(anyhow!("Device is not connectible"));
     }
 
-    self.internal.connect().await
+    if self.connected.load(Ordering::SeqCst) {
+      return Err(anyhow!("Device is already connected"));
+    }
+
+    self.internal.connect().await?;
+
+    self.connected.store(true, Ordering::SeqCst);
+
+    Ok(())
   }
 }

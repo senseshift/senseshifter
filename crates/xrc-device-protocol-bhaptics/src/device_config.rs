@@ -1,3 +1,4 @@
+use derivative::Derivative;
 use getset::Getters;
 use serde::{Deserialize, Serialize};
 
@@ -74,7 +75,8 @@ impl BHapticsDeviceType {
   }
 }
 
-#[derive(Getters, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Derivative, Getters, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[derivative(Debug)]
 pub struct BHapticsDeviceIdentifier {
   #[get = "pub"]
   #[serde(rename = "name")]
@@ -82,14 +84,17 @@ pub struct BHapticsDeviceIdentifier {
 
   #[get = "pub"]
   #[serde(rename = "nameContains")]
+  #[derivative(Debug = "ignore")]
   name_contains: String,
 
   #[get = "pub"]
   #[serde(rename = "rawValue")]
+  #[derivative(Debug = "ignore")]
   appearance: u16,
 
   #[get = "pub"]
   #[serde(rename = "candidatePositions")]
+  #[derivative(Debug = "ignore")]
   candidate_positions: Vec<Position>,
 }
 

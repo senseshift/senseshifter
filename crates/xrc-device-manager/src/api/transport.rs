@@ -10,7 +10,7 @@ use tracing::error;
 #[cfg(any(feature = "mockall", test))]
 use mockall::{automock, predicate::*};
 
-pub trait TransportManagerBuilder: Default + Send {
+pub trait TransportManagerBuilder {
   fn finish(
     &self,
     event_sender: mpsc::Sender<TransportManagerEvent>,
@@ -34,6 +34,10 @@ pub trait TransportManager: Send + Sync {
   async fn stop_scanning(&mut self) -> Result<()>;
 
   async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()>;
+
+  fn devices(&self) -> Result<Vec<ConcurrentDevice>>;
+
+  fn get_device(&self, device_id: &DeviceId) -> Result<Option<ConcurrentDevice>>;
 }
 
 #[cfg_attr(any(feature = "mockall", test), automock)]
@@ -48,6 +52,10 @@ pub trait RescanTransportManager: Sync + Send {
   async fn scan(&self) -> Result<()>;
 
   async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()>;
+
+  fn devices(&self) -> Result<Vec<ConcurrentDevice>>;
+
+  fn get_device(&self, device_id: &DeviceId) -> Result<Option<ConcurrentDevice>>;
 }
 
 pub struct PeriodicScanTransportManager<T: RescanTransportManager + 'static> {
@@ -119,25 +127,24 @@ impl<T: RescanTransportManager> TransportManager for PeriodicScanTransportManage
   async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()> {
     self.inner.connect_scanned(device_id).await
   }
+
+  #[inline(always)]
+  fn devices(&self) -> Result<Vec<ConcurrentDevice>> {
+    self.inner.devices()
+  }
+
+  #[inline(always)]
+  fn get_device(&self, device_id: &DeviceId) -> Result<Option<ConcurrentDevice>> {
+    self.inner.get_device(device_id)
+  }
 }
 
 #[derive(Debug)]
 pub enum TransportManagerEvent {
-  /// Scan started
-  ScanStarted,
-  /// Continuous scan stopped
-  ScanStopped,
+  DeviceDiscovered { device: ConcurrentDevice },
+  DeviceUpdated { device: ConcurrentDevice },
 
-  DeviceDiscovered {
-    device: ConcurrentDevice,
-  },
-  DeviceUpdated {
-    device: ConcurrentDevice,
-  },
-
-  DeviceConnected {
-    device: ConcurrentDevice,
-  },
+  DeviceConnected { device: ConcurrentDevice },
   DeviceDisconnected(DeviceId),
 }
 

@@ -2,19 +2,28 @@ use anyhow::anyhow;
 use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
 use std::sync::{Arc, RwLock};
+use derivative::Derivative;
 use tracing::{instrument, warn};
 
 use crate::btleplug::device_task::BhapticsDeviceTask;
 use crate::BHapticsDeviceIdentifier;
 use xrc_device_transport_btleplug::api::*;
 
-#[derive(Debug, Clone)]
+#[derive(Derivative, Clone)]
+#[derivative(Debug)]
 pub(crate) struct BhapticsDeviceInternal {
   product: Arc<BHapticsDeviceIdentifier>,
+
+  #[derivative(Debug = "ignore")]
   peripheral: Peripheral,
+
+  #[derivative(Debug = "ignore")]
   descriptor: Arc<RwLock<GenericDeviceDescriptor>>,
 
+  #[derivative(Debug = "ignore")]
   firmware_version: Arc<RwLock<Option<String>>>,
+
+  #[derivative(Debug = "ignore")]
   battery_level: Arc<RwLock<Option<DeviceBatteryProperty>>>,
 }
 
@@ -43,8 +52,8 @@ impl DeviceInternal<GenericDeviceProperties> for BhapticsDeviceInternal {
     let battery_levels = result.as_ref().map(|level| vec![level.clone()]);
 
     return Ok(Some(GenericDeviceProperties::new(
-      self.firmware_version.read().unwrap().clone(),
       None,
+      self.firmware_version.read().unwrap().clone(),
       battery_levels,
     )));
   }

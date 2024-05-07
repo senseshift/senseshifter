@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use dashmap::{DashMap, DashSet};
+use futures::pin_mut;
 
 use task::{BtlePlugDeviceManagerTask, BtlePlugManagerCommand};
 
@@ -22,11 +23,11 @@ pub struct BtlePlugDeviceManagerBuilder {
 }
 
 impl BtlePlugDeviceManagerBuilder {
-  pub fn with_protocol(
-    mut self,
-    protocol_handler: Box<dyn BtlePlugProtocolSpecifierBuilder>,
-  ) -> Self {
-    self.protocol_handlers.push(protocol_handler);
+  pub fn protocol<T: BtlePlugProtocolSpecifierBuilder + 'static>(
+    &mut self,
+    builder: T,
+  ) -> &mut Self {
+    self.protocol_handlers.push(Box::new(builder));
     self
   }
 }
@@ -51,7 +52,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 
     // Create the task
     let cancel_token = CancellationToken::new();
-    let mut task = BtlePlugDeviceManagerTask::new(
+    let task = BtlePlugDeviceManagerTask::new(
       task_command_receiver,
       event_sender.clone(),
       discovered_devices.clone(),
@@ -62,10 +63,11 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 
     // Spawn the task
     let _join_token = tokio::spawn(async move {
+      pin_mut!(task);
       if let Err(err) = task.run().await {
-        error!("BtlePlug Device Manager Task failed: {:?}", err);
+        error!("BtlePlug Transport Manager Task failed: {:?}", err);
       }
-      info!("BtlePlug Device Manager Task exited.");
+      info!("BtlePlug Transport Manager Task exited.");
     });
 
     Ok(Box::new(BtlePlugDeviceManager {
@@ -190,6 +192,25 @@ impl TransportManager for BtlePlugDeviceManager {
     self.connecting_devices.remove(device_id);
 
     Ok(())
+  }
+
+  fn devices(&self) -> Result<Vec<ConcurrentDevice>> {
+    let devices = self
+      .discovered_devices
+      .iter()
+      .map(|v| v.value().clone())
+      .collect();
+
+    Ok(devices)
+  }
+
+  fn get_device(&self, device_id: &DeviceId) -> Result<Option<ConcurrentDevice>> {
+    Ok(
+      self
+        .discovered_devices
+        .get(device_id)
+        .map(|v| v.value().clone()),
+    )
   }
 }
 

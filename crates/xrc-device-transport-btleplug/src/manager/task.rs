@@ -110,9 +110,6 @@ impl BtlePlugDeviceManagerTask {
             },
             None => {
               error!("btleplug event stream ended");
-              if let Err(err) = self.event_sender.send(TransportManagerEvent::ScanStopped).await {
-                error!("Unable to send scanning finished event: {}", err);
-              }
               break;
             }
           }

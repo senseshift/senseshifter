@@ -5,4 +5,4 @@ pub mod btleplug;
 
 pub use device_config::*;
 
-pub type Result<T> = xrc_commons::Result<T>;
+pub use xrc_commons::Result;
