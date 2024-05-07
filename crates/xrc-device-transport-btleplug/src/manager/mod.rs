@@ -139,7 +139,7 @@ impl TransportManager for BtlePlugDeviceManager {
   }
 
   #[instrument(skip(self))]
-  async fn connect(&self, device_id: &DeviceId) -> Result<()> {
+  async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()> {
     if !self.connecting_devices.insert(device_id.clone()) {
       warn!("Device is already connecting");
       return Ok(());

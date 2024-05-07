@@ -41,39 +41,32 @@ where
   async fn connect(&self) -> Result<()>;
 }
 
+/// Thread-safe device handle
 pub type ConcurrentDevice = Arc<dyn Device<GenericDeviceDescriptor, GenericDeviceProperties>>;
 
 #[derive(Derivative, Debug, Clone)]
 #[derivative(PartialEq, Hash)]
-pub struct GenericDevice<Descriptor, Properties>
-where
-  Descriptor: DeviceDescriptor,
-  Properties: DeviceProperties,
-{
+pub struct GenericDevice {
   id: DeviceId,
 
   #[derivative(PartialEq = "ignore")]
   #[derivative(Hash = "ignore")]
-  descriptor: Arc<RwLock<Descriptor>>, // todo: use ArcSwap?
+  descriptor: Arc<RwLock<GenericDeviceDescriptor>>, // todo: use ArcSwap or keepcalm?
 
   connectible: bool,
 
   #[derivative(PartialEq = "ignore")]
   #[derivative(Hash = "ignore")]
-  internal: Arc<dyn DeviceInternal<Properties>>,
+  internal: Arc<dyn DeviceInternal<GenericDeviceProperties>>,
 }
 
-impl<Descriptor, Properties> GenericDevice<Descriptor, Properties>
-where
-  Descriptor: DeviceDescriptor,
-  Properties: DeviceProperties,
-{
+impl GenericDevice {
   #[inline(always)]
   pub fn new(
     id: DeviceId,
-    descriptor: Arc<RwLock<Descriptor>>,
+    descriptor: Arc<RwLock<GenericDeviceDescriptor>>,
     connectible: bool,
-    internal: Arc<dyn DeviceInternal<Properties>>,
+    internal: Arc<dyn DeviceInternal<GenericDeviceProperties>>,
   ) -> Self {
     Self {
       id,
@@ -85,24 +78,19 @@ where
 }
 
 #[async_trait]
-impl<Descriptor, Properties> Device<Descriptor, Properties>
-  for GenericDevice<Descriptor, Properties>
-where
-  Descriptor: DeviceDescriptor + Send + Sync + Clone,
-  Properties: DeviceProperties + Send + Sync,
-{
+impl Device<GenericDeviceDescriptor, GenericDeviceProperties> for GenericDevice {
   #[inline(always)]
   fn id(&self) -> &DeviceId {
     &self.id
   }
 
   #[inline(always)]
-  fn descriptor(&self) -> Descriptor {
+  fn descriptor(&self) -> GenericDeviceDescriptor {
     self.descriptor.read().unwrap().clone()
   }
 
   #[inline(always)]
-  async fn properties(&self) -> Result<Option<Properties>> {
+  async fn properties(&self) -> Result<Option<GenericDeviceProperties>> {
     self.internal.properties().await
   }
 

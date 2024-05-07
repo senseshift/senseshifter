@@ -18,7 +18,7 @@ pub trait TransportManager: Send + Sync {
 
   async fn stop_scanning(&self) -> Result<()>;
 
-  async fn connect(&self, device_id: &DeviceId) -> Result<()>;
+  async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()>;
 }
 
 #[derive(Debug)]

@@ -38,7 +38,7 @@ async fn main() {
             device,
           } => {
             if device.connectible() {
-              match manager.connect(device.id()).await {
+              match manager.connect_scanned(device.id()).await {
                 Ok(_) => {
                   // info!("Connected to device: {:?}", device.descriptor());
                 }
