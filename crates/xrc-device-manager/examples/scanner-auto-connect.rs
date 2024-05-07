@@ -3,6 +3,7 @@ use tracing::info;
 use xrc_device_manager::manager::DeviceManagerBuilder;
 use xrc_device_protocol_bhaptics::btleplug::BhapticsProtocolSpecifierBuilder;
 use xrc_device_transport_btleplug::BtlePlugDeviceManagerBuilder;
+use xrc_device_transport_rfcomm::RfcommTransportManagerBuilder;
 use xrc_device_transport_serialport::manager::SerialPortTransportManagerBuilder;
 
 #[tokio::main]
@@ -23,6 +24,12 @@ async fn main() {
     let serialport_transport_builder = SerialPortTransportManagerBuilder::default();
 
     builder.transport(serialport_transport_builder);
+  }
+
+  {
+    let rfcomm_transport_builder = RfcommTransportManagerBuilder::default();
+
+    builder.transport(rfcomm_transport_builder);
   }
 
   let manager = builder.build().unwrap();

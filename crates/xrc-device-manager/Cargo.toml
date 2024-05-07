@@ -42,6 +42,7 @@ xrc-haptics-manager = { workspace = true, default-features = false, features = [
 
 xrc-device-transport-btleplug = { workspace = true }
 xrc-device-transport-serialport = { workspace = true }
+xrc-device-transport-rfcomm = { workspace = true }
 
 xrc-device-protocol-bhaptics = { workspace = true, features = ["btleplug"] }
 

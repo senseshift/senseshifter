@@ -1,8 +1,8 @@
 use anyhow::anyhow;
 use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
-use std::sync::{Arc, RwLock};
 use derivative::Derivative;
+use std::sync::{Arc, RwLock};
 use tracing::{instrument, warn};
 
 use crate::btleplug::device_task::BhapticsDeviceTask;

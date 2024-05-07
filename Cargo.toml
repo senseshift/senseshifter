@@ -20,6 +20,7 @@ xrc-device-manager = { path = "crates/xrc-device-manager" }
 
 xrc-device-transport-btleplug = { path = "crates/xrc-device-transport-btleplug" }
 xrc-device-transport-serialport = { path = "crates/xrc-device-transport-serialport" }
+xrc-device-transport-rfcomm = { path = "crates/xrc-device-transport-rfcomm" }
 
 xrc-device-protocol-bhaptics = { path = "crates/xrc-device-protocol-bhaptics" }
 
@@ -27,11 +28,13 @@ xrc-haptics-manager = { path = "crates/xrc-haptics-manager" }
 xrc-haptics-body = { path = "crates/xrc-haptics-body" }
 
 # Common dependencies
-# btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }
-btleplug = { path = "../btleplug" }
 # rshapes = { git = "https://github.com/senseshift/rshapes.git" }
 rshapes = { path = "../rshapes" }
 
+# btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }
+btleplug = { path = "../btleplug" }
+
+bluetooth-serial-port = "^0.6.0"
 tokio-serial = "^5.4.4"
 
 tracing-subscriber = "^0.3.18"
