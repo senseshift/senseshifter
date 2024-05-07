@@ -1617,6 +1617,7 @@ dependencies = [
  "serde",
  "thiserror",
  "tokio",
+ "tokio-util",
  "tracing",
  "tracing-subscriber",
  "uuid",

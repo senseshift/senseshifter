@@ -2,7 +2,7 @@ mod task;
 
 use std::collections::HashMap;
 
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use dashmap::{DashMap, DashSet};
@@ -73,6 +73,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
       discovered_devices,
       adapter_ready,
       cancel_token,
+      is_scanning: AtomicBool::new(false),
       connecting_devices: Arc::new(DashSet::new()),
     }))
   }
@@ -83,6 +84,7 @@ pub struct BtlePlugDeviceManager {
   discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
+  is_scanning: AtomicBool,
   connecting_devices: Arc<DashSet<DeviceId>>,
 }
 
@@ -92,7 +94,17 @@ impl TransportManager for BtlePlugDeviceManager {
     "BtlePlug"
   }
 
-  async fn start_scanning(&self) -> Result<()> {
+  fn ready(&self) -> bool {
+    self.adapter_ready.load(Ordering::SeqCst)
+  }
+
+  fn is_scanning(&self) -> bool {
+    self.is_scanning.load(Ordering::SeqCst)
+  }
+
+  async fn start_scanning(&mut self) -> Result<()> {
+    self.is_scanning.store(true, Ordering::SeqCst);
+
     let (sender, receiver) = oneshot::channel();
 
     // Send the command to the task
@@ -103,6 +115,7 @@ impl TransportManager for BtlePlugDeviceManager {
     {
       Ok(_) => (),
       Err(err) => {
+        self.is_scanning.store(false, Ordering::SeqCst);
         error!("Failed to send scan start command: {:?}", err);
         return Err(err.into());
       }
@@ -110,12 +123,15 @@ impl TransportManager for BtlePlugDeviceManager {
 
     // wait for the result
     receiver.await.unwrap_or_else(|err| {
+      self.is_scanning.store(false, Ordering::SeqCst);
       error!("Failed to receive scan start result: {:?}", err);
       Err(err.into())
     })
   }
 
-  async fn stop_scanning(&self) -> Result<()> {
+  async fn stop_scanning(&mut self) -> Result<()> {
+    self.is_scanning.store(false, Ordering::SeqCst);
+
     let (sender, receiver) = oneshot::channel();
 
     // Send the command to the task
@@ -126,6 +142,7 @@ impl TransportManager for BtlePlugDeviceManager {
     {
       Ok(_) => (),
       Err(err) => {
+        self.is_scanning.store(true, Ordering::SeqCst);
         error!("Failed to send scan stop command: {:?}", err);
         return Err(err.into());
       }
@@ -133,6 +150,7 @@ impl TransportManager for BtlePlugDeviceManager {
 
     // wait for the result
     receiver.await.unwrap_or_else(|err| {
+      self.is_scanning.store(true, Ordering::SeqCst);
       error!("Failed to receive scan stop result: {:?}", err);
       Err(err.into())
     })

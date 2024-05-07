@@ -17,7 +17,7 @@ async fn main() {
   let builder = BtlePlugDeviceManagerBuilder::default()
     .with_protocol(Box::<BhapticsProtocolSpecifierBuilder>::default());
 
-  let manager = builder.finish(event_sender).unwrap();
+  let mut manager = builder.finish(event_sender).unwrap();
 
   manager
     .start_scanning()

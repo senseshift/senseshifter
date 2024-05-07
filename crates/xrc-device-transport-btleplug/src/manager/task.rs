@@ -189,9 +189,6 @@ impl BtlePlugDeviceManagerTask {
 
         self.discovered_devices.remove(&device_id);
         self
-          .discovered_devices
-          .remove(&address_to_id(&peripheral_id.address()));
-        self
           .event_sender
           .send(TransportManagerEvent::DeviceDisconnected(device_id))
           .await
