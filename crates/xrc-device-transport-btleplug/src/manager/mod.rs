@@ -2,6 +2,7 @@ mod task;
 
 use std::collections::HashMap;
 
+use btleplug::api::Peripheral;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -83,9 +84,9 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
   }
 }
 
-pub struct BtlePlugDeviceManager {
+pub struct BtlePlugDeviceManager<P: Peripheral> {
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
-  discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
+  discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice<P>>>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
   is_scanning: AtomicBool,
@@ -93,7 +94,7 @@ pub struct BtlePlugDeviceManager {
 }
 
 #[async_trait::async_trait]
-impl TransportManager for BtlePlugDeviceManager {
+impl<P: Peripheral + 'static> TransportManager for BtlePlugDeviceManager<P> {
   fn name(&self) -> &'static str {
     "BtlePlug"
   }
@@ -180,7 +181,7 @@ impl TransportManager for BtlePlugDeviceManager {
   }
 }
 
-impl Drop for BtlePlugDeviceManager {
+impl<P: Peripheral> Drop for BtlePlugDeviceManager<P> {
   fn drop(&mut self) {
     self.cancel_token.cancel();
   }

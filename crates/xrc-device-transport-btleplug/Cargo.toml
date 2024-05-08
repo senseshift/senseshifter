@@ -8,9 +8,11 @@ edition.workspace = true
 [features]
 default = ["manager"]
 
+manager = []
+
 serde = ["dep:serde"]
 
-manager = []
+mockall = ["dep:mockall", "xrc-device-manager/mockall"]
 
 # protocol-bhaptics = ["dep:xrc-device-protocol-bhaptics"]
 
@@ -36,10 +38,14 @@ tokio-util = { workspace = true }
 dashmap = { workspace = true }
 dyn-clone = { workspace = true }
 
+mockall = { workspace = true, optional = true }
+
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "^0.56.0", features = ["Devices_Bluetooth", "Foundation"] }
 
 [dev-dependencies]
 xrc-device-protocol-bhaptics = { workspace = true, features = ["btleplug"] }
+
+mockall = { workspace = true }
 
 tracing-subscriber = { workspace = true }

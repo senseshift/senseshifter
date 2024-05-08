@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use btleplug::{
-  api::{Central, CentralEvent, Manager as _, Peripheral as _, ScanFilter},
+  api::{Central, CentralEvent, Manager as _, Peripheral, ScanFilter},
   platform::{Adapter, Manager, PeripheralId},
 };
 use dashmap::DashMap;
@@ -25,22 +25,22 @@ pub enum BtlePlugManagerCommand {
   ScanStop(#[derivative(Debug = "ignore")] oneshot::Sender<Result<()>>),
 }
 
-pub(crate) struct BtlePlugDeviceManagerTask {
+pub(crate) struct BtlePlugDeviceManagerTask<P: Peripheral> {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
-  discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
-  connected_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
+  discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice<P>>>>,
+  connected_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice<P>>>>,
   protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
 }
 
-impl BtlePlugDeviceManagerTask {
+impl<P: Peripheral> BtlePlugDeviceManagerTask<P> {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
-    discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
-    connected_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
+    discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice<P>>>>,
+    connected_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice<P>>>>,
     protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
     adapter_ready: Arc<AtomicBool>,
     cancel_token: CancellationToken,
@@ -55,7 +55,9 @@ impl BtlePlugDeviceManagerTask {
       cancel_token,
     }
   }
+}
 
+impl BtlePlugDeviceManagerTask<btleplug::platform::Peripheral> {
   #[instrument(skip(self))]
   pub async fn run(&mut self) -> Result<()> {
     info!("Starting BtlePlug Transport Task");
@@ -170,7 +172,7 @@ impl BtlePlugDeviceManagerTask {
         self
           .event_sender
           .send(TransportManagerEvent::DeviceConnected {
-            device: device.clone(),
+            device: device.clone() as ConcurrentDevice,
           })
           .await
           .unwrap_or_else(|err| {

@@ -164,8 +164,8 @@ impl TryInto<DeviceManagerEvent> for TransportManagerEvent {
 mod tests {
   use super::*;
 
-  #[tokio::test]
-  async fn test_periodic_scan() {
+  #[test]
+  fn test_periodic_scan() {
     let mut mock = MockRescanTransportManager::new();
 
     mock.expect_ready().times(1).return_once(|| false);

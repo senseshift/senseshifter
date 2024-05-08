@@ -14,6 +14,10 @@ use uuid::Uuid;
 pub struct DeviceId(#[cfg_attr(feature = "serde", serde(with = "uuid::serde::urn"))] Uuid);
 
 impl DeviceId {
+  pub fn empty() -> Self {
+    Self(Uuid::nil())
+  }
+
   #[inline(always)]
   pub fn new(uuid: Uuid) -> Self {
     Self(uuid)
