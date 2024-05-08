@@ -139,13 +139,34 @@ impl<T: RescanTransportManager> TransportManager for PeriodicScanTransportManage
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TransportManagerEvent {
   DeviceDiscovered { device: ConcurrentDevice },
   DeviceUpdated { device: ConcurrentDevice },
 
   DeviceConnected { device: ConcurrentDevice },
   DeviceDisconnected(DeviceId),
+}
+
+impl TryInto<DeviceManagerEvent> for TransportManagerEvent {
+  type Error = anyhow::Error;
+
+  fn try_into(self) -> std::result::Result<DeviceManagerEvent, Self::Error> {
+    match self {
+      TransportManagerEvent::DeviceDiscovered { device } => {
+        Ok(DeviceManagerEvent::DeviceDiscovered(device))
+      }
+      TransportManagerEvent::DeviceUpdated { device } => {
+        Ok(DeviceManagerEvent::DeviceUpdated(device))
+      }
+      TransportManagerEvent::DeviceConnected { device } => {
+        Ok(DeviceManagerEvent::DeviceConnected(device))
+      }
+      TransportManagerEvent::DeviceDisconnected(device_id) => {
+        Ok(DeviceManagerEvent::DeviceDisconnected(device_id))
+      }
+    }
+  }
 }
 
 #[cfg(test)]

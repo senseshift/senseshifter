@@ -36,10 +36,10 @@ impl DeviceManagerTask {
     loop {
       tokio::select! {
         Some(transport_event) = self.transport_event_receiver.recv() => {
-          self.handle_transport_event(transport_event).await?;
+          let _ = self.handle_transport_event(transport_event).await;
         },
         Some(task_command) = self.task_command_receiver.recv() => {
-          self.handle_task_command(task_command).await?;
+          let _ = self.handle_task_command(task_command).await;
         },
         _ = self.cancel_token.cancelled() => {
           break;
@@ -52,7 +52,12 @@ impl DeviceManagerTask {
 
   #[tracing::instrument(skip(self))]
   async fn handle_transport_event(&mut self, event: TransportManagerEvent) -> Result<()> {
-    info!("Handling transport event: {:?}", event);
+    let manager_event: DeviceManagerEvent = event.try_into()?;
+
+    self.event_sender.send(manager_event).map_err(|err| {
+      error!("Error sending event: {}", err);
+      err
+    })?;
 
     Ok(())
   }

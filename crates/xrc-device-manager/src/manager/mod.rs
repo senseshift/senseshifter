@@ -88,19 +88,23 @@ impl DeviceManager {
 
   pub async fn scan_start(&self) -> Result<()> {
     let (tx, rx) = oneshot::channel();
+
     self
       .task_command_sender
       .send(DeviceManagerCommand::ScanStart(tx))
       .await?;
+
     rx.await?
   }
 
   pub async fn scan_stop(&self) -> Result<()> {
     let (tx, rx) = oneshot::channel();
+
     self
       .task_command_sender
       .send(DeviceManagerCommand::ScanStop(tx))
       .await?;
+
     rx.await?
   }
 }

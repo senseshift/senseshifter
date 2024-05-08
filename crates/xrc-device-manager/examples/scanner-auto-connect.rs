@@ -1,6 +1,7 @@
 use futures::{pin_mut, StreamExt};
-use tracing::info;
-use xrc_device_manager::manager::DeviceManagerBuilder;
+use tracing::{info, instrument};
+use xrc_device_manager::api::*;
+use xrc_device_manager::manager::{DeviceManager, DeviceManagerBuilder};
 use xrc_device_protocol_bhaptics::btleplug::BhapticsProtocolSpecifierBuilder;
 use xrc_device_transport_btleplug::BtlePlugDeviceManagerBuilder;
 use xrc_device_transport_serialport::manager::SerialPortTransportManagerBuilder;
@@ -34,12 +35,26 @@ async fn main() {
   loop {
     tokio::select! {
       Some(event) = event_stream.next() => {
-        info!("Got event: {:?}", event);
+        handle_event(&manager, event).await;
       },
       _ = tokio::signal::ctrl_c() => {
         info!("Received Ctrl-C, stopping...");
         break;
       }
     }
+  }
+}
+
+#[instrument(skip(manager))]
+async fn handle_event(manager: &DeviceManager, event: DeviceManagerEvent) {
+  match event {
+    DeviceManagerEvent::DeviceDiscovered(device) => {
+      info!("Connecting to {}", device.descriptor().name());
+      device.connect().await.unwrap();
+    }
+    DeviceManagerEvent::DeviceConnected(device) => {
+      info!("Connected to {}", device.descriptor().name());
+    }
+    _ => {}
   }
 }

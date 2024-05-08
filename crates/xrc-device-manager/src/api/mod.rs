@@ -11,4 +11,9 @@ pub use device_properties::*;
 pub use transport::*;
 
 #[derive(Clone, Debug)]
-pub enum DeviceManagerEvent {}
+pub enum DeviceManagerEvent {
+  DeviceDiscovered(ConcurrentDevice),
+  DeviceUpdated(ConcurrentDevice),
+  DeviceConnected(ConcurrentDevice),
+  DeviceDisconnected(DeviceId),
+}
