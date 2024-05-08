@@ -85,7 +85,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
 
 pub struct BtlePlugDeviceManager {
   task_command_sender: mpsc::Sender<BtlePlugManagerCommand>,
-  discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
+  discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
   is_scanning: AtomicBool,
@@ -164,19 +164,19 @@ impl TransportManager for BtlePlugDeviceManager {
     let devices = self
       .discovered_devices
       .iter()
-      .map(|v| v.value().clone())
+      .map(|v| v.value().clone() as ConcurrentDevice)
       .collect();
 
     Ok(devices)
   }
 
   fn get_device(&self, device_id: &DeviceId) -> Result<Option<ConcurrentDevice>> {
-    Ok(
-      self
-        .discovered_devices
-        .get(device_id)
-        .map(|v| v.value().clone()),
-    )
+    let device = self
+      .discovered_devices
+      .get(device_id)
+      .map(|v| v.value().clone() as ConcurrentDevice);
+
+    Ok(device)
   }
 }
 

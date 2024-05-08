@@ -43,6 +43,10 @@ where
     false
   }
 
+  async fn is_connected(&self) -> bool {
+    false
+  }
+
   async fn connect(&self) -> Result<()>;
 }
 

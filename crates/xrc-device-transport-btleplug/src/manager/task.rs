@@ -28,8 +28,8 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
-  discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
-  connected_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
+  discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
+  connected_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
   protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
@@ -39,8 +39,8 @@ impl BtlePlugDeviceManagerTask {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
-    discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
-    connected_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
+    discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
+    connected_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice>>>,
     protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
     adapter_ready: Arc<AtomicBool>,
     cancel_token: CancellationToken,
@@ -197,15 +197,19 @@ impl BtlePlugDeviceManagerTask {
   #[instrument(skip(self, adapter))]
   async fn handle_peripheral_event(&self, peripheral_id: &PeripheralId, adapter: &Adapter) {
     let device_id = address_to_id(&peripheral_id.address());
-    let existing = self.discovered_devices.get_mut(&device_id);
+    let existing = self.discovered_devices.get(&device_id);
 
     if let Some(existing) = existing {
-      let peripheral = existing.value();
+      let device = existing.value();
+
+      device.handle_update_event().await.unwrap_or_else(|err| {
+        error!("Error during internal device update: {}", err);
+      });
 
       if let Err(err) = self
         .event_sender
         .send(TransportManagerEvent::DeviceUpdated {
-          device: peripheral.clone(),
+          device: device.clone(),
         })
         .await
       {
@@ -245,8 +249,11 @@ impl BtlePlugDeviceManagerTask {
     };
 
     let device = BtlePlugDevice::new(device_id, peripheral, device_internal);
-
     let device = Arc::new(device);
+
+    device.handle_update_event().await.unwrap_or_else(|err| {
+      error!("Error during initial device update: {}", err);
+    });
 
     self
       .discovered_devices

@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use std::time::Duration;
 use tokio::sync::mpsc;
-use tracing::info;
 use xrc_device_manager::api::*;
 use xrc_device_manager::Result;
 
@@ -39,13 +38,9 @@ impl RescanTransportManager for SerialPortTransportManager {
   async fn scan(&self) -> Result<()> {
     let ports = tokio_serial::available_ports()?;
 
-    info!("Found {} serial ports: {:?}", ports.len(), ports);
+    // info!("Found {} serial ports: {:?}", ports.len(), ports);
 
     Ok(())
-  }
-
-  async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()> {
-    todo!()
   }
 
   fn devices(&self) -> Result<Vec<ConcurrentDevice>> {
