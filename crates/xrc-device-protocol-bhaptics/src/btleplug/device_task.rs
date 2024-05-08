@@ -25,7 +25,7 @@ impl BhapticsDeviceTask {
     }
   }
 
-  pub async fn run(self) -> Result<()> {
+  pub async fn run(&self) -> Result<()> {
     // Subscribe to battery level notifications
     let battery_char = self
       .peripheral

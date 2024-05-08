@@ -225,9 +225,9 @@ impl BtlePlugDeviceManagerTask {
       }
     };
 
-    let mut device = None;
+    let mut device_internal = None;
     for (_, handler) in self.protocol_handlers.iter() {
-      device = handler
+      device_internal = handler
         .specify_protocol(peripheral.clone())
         .await
         .unwrap_or_else(|err| {
@@ -235,17 +235,21 @@ impl BtlePlugDeviceManagerTask {
           None
         });
 
-      if device.is_some() {
+      if device_internal.is_some() {
         break;
       }
     }
 
-    let device = match device {
-      Some(candidate) => candidate,
+    let device_internal = match device_internal {
+      Some(device) => device,
       None => {
         return;
       }
     };
+
+    let device = BtlePlugDevice::new(device_id, peripheral, device_internal);
+
+    let device = Arc::new(device);
 
     self
       .discovered_devices

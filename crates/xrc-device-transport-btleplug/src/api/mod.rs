@@ -2,8 +2,10 @@ use btleplug::api::BDAddr;
 use uuid::Uuid;
 pub use xrc_device_manager::api::*;
 
+mod device;
 mod protocol;
 
+pub use device::*;
 pub use protocol::*;
 
 /// Convert a Bluetooth address to a device ID.

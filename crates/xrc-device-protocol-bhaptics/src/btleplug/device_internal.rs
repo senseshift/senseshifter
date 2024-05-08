@@ -1,24 +1,26 @@
 use anyhow::anyhow;
 use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
-use std::sync::{Arc, RwLock};
 use derivative::Derivative;
-use tracing::{instrument, warn};
+use futures::pin_mut;
+use std::fmt::{Debug, Formatter};
+use std::sync::{Arc, RwLock};
+use tracing::{error, info, instrument};
 
 use crate::btleplug::device_task::BhapticsDeviceTask;
 use crate::BHapticsDeviceIdentifier;
 use xrc_device_transport_btleplug::api::*;
 
 #[derive(Derivative, Clone)]
-#[derivative(Debug)]
 pub(crate) struct BhapticsDeviceInternal {
+  name: String,
+
   product: Arc<BHapticsDeviceIdentifier>,
 
   #[derivative(Debug = "ignore")]
   peripheral: Peripheral,
 
-  #[derivative(Debug = "ignore")]
-  descriptor: Arc<RwLock<GenericDeviceDescriptor>>,
+  serial_number: Arc<RwLock<Option<String>>>,
 
   #[derivative(Debug = "ignore")]
   firmware_version: Arc<RwLock<Option<String>>>,
@@ -27,17 +29,22 @@ pub(crate) struct BhapticsDeviceInternal {
   battery_level: Arc<RwLock<Option<DeviceBatteryProperty>>>,
 }
 
+impl Debug for BhapticsDeviceInternal {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("BhapticsDeviceInternal")
+      .field("descriptor", &self.descriptor())
+      .finish()
+  }
+}
+
 impl BhapticsDeviceInternal {
-  pub fn new(
-    product: Arc<BHapticsDeviceIdentifier>,
-    peripheral: Peripheral,
-    descriptor: Arc<RwLock<GenericDeviceDescriptor>>,
-  ) -> Self {
+  pub fn new(name: String, product: Arc<BHapticsDeviceIdentifier>, peripheral: Peripheral) -> Self {
     Self {
+      name,
       product,
       peripheral,
-      descriptor,
 
+      serial_number: Arc::new(RwLock::new(None)),
       firmware_version: Arc::new(RwLock::new(None)),
       battery_level: Arc::new(RwLock::new(None)),
     }
@@ -45,7 +52,16 @@ impl BhapticsDeviceInternal {
 }
 
 #[async_trait::async_trait]
-impl DeviceInternal<GenericDeviceProperties> for BhapticsDeviceInternal {
+impl BtlePlugDeviceInternal for BhapticsDeviceInternal {
+  fn descriptor(&self) -> GenericDeviceDescriptor {
+    return GenericDeviceDescriptor::new(
+      self.name.clone(),
+      Some("bHaptics".to_string()),
+      Some(self.product.device().product_name()),
+      self.serial_number.read().unwrap().clone(),
+    );
+  }
+
   async fn properties(&self) -> crate::Result<Option<GenericDeviceProperties>> {
     // todo: do not panic
     let result = self.battery_level.read().unwrap().clone();
@@ -58,6 +74,10 @@ impl DeviceInternal<GenericDeviceProperties> for BhapticsDeviceInternal {
     )));
   }
 
+  fn connectible(&self) -> bool {
+    true
+  }
+
   #[instrument(skip(self))]
   async fn connect(&self) -> crate::Result<()> {
     if self.peripheral.is_connected().await? {
@@ -68,27 +88,18 @@ impl DeviceInternal<GenericDeviceProperties> for BhapticsDeviceInternal {
 
     self.peripheral.discover_services().await?;
 
-    if let Ok(sn) = self.read_sn().await {
-      // todo: do not panic
-      let descriptor = self.descriptor.read().unwrap().clone();
-      let descriptor = GenericDeviceDescriptor::new(
-        descriptor.name().to_string(),
-        descriptor.manufacturer().map(|s| s.to_string()),
-        descriptor.product().map(|s| s.to_string()),
-        Some(sn),
-      );
-      *self.descriptor.write().unwrap() = descriptor;
-    } else {
-      warn!("Could not read SN from device");
-    }
-
     // todo: do not panic
+    *self.serial_number.write().unwrap() = self.read_sn().await.ok();
     *self.firmware_version.write().unwrap() = self.read_firmware_version().await.ok();
 
     let task = BhapticsDeviceTask::new(self.peripheral.clone(), self.battery_level.clone());
 
-    tokio::spawn(async move {
-      task.run().await.ok();
+    let _task_handle = tokio::spawn(async move {
+      pin_mut!(task);
+      if let Err(err) = task.run().await {
+        error!("bHaptics Device Task failed: {:?}", err);
+      }
+      info!("bHaptics Device Task exited.");
     });
 
     Ok(())

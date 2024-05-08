@@ -5,7 +5,7 @@ use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
 
 use async_trait::async_trait;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use tracing::{info, instrument};
 use xrc_device_transport_btleplug::api::*;
 
@@ -37,7 +37,7 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
   async fn specify_protocol(
     &self,
     peripheral: Peripheral,
-  ) -> crate::Result<Option<ConcurrentDevice>> {
+  ) -> crate::Result<Option<Box<dyn BtlePlugDeviceInternal>>> {
     let properties = match peripheral.properties().await? {
       Some(properties) => properties,
       None => return Ok(None),
@@ -55,26 +55,9 @@ impl BtlePlugProtocolSpecifier for BhapticsProtocolSpecifier {
 
     info!("Found bHaptics device: {:?}", product.device());
 
-    let device_id = address_to_id(&peripheral.address());
+    let internal = BhapticsDeviceInternal::new(name, product.clone(), peripheral.clone());
 
-    let descriptor = GenericDeviceDescriptor::new(
-      name,
-      Some("bHaptics".to_string()),
-      Some(product.device().product_name()),
-      None,
-    );
-    let descriptor = Arc::new(RwLock::new(descriptor));
-
-    let internal =
-      BhapticsDeviceInternal::new(product.clone(), peripheral.clone(), descriptor.clone());
-
-    let device = GenericDevice::new(device_id, descriptor, true, Arc::new(internal));
-    Ok(Some(Arc::new(device)))
-  }
-
-  #[instrument(skip(self))]
-  async fn connect_peripheral(&self, _peripheral: Peripheral) -> crate::Result<()> {
-    Ok(())
+    Ok(Some(Box::new(internal)))
   }
 }
 
