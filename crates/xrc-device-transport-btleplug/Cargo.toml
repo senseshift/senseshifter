@@ -43,8 +43,3 @@ windows = { version = "^0.56.0", features = ["Devices_Bluetooth", "Foundation"] 
 xrc-device-protocol-bhaptics = { workspace = true, features = ["btleplug"] }
 
 tracing-subscriber = { workspace = true }
-
-[[example]]
-name = "scanner-auto-connect"
-path = "examples/scanner-auto-connect.rs"
-required-features = ["manager"]

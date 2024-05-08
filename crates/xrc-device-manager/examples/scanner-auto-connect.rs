@@ -50,10 +50,22 @@ async fn handle_event(manager: &DeviceManager, event: DeviceManagerEvent) {
   match event {
     DeviceManagerEvent::DeviceDiscovered(device) => {
       info!("Connecting to {}", device.descriptor().name());
-      device.connect().await.unwrap();
+      manager
+        .connect_device(device.id())
+        .await
+        .unwrap_or_else(|err| {
+          info!(
+            "Failed to connect to {}: {}",
+            device.descriptor().name(),
+            err
+          );
+        });
     }
     DeviceManagerEvent::DeviceConnected(device) => {
       info!("Connected to {}", device.descriptor().name());
+    }
+    DeviceManagerEvent::DeviceDisconnected(id) => {
+      info!("Disconnected from {}", id);
     }
     _ => {}
   }

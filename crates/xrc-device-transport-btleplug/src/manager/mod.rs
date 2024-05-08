@@ -15,7 +15,7 @@ use crate::Result;
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
-use tracing::{error, info, instrument, warn};
+use tracing::{error, info};
 
 #[derive(Default)]
 pub struct BtlePlugDeviceManagerBuilder {
@@ -49,6 +49,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
     }
 
     let discovered_devices = Arc::new(DashMap::new());
+    let connected_devices = Arc::new(DashMap::new());
 
     // Create the task
     let cancel_token = CancellationToken::new();
@@ -56,6 +57,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
       task_command_receiver,
       event_sender.clone(),
       discovered_devices.clone(),
+      connected_devices.clone(),
       protocol_handlers,
       adapter_ready.clone(),
       cancel_token.clone(),
@@ -156,42 +158,6 @@ impl TransportManager for BtlePlugDeviceManager {
       error!("Failed to receive scan stop result: {:?}", err);
       Err(err.into())
     })
-  }
-
-  #[instrument(skip(self))]
-  async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()> {
-    if !self.connecting_devices.insert(device_id.clone()) {
-      warn!("Device is already connecting");
-      return Ok(());
-    }
-
-    let (sender, receiver) = oneshot::channel();
-
-    // Send the command to the task
-    let _ = match self
-      .task_command_sender
-      .send(BtlePlugManagerCommand::ConnectDevice(
-        device_id.clone(),
-        sender,
-      ))
-      .await
-    {
-      Ok(_) => (),
-      Err(err) => {
-        error!("Failed to send connect command: {:?}", err);
-        return Err(err.into());
-      }
-    };
-
-    // wait for the result
-    receiver.await.unwrap_or_else(|err| {
-      error!("Failed to receive connect result: {:?}", err);
-      Err(err.into())
-    })?;
-
-    self.connecting_devices.remove(device_id);
-
-    Ok(())
   }
 
   fn devices(&self) -> Result<Vec<ConcurrentDevice>> {

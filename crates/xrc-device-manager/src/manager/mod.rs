@@ -1,13 +1,16 @@
 use crate::api::*;
 use crate::Result;
+use anyhow::anyhow;
 use async_stream::stream;
+use dashmap::DashMap;
 use derivative::Derivative;
 use futures::{pin_mut, Stream};
 use futures_util::StreamExt;
+use std::sync::Arc;
 use task::DeviceManagerTask;
 use tokio::sync::{broadcast, mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info};
+use tracing::{error, info, instrument};
 
 mod task;
 
@@ -44,12 +47,17 @@ impl DeviceManagerBuilder {
       })
       .collect::<Result<Vec<_>>>()?;
 
+    let discovered_devices = Arc::new(DashMap::new());
+    let connected_devices = Arc::new(DashMap::new());
+
     let task = DeviceManagerTask::new(
       cancel_token.clone(),
       transport_managers,
       transport_event_receiver,
       event_sender.clone(),
       task_command_receiver,
+      discovered_devices.clone(),
+      connected_devices.clone(),
     );
     let _join_token = tokio::spawn(async move {
       pin_mut!(task);
@@ -63,6 +71,8 @@ impl DeviceManagerBuilder {
       cancel_token,
       event_sender,
       task_command_sender,
+      discovered_devices,
+      connected_devices,
     };
 
     Ok(manager)
@@ -73,6 +83,8 @@ pub struct DeviceManager {
   cancel_token: CancellationToken,
   event_sender: broadcast::Sender<DeviceManagerEvent>,
   task_command_sender: mpsc::Sender<DeviceManagerCommand>,
+  discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
+  connected_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
 }
 
 impl DeviceManager {
@@ -106,6 +118,27 @@ impl DeviceManager {
       .await?;
 
     rx.await?
+  }
+
+  #[instrument(skip(self))]
+  pub async fn connect_device(&self, device_id: &DeviceId) -> Result<()> {
+    info!("Connecting device: {:?}", device_id);
+
+    let device = match self.discovered_devices.get(device_id) {
+      Some(device) => device,
+      None => return Err(anyhow!("Device not found")),
+    };
+
+    if !device.connectible() {
+      return Err(anyhow!("Device is not connectible"));
+    }
+
+    // if device.connected() {
+    //   return Err(anyhow!("Device already connected"));
+    // }
+
+    // todo: remove from discovered devices if connection fails
+    device.connect().await
   }
 }
 

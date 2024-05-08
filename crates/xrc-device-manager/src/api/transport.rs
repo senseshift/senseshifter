@@ -33,8 +33,6 @@ pub trait TransportManager: Send + Sync {
 
   async fn stop_scanning(&mut self) -> Result<()>;
 
-  async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()>;
-
   fn devices(&self) -> Result<Vec<ConcurrentDevice>>;
 
   fn get_device(&self, device_id: &DeviceId) -> Result<Option<ConcurrentDevice>>;
@@ -50,8 +48,6 @@ pub trait RescanTransportManager: Sync + Send {
   fn ready(&self) -> bool;
 
   async fn scan(&self) -> Result<()>;
-
-  async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()>;
 
   fn devices(&self) -> Result<Vec<ConcurrentDevice>>;
 
@@ -121,11 +117,6 @@ impl<T: RescanTransportManager> TransportManager for PeriodicScanTransportManage
     }
     self.cancel_token.take().unwrap().cancel();
     Ok(())
-  }
-
-  #[inline(always)]
-  async fn connect_scanned(&self, device_id: &DeviceId) -> Result<()> {
-    self.inner.connect_scanned(device_id).await
   }
 
   #[inline(always)]

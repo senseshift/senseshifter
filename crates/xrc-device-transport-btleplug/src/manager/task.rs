@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -23,16 +23,13 @@ use tracing::{error, info, instrument};
 pub enum BtlePlugManagerCommand {
   ScanStart(#[derivative(Debug = "ignore")] oneshot::Sender<Result<()>>),
   ScanStop(#[derivative(Debug = "ignore")] oneshot::Sender<Result<()>>),
-  ConnectDevice(
-    DeviceId,
-    #[derivative(Debug = "ignore")] oneshot::Sender<Result<()>>,
-  ),
 }
 
 pub(crate) struct BtlePlugDeviceManagerTask {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
   discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
+  connected_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
   protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
   adapter_ready: Arc<AtomicBool>,
   cancel_token: CancellationToken,
@@ -42,17 +39,19 @@ impl BtlePlugDeviceManagerTask {
   pub fn new(
     command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
     event_sender: mpsc::Sender<TransportManagerEvent>,
-    scanned_peripherals: Arc<DashMap<DeviceId, ConcurrentDevice>>,
+    discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
+    connected_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
     protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
-    adapter_connected: Arc<AtomicBool>,
+    adapter_ready: Arc<AtomicBool>,
     cancel_token: CancellationToken,
   ) -> Self {
     Self {
       command_receiver,
       event_sender,
-      discovered_devices: scanned_peripherals,
+      discovered_devices,
+      connected_devices,
       protocol_handlers,
-      adapter_ready: adapter_connected,
+      adapter_ready,
       cancel_token,
     }
   }
@@ -152,11 +151,6 @@ impl BtlePlugDeviceManagerTask {
           error!("Unable to send scanning stopped reply");
         }
       }
-      BtlePlugManagerCommand::ConnectDevice(device_id, sender) => {
-        if sender.send(self.connect_device(&device_id).await).is_err() {
-          error!("Unable to send connect device reply");
-        }
-      }
     }
   }
 
@@ -171,6 +165,8 @@ impl BtlePlugDeviceManagerTask {
 
         let device = self.discovered_devices.get(&device_id).unwrap();
 
+        self.connected_devices.insert(device_id, device.clone());
+
         self
           .event_sender
           .send(TransportManagerEvent::DeviceConnected {
@@ -184,6 +180,7 @@ impl BtlePlugDeviceManagerTask {
       CentralEvent::DeviceDisconnected(peripheral_id) => {
         let device_id = address_to_id(&peripheral_id.address());
 
+        self.connected_devices.remove(&device_id);
         self.discovered_devices.remove(&device_id);
         self
           .event_sender
@@ -262,26 +259,6 @@ impl BtlePlugDeviceManagerTask {
     {
       error!("Unable to send device discovered event: {}", err);
     }
-  }
-
-  #[instrument(skip(self))]
-  async fn connect_device(&self, device_id: &DeviceId) -> Result<()> {
-    info!("Connecting device: {:?}", device_id);
-
-    let device = match self.discovered_devices.get(device_id) {
-      Some(device) => device,
-      None => return Err(anyhow!("Device not found")),
-    };
-
-    if !device.connectible() {
-      return Err(anyhow!("Device is not connectible"));
-    }
-
-    // if device.connected() {
-    //   return Err(anyhow!("Device already connected"));
-    // }
-
-    device.connect().await
   }
 }
 

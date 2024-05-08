@@ -1,7 +1,9 @@
 use crate::api::*;
 use crate::manager::DeviceManagerCommand;
 use crate::Result;
+use dashmap::DashMap;
 use futures_util::future::join_all;
+use std::sync::Arc;
 use tokio::sync::{broadcast, mpsc};
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
@@ -12,6 +14,8 @@ pub(crate) struct DeviceManagerTask {
   transport_event_receiver: mpsc::Receiver<TransportManagerEvent>,
   event_sender: broadcast::Sender<DeviceManagerEvent>,
   task_command_receiver: mpsc::Receiver<DeviceManagerCommand>,
+  discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
+  connected_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
 }
 
 impl DeviceManagerTask {
@@ -21,6 +25,8 @@ impl DeviceManagerTask {
     transport_event_receiver: mpsc::Receiver<TransportManagerEvent>,
     event_sender: broadcast::Sender<DeviceManagerEvent>,
     task_command_receiver: mpsc::Receiver<DeviceManagerCommand>,
+    discovered_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
+    connected_devices: Arc<DashMap<DeviceId, ConcurrentDevice>>,
   ) -> Self {
     Self {
       cancel_token,
@@ -28,6 +34,8 @@ impl DeviceManagerTask {
       transport_event_receiver,
       event_sender,
       task_command_receiver,
+      discovered_devices,
+      connected_devices,
     }
   }
 
@@ -52,8 +60,21 @@ impl DeviceManagerTask {
 
   #[tracing::instrument(skip(self))]
   async fn handle_transport_event(&mut self, event: TransportManagerEvent) -> Result<()> {
-    let manager_event: DeviceManagerEvent = event.try_into()?;
+    match event {
+      TransportManagerEvent::DeviceDiscovered { ref device } => {
+        self.discovered_devices.insert(*device.id(), device.clone());
+      }
+      TransportManagerEvent::DeviceConnected { ref device } => {
+        self.connected_devices.insert(*device.id(), device.clone());
+      }
+      TransportManagerEvent::DeviceDisconnected(ref device_id) => {
+        self.connected_devices.remove(device_id);
+        self.discovered_devices.remove(device_id);
+      }
+      _ => {}
+    }
 
+    let manager_event: DeviceManagerEvent = event.try_into()?;
     self.event_sender.send(manager_event).map_err(|err| {
       error!("Error sending event: {}", err);
       err
