@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use btleplug::api::Peripheral;
 use derivative::Derivative;
 use std::fmt::Debug;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -57,7 +57,11 @@ impl<P: Peripheral> Device<GenericDeviceDescriptor, GenericDeviceProperties> for
   }
 
   async fn connect(&self) -> Result<()> {
-    self.internal.connect().await
+    self.internal.connect().await?;
+
+    self.connected.store(true, Ordering::Relaxed);
+
+    Ok(())
   }
 }
 

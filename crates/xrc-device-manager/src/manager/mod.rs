@@ -133,9 +133,9 @@ impl DeviceManager {
       return Err(anyhow!("Device is not connectible"));
     }
 
-    // if device.connected() {
-    //   return Err(anyhow!("Device already connected"));
-    // }
+    if device.is_connected().await {
+      return Err(anyhow!("Device already connected"));
+    }
 
     // todo: remove from discovered devices if connection fails
     device.connect().await
