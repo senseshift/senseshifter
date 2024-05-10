@@ -16,7 +16,7 @@ use crate::Result;
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
-use tracing::{error, info};
+use tracing::{error, info, Instrument};
 
 #[derive(Default)]
 pub struct BtlePlugDeviceManagerBuilder {
@@ -53,6 +53,7 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
     let connected_devices = Arc::new(DashMap::new());
 
     // Create the task
+    let task_span = tracing::info_span!("BtlePlugDeviceManagerTask");
     let cancel_token = CancellationToken::new();
     let task = BtlePlugDeviceManagerTask::new(
       task_command_receiver,
@@ -65,13 +66,16 @@ impl TransportManagerBuilder for BtlePlugDeviceManagerBuilder {
     );
 
     // Spawn the task
-    let _join_token = tokio::spawn(async move {
-      pin_mut!(task);
-      if let Err(err) = task.run().await {
-        error!("BtlePlug Transport Manager Task failed: {:?}", err);
+    let _join_token = tokio::spawn(
+      async move {
+        pin_mut!(task);
+        if let Err(err) = task.run().await {
+          error!("BtlePlug Transport Manager Task failed: {:?}", err);
+        }
+        info!("BtlePlug Transport Manager Task exited.");
       }
-      info!("BtlePlug Transport Manager Task exited.");
-    });
+      .instrument(task_span),
+    );
 
     Ok(Box::new(BtlePlugDeviceManager {
       task_command_sender,

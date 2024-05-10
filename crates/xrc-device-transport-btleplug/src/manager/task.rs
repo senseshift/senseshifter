@@ -28,6 +28,10 @@ pub enum BtlePlugManagerCommand {
 pub(crate) struct BtlePlugDeviceManagerTask<P: Peripheral> {
   command_receiver: mpsc::Receiver<BtlePlugManagerCommand>,
   event_sender: mpsc::Sender<TransportManagerEvent>,
+  // TODO: Wait for https://github.com/rust-lang/rust/issues/65991 to stabilize
+  // Later we can use trait `Arc<dyn BtlePlugDevice<P>>` instead of `Arc<BtlePlugDevice<P>>`
+  // and upcast it to `Arc<dyn Device>`.
+  // Example: https://play.rust-lang.org/?version=nightly&mode=debug&edition=2021&gist=dafd9444190ec23b7558b7f16e10c63d
   discovered_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice<P>>>>,
   connected_devices: Arc<DashMap<DeviceId, Arc<BtlePlugDevice<P>>>>,
   protocol_handlers: HashMap<String, Box<dyn BtlePlugProtocolSpecifier>>,
@@ -55,10 +59,29 @@ impl<P: Peripheral> BtlePlugDeviceManagerTask<P> {
       cancel_token,
     }
   }
+
+  #[instrument(skip(self, central))]
+  async fn handle_command(&self, command: BtlePlugManagerCommand, central: &Adapter) {
+    match command {
+      BtlePlugManagerCommand::ScanStart(sender) => {
+        info!("Starting Bluetooth LE scanning");
+        let result = central.start_scan(ScanFilter::default()).await;
+        if sender.send(result.map_err(|err| err.into())).is_err() {
+          error!("Unable to send scanning started reply");
+        }
+      }
+      BtlePlugManagerCommand::ScanStop(sender) => {
+        info!("Stopping Bluetooth LE scanning");
+        let result = central.stop_scan().await;
+        if sender.send(result.map_err(|err| err.into())).is_err() {
+          error!("Unable to send scanning stopped reply");
+        }
+      }
+    }
+  }
 }
 
 impl BtlePlugDeviceManagerTask<btleplug::platform::Peripheral> {
-  #[instrument(skip(self))]
   pub async fn run(&mut self) -> Result<()> {
     info!("Starting BtlePlug Transport Task");
 
@@ -136,26 +159,6 @@ impl BtlePlugDeviceManagerTask<btleplug::platform::Peripheral> {
     Ok(())
   }
 
-  #[instrument(skip(self, central))]
-  async fn handle_command(&self, command: BtlePlugManagerCommand, central: &Adapter) {
-    match command {
-      BtlePlugManagerCommand::ScanStart(sender) => {
-        info!("Starting Bluetooth LE scanning");
-        let result = central.start_scan(ScanFilter::default()).await;
-        if sender.send(result.map_err(|err| err.into())).is_err() {
-          error!("Unable to send scanning started reply");
-        }
-      }
-      BtlePlugManagerCommand::ScanStop(sender) => {
-        info!("Stopping Bluetooth LE scanning");
-        let result = central.stop_scan().await;
-        if sender.send(result.map_err(|err| err.into())).is_err() {
-          error!("Unable to send scanning stopped reply");
-        }
-      }
-    }
-  }
-
   async fn handle_btle_event(&self, event: CentralEvent, adapter: &Adapter) {
     match event {
       CentralEvent::DeviceDiscovered(peripheral_id)
@@ -165,6 +168,7 @@ impl BtlePlugDeviceManagerTask<btleplug::platform::Peripheral> {
       CentralEvent::DeviceConnected(peripheral_id) => {
         let device_id = address_to_id(&peripheral_id.address());
 
+        // todo: do not panic
         let device = self.discovered_devices.get(&device_id).unwrap();
 
         self.connected_devices.insert(device_id, device.clone());
@@ -202,21 +206,8 @@ impl BtlePlugDeviceManagerTask<btleplug::platform::Peripheral> {
     let existing = self.discovered_devices.get(&device_id);
 
     if let Some(existing) = existing {
-      let device = existing.value();
-
-      device.handle_update_event().await.unwrap_or_else(|err| {
-        error!("Error during internal device update: {}", err);
-      });
-
-      if let Err(err) = self
-        .event_sender
-        .send(TransportManagerEvent::DeviceUpdated {
-          device: device.clone(),
-        })
-        .await
-      {
-        error!("Unable to send device updated event: {}", err);
-      }
+      let device = existing.value().clone();
+      self.handle_update_event(device).await;
       return;
     }
 
@@ -267,6 +258,22 @@ impl BtlePlugDeviceManagerTask<btleplug::platform::Peripheral> {
       .await
     {
       error!("Unable to send device discovered event: {}", err);
+    }
+  }
+
+  async fn handle_update_event(&self, device: Arc<BtlePlugDevice<btleplug::platform::Peripheral>>) {
+    device.handle_update_event().await.unwrap_or_else(|err| {
+      error!("Error during internal device update: {}", err);
+    });
+
+    if let Err(err) = self
+      .event_sender
+      .send(TransportManagerEvent::DeviceUpdated {
+        device: device.clone(),
+      })
+      .await
+    {
+      error!("Unable to send device updated event: {}", err);
     }
   }
 }

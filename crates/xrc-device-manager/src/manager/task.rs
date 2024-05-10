@@ -6,7 +6,7 @@ use futures_util::future::join_all;
 use std::sync::Arc;
 use tokio::sync::{broadcast, mpsc};
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info, instrument};
+use tracing::{error, info};
 
 pub(crate) struct DeviceManagerTask {
   cancel_token: CancellationToken,
@@ -39,7 +39,6 @@ impl DeviceManagerTask {
     }
   }
 
-  #[instrument(skip(self))]
   pub async fn run(&mut self) -> Result<()> {
     loop {
       tokio::select! {

@@ -67,6 +67,8 @@ async fn handle_event(manager: &DeviceManager, event: DeviceManagerEvent) {
     DeviceManagerEvent::DeviceDisconnected(id) => {
       info!("Disconnected from {}", id);
     }
-    _ => {}
+    DeviceManagerEvent::DeviceUpdated(device) => {
+      info!("Updated {}", device.descriptor().name());
+    }
   }
 }

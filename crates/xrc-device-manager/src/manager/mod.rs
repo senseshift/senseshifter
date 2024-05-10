@@ -10,7 +10,7 @@ use std::sync::Arc;
 use task::DeviceManagerTask;
 use tokio::sync::{broadcast, mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info, instrument};
+use tracing::{error, info, instrument, Instrument};
 
 mod task;
 
@@ -50,6 +50,7 @@ impl DeviceManagerBuilder {
     let discovered_devices = Arc::new(DashMap::new());
     let connected_devices = Arc::new(DashMap::new());
 
+    let task_span = tracing::info_span!("DeviceManagerTask");
     let task = DeviceManagerTask::new(
       cancel_token.clone(),
       transport_managers,
@@ -59,13 +60,16 @@ impl DeviceManagerBuilder {
       discovered_devices.clone(),
       connected_devices.clone(),
     );
-    let _join_token = tokio::spawn(async move {
-      pin_mut!(task);
-      if let Err(err) = task.run().await {
-        error!("Device Manager Task failed: {:?}", err);
+    let _join_token = tokio::spawn(
+      async move {
+        pin_mut!(task);
+        if let Err(err) = task.run().await {
+          error!("Device Manager Task failed: {:?}", err);
+        }
+        info!("Device Manager Task exited.");
       }
-      info!("Device Manager Task exited.");
-    });
+      .instrument(task_span),
+    );
 
     let manager = DeviceManager {
       cancel_token,
