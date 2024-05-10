@@ -1,11 +1,10 @@
-use anyhow::anyhow;
 use btleplug::api::Peripheral as _;
 use btleplug::platform::Peripheral;
 use derivative::Derivative;
 use futures::pin_mut;
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, RwLock};
-use tracing::{error, info, instrument};
+use tracing::{error, info, instrument, Instrument};
 
 use crate::btleplug::device_task::BhapticsDeviceTask;
 use crate::BHapticsDeviceIdentifier;
@@ -85,41 +84,64 @@ impl BtlePlugDeviceInternal for BhapticsDeviceInternal {
     }
 
     self.peripheral.connect().await?;
-
     self.peripheral.discover_services().await?;
 
-    // todo: do not panic
-    *self.serial_number.write().unwrap() = self.read_sn().await.ok();
-    *self.firmware_version.write().unwrap() = self.read_firmware_version().await.ok();
+    let sn = self.read_sn().await;
+    match self.serial_number.write() {
+      Ok(mut serial_number) => *serial_number = sn,
+      Err(err) => error!("Could not write serial number: {:?}", err),
+    }
 
+    let fw = self.read_firmware_version().await;
+    match self.firmware_version.write() {
+      Ok(mut firmware_version) => *firmware_version = fw,
+      Err(err) => error!("Could not write firmware version: {:?}", err),
+    }
+
+    let span = tracing::info_span!("BhapticsDeviceTask", peripheral = %self.peripheral.id());
     let task = BhapticsDeviceTask::new(self.peripheral.clone(), self.battery_level.clone());
-
-    let _task_handle = tokio::spawn(async move {
-      pin_mut!(task);
-      if let Err(err) = task.run().await {
-        error!("bHaptics Device Task failed: {:?}", err);
+    let _task_handle = tokio::spawn(
+      async move {
+        pin_mut!(task);
+        if let Err(err) = task.run().await {
+          error!("bHaptics Device Task failed: {:?}", err);
+        }
+        info!("bHaptics Device Task exited.");
       }
-      info!("bHaptics Device Task exited.");
-    });
+      .instrument(span),
+    );
 
     Ok(())
   }
 }
 
 impl BhapticsDeviceInternal {
-  async fn read_sn(&self) -> crate::Result<String> {
+  async fn read_sn(&self) -> Option<String> {
     let sn_char = self
       .peripheral
       .characteristics()
       .into_iter()
       .find(|c| c.uuid == super::constants::CHAR_SN);
-    let sn = match sn_char {
-      Some(sn_char) => self.peripheral.read(&sn_char).await?,
-      None => return Err(anyhow!("Could not find SN characteristic")),
+
+    let sn_char = match sn_char {
+      Some(sn_char) => sn_char,
+      None => {
+        error!("Could not find SN characteristic");
+        return None;
+      }
+    };
+
+    let sn = match self.peripheral.read(&sn_char).await {
+      Ok(sn) => sn,
+      Err(err) => {
+        error!("Could not read SN characteristic: {:?}", err);
+        return None;
+      }
     };
 
     if sn.len() % 2 != 0 {
-      return Err(anyhow!("SN length is not even"));
+      error!("Invalid SN length: {}", sn.len());
+      return None;
     }
 
     // [0xcd, 0x0b, 0x81, 0x45, ...] => "cd0b-8145-..."
@@ -133,23 +155,31 @@ impl BhapticsDeviceInternal {
       .collect::<Vec<_>>()
       .join("-");
 
-    Ok(sn)
+    Some(sn)
   }
 
-  async fn read_firmware_version(&self) -> crate::Result<String> {
+  async fn read_firmware_version(&self) -> Option<String> {
     let fw_char = self
       .peripheral
       .characteristics()
       .into_iter()
       .find(|c| c.uuid == super::constants::CHAR_VERSION);
-    let fw = match fw_char {
-      Some(fw_char) => self.peripheral.read(&fw_char).await?,
-      None => return Err(anyhow!("Could not find FW characteristic")),
+
+    let fw_char = match fw_char {
+      Some(fw_char) => fw_char,
+      None => {
+        error!("Could not find FW characteristic");
+        return None;
+      }
     };
 
-    if fw.len() % 2 != 0 {
-      return Err(anyhow!("FW length is not even"));
-    }
+    let fw = match self.peripheral.read(&fw_char).await {
+      Ok(fw) => fw,
+      Err(err) => {
+        error!("Could not read FW characteristic: {:?}", err);
+        return None;
+      }
+    };
 
     // [0x01, 0x0f] => "1.15"
     let fw = fw
@@ -158,6 +188,6 @@ impl BhapticsDeviceInternal {
       .collect::<Vec<_>>()
       .join(".");
 
-    Ok(fw)
+    Some(fw)
   }
 }

@@ -6,7 +6,7 @@ use std::sync::{Arc, RwLock};
 use futures::StreamExt;
 
 use anyhow::Context;
-use tracing::{info, instrument};
+use tracing::{info, instrument, warn};
 use xrc_device_transport_btleplug::api::DeviceBatteryProperty;
 
 pub(crate) struct BhapticsDeviceTask {
@@ -51,8 +51,8 @@ impl BhapticsDeviceTask {
       tokio::select! {
         notification = notification_stream.next() => {
           match notification {
-            Some(notification) => self.handle_notification(notification),
-            None => info!("Notification stream ended."),
+            Some(notification) => self.handle_notification(notification).await,
+            None => warn!("Notification stream ended."),
           }
         }
       }
@@ -60,26 +60,28 @@ impl BhapticsDeviceTask {
   }
 
   #[instrument(skip(self))]
-  fn handle_notification(&self, event: ValueNotification) {
+  async fn handle_notification(&self, event: ValueNotification) {
     match event.uuid {
       uuid if uuid == super::constants::CHAR_BATTERY => {
-        let level = event.value[0];
-        let level = level as f32 / 100.0;
-
-        let mut battery = DeviceBatteryProperty::default();
-        battery.set_level(level);
-
-        match self.battery_level.write() {
-          Ok(mut guard) => {
-            guard.replace(battery);
-          }
-          Err(err) => {
-            info!("Failed to update battery level: {:?}", err);
-          }
-        }
+        self.handle_battery_notification(event);
       }
-      _ => {
-        info!("Received notification: {:?}", event);
+      _ => {}
+    }
+  }
+
+  fn handle_battery_notification(&self, event: ValueNotification) {
+    let level = event.value[0];
+    let level = level as f32 / 100.0;
+
+    let mut battery = DeviceBatteryProperty::default();
+    battery.set_level(level);
+
+    match self.battery_level.write() {
+      Ok(mut guard) => {
+        guard.replace(battery);
+      }
+      Err(err) => {
+        info!("Failed to update battery level: {:?}", err);
       }
     }
   }
