@@ -1,0 +1,21 @@
+[package]
+name = "senseshifter-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+xrc-haptics-manager = { workspace = true }
+
+xrc-device-manager = { workspace = true }
+
+xrc-device-transport-btleplug = { workspace = true }
+xrc-device-transport-serialport = { workspace = true }
+
+xrc-device-protocol-bhaptics = { workspace = true, features = ["btleplug"] }
+
+futures = { workspace = true }
+futures-util = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

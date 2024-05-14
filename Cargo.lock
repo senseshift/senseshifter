@@ -1103,6 +1103,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
+name = "senseshifter-cli"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "futures-util",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+ "xrc-device-manager",
+ "xrc-device-protocol-bhaptics",
+ "xrc-device-transport-btleplug",
+ "xrc-device-transport-serialport",
+ "xrc-haptics-manager",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.198"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1776,12 +1793,8 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
- "tracing-subscriber",
  "uuid",
  "xrc-commons",
- "xrc-device-protocol-bhaptics",
- "xrc-device-transport-btleplug",
- "xrc-device-transport-serialport",
  "xrc-haptics-manager",
 ]
 
@@ -1802,6 +1815,8 @@ dependencies = [
  "uuid",
  "xrc-commons",
  "xrc-device-transport-btleplug",
+ "xrc-haptics-body",
+ "xrc-haptics-manager",
 ]
 
 [[package]]
@@ -1873,6 +1888,7 @@ name = "xrc-haptics-manager"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "mockall",
  "tokio",
  "xrc-commons",
