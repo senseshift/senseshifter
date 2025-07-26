@@ -1,0 +1,24 @@
+[package]
+name = "airpods-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = { workspace = true }
+strum = { git = "https://github.com/jscatena88/strum.git", branch = "discrim_repr_inherit", features = ["derive"] }
+num_enum = { version = "^0.7" }
+bytes = "1"
+
+tokio = { workspace = true, optional = true, features = ["full"]}
+btleplug = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+
+[dev-dependencies]
+test-case = "3"
+
+[[example]]
+name = "btleplug-listener"
+required-features = ["tokio", "btleplug", "futures"]
+test = false
