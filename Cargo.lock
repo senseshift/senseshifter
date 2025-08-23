@@ -1367,6 +1367,7 @@ dependencies = [
  "tokio-util",
  "toml",
  "tracing",
+ "tracing-subscriber",
  "xrc-commons",
 ]
 

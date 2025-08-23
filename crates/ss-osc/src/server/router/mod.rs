@@ -1,23 +1,31 @@
-mod config;
+pub mod config;
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use rosc::{OscMessage, OscPacket};
 use tokio::sync::mpsc;
+use tracing::{debug, error, info, warn};
 
-pub(crate) struct OscRouterRouteForward {
-    to: String, // Key to look up in forward_targets
-    rewrite: Option<String>,
+// Re-export for convenience
+pub use config::{RouterRouteConfig as OscRouterRoute, RouterForwardConfig as OscRouterRouteForward};
+
+// Runtime router types that reference targets by name
+#[derive(Debug)]
+pub struct OscRouterRouteForwardRuntime {
+    pub to: String, // Key to look up in forward_targets
+    pub rewrite: Option<String>,
 }
 
-pub(crate) struct OscRouterRoute {
-    address: regex::Regex,
-    stop_propagation: bool,
-    forward: Vec<OscRouterRouteForward>,
+#[derive(Debug)]
+pub struct OscRouterRouteRuntime {
+    pub address: regex::Regex,
+    pub stop_propagation: bool,
+    pub forward: Vec<OscRouterRouteForwardRuntime>,
 }
 
-pub(crate) struct OscRouter {
-    routes: Vec<OscRouterRoute>,
+#[derive(Debug)]
+pub struct OscRouter {
+    routes: Vec<OscRouterRouteRuntime>,
 
     /// Pre-Connected proxy targets
     forward_targets: HashMap<String, mpsc::Sender<OscPacket>>,
@@ -26,9 +34,16 @@ pub(crate) struct OscRouter {
 
 impl OscRouter {
     pub fn new(
-        routes: Vec<OscRouterRoute>,
+        routes: Vec<OscRouterRouteRuntime>,
         forward_targets: HashMap<String, mpsc::Sender<OscPacket>>,
     ) -> Self {
+        info!(
+            "Creating OSC router with {} routes and {} forward targets",
+            routes.len(),
+            forward_targets.len()
+        );
+        debug!("Forward targets: {:?}", forward_targets.keys().collect::<Vec<_>>());
+        
         Self {
             routes,
             forward_targets,
@@ -42,6 +57,7 @@ impl OscRouter {
 
 impl OscRouter {
     pub async fn route(&self, packet: &OscPacket, from: &SocketAddr) {
+        debug!("Routing OSC packet from {}", from);
         self.route_packet(packet, from, 255).await;
     }
 
@@ -60,20 +76,36 @@ impl OscRouter {
                     if depth > 0 {
                         Box::pin(self.route_packet(p, from, depth - 1)).await;
                     } else {
-                        println!("Max bundle depth reached, skipping further routing.");
+                        warn!(
+                            "Max bundle depth reached (255), skipping further routing for packet from {}",
+                            from
+                        );
                     }
                 }
             }
         }
     }
 
-    async fn route_message(&self, msg: &OscMessage, from: &SocketAddr) {
+    async fn route_message(&self, msg: &OscMessage, _from: &SocketAddr) {
+        debug!(
+            "Routing OSC message: {} with {} args",
+            msg.addr,
+            msg.args.len()
+        );
+        
+        let mut matched_routes = 0;
+        
         for route in &self.routes {
             // Check if the message address matches the route's address pattern
             let captures = match route.address.captures(&msg.addr) {
-                Some(c) => c,
+                Some(c) => {
+                    debug!("Route matched: {} -> pattern {}", msg.addr, route.address.as_str());
+                    c
+                },
                 None => continue,
             };
+            
+            matched_routes += 1;
 
             // Route matched, process forwards
             for forward in &route.forward {
@@ -81,7 +113,11 @@ impl OscRouter {
                 let target = match self.get_forward_target(&forward.to) {
                     Some(t) => t,
                     None => {
-                        eprintln!("No forward target found for key: {}", forward.to);
+                        error!(
+                            "No forward target '{}' found for route. Available targets: {:?}",
+                            forward.to,
+                            self.forward_targets.keys().collect::<Vec<_>>()
+                        );
                         continue;
                     }
                 };
@@ -90,22 +126,50 @@ impl OscRouter {
 
                 // Rewrite address if needed
                 if let Some(rewrite) = &forward.rewrite {
+                    let original_addr = msg_to_send.addr.clone();
                     let new_addr = self.rewrite_address(rewrite, &captures, route.address.capture_names());
-                    msg_to_send.addr = new_addr;
+                    msg_to_send.addr = new_addr.clone();
+                    debug!(
+                        "Address rewritten: '{}' -> '{}' using pattern '{}'",
+                        original_addr,
+                        new_addr,
+                        rewrite
+                    );
                 }
 
+                let message_addr = msg_to_send.addr.clone();
                 let packet_to_send = OscPacket::Message(msg_to_send);
 
                 // Send the packet to the target
-                if let Err(e) = target.send(packet_to_send).await {
-                    eprintln!("Failed to send packet to {}: {}", forward.to, e);
+                match target.send(packet_to_send).await {
+                    Ok(_) => {
+                        debug!("Successfully forwarded message to target '{}': {}", forward.to, message_addr);
+                    },
+                    Err(e) => {
+                        error!(
+                            "Failed to send packet to target '{}': {}. Message: {}",
+                            forward.to,
+                            e,
+                            message_addr
+                        );
+                    }
                 }
             }
 
             // If stop_propagation is set, break after the first match
             if route.stop_propagation {
-                break
+                debug!(
+                    "Stop propagation enabled for route '{}', stopping further routing",
+                    route.address.as_str()
+                );
+                break;
             }
+        }
+        
+        if matched_routes == 0 {
+            debug!("No routes matched for OSC message: {}", msg.addr);
+        } else {
+            debug!("Message '{}' matched {} route(s)", msg.addr, matched_routes);
         }
     }
 
@@ -116,21 +180,41 @@ impl OscRouter {
         capture_names: regex::CaptureNames,
     ) -> String {
         let mut new_addr = rewrite.to_string();
+        let original_pattern = new_addr.clone();
 
         // Replace numbered captures ($1, $2, etc.)
+        let mut numbered_replacements = Vec::new();
         for (i, cap) in captures.iter().enumerate() {
             if let Some(m) = cap {
                 let placeholder = format!("${}", i);
-                new_addr = new_addr.replace(&placeholder, m.as_str());
+                if new_addr.contains(&placeholder) {
+                    new_addr = new_addr.replace(&placeholder, m.as_str());
+                    numbered_replacements.push((placeholder, m.as_str().to_string()));
+                }
             }
         }
 
         // Replace named captures ($name)
+        let mut named_replacements = Vec::new();
         for name in capture_names.flatten() {
             if let Some(m) = captures.name(name) {
                 let placeholder = format!("${}", name);
-                new_addr = new_addr.replace(&placeholder, m.as_str());
+                if new_addr.contains(&placeholder) {
+                    new_addr = new_addr.replace(&placeholder, m.as_str());
+                    named_replacements.push((placeholder, m.as_str().to_string()));
+                }
             }
+        }
+
+        // Log replacement details at trace level for debugging
+        if !numbered_replacements.is_empty() || !named_replacements.is_empty() {
+            debug!(
+                "Address rewrite details: '{}' -> '{}'. Numbered: {:?}, Named: {:?}",
+                original_pattern,
+                new_addr,
+                numbered_replacements,
+                named_replacements
+            );
         }
 
         new_addr
@@ -232,31 +316,31 @@ mod tests {
         };
 
         let routes = vec![
-            super::OscRouterRoute {
+            super::OscRouterRouteRuntime {
                 address: Regex::new(r"^/foo/(.*)$").unwrap(),
                 stop_propagation: false,
                 forward: vec![
-                    super::OscRouterRouteForward {
+                    super::OscRouterRouteForwardRuntime {
                         to: "foo".to_string(),
                         rewrite: Some("/bar/$1".to_string()),
                     }
                 ],
             },
-            super::OscRouterRoute {
+            super::OscRouterRouteRuntime {
                 address: Regex::new(r"^/baz/(.*)$").unwrap(),
                 stop_propagation: true,
                 forward: vec![
-                    super::OscRouterRouteForward {
+                    super::OscRouterRouteForwardRuntime {
                         to: "baz".to_string(),
                         rewrite: Some("/qux".to_string()),
                     }
                 ],
             },
-            super::OscRouterRoute {
+            super::OscRouterRouteRuntime {
                 address: Regex::new(r"(.*)").unwrap(),
                 stop_propagation: false,
                 forward: vec![
-                    super::OscRouterRouteForward {
+                    super::OscRouterRouteForwardRuntime {
                         to: "catchall".to_string(),
                         rewrite: None,
                     }

@@ -35,4 +35,5 @@ serde = ["dep:serde", "serde_regex"]
 
 [dev-dependencies]
 toml = "0.9.5"
-serde_yaml = "0.9.33"
+serde_yaml = "^0.9.33"
+tracing-subscriber = { workspace = true }

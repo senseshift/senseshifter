@@ -9,7 +9,7 @@ use tokio::sync::{broadcast};
 use std::net::{
     SocketAddr,
 };
-use derivative::Derivative;
+use crate::server::router::OscRouter;
 
 #[derive(Debug)]
 pub enum OscServerEvent {
@@ -21,6 +21,8 @@ pub enum OscServerEvent {
 
 #[derive(Debug)]
 pub(crate) struct OscServerTask {
+    router: OscRouter,
+
     udp_addrs: Vec<SocketAddr>,
     tcp_addrs: Vec<SocketAddr>,
 
@@ -30,6 +32,7 @@ pub(crate) struct OscServerTask {
 
 impl OscServerTask {
     pub(crate) fn new(
+        router: OscRouter,
         udp_addrs: Vec<SocketAddr>,
         tcp_addrs: Vec<SocketAddr>,
         cancellation_token: CancellationToken,
@@ -44,6 +47,7 @@ impl OscServerTask {
         }
 
         Self {
+            router,
             udp_addrs,
             tcp_addrs,
             cancellation_token,

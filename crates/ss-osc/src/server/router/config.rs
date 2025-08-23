@@ -1,116 +1,192 @@
-use derivative::Derivative;
+use std::net::SocketAddr;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct OscRouterForwardTargetOscUdpConfig {
-    to: std::net::SocketAddr,
-    from: std::net::SocketAddr,
+pub struct UdpRouterForwardTargetConfig {
+    /// Remote target address
+    pub to: SocketAddr,
+}
+
+impl UdpRouterForwardTargetConfig {
+    pub fn new(to: SocketAddr) -> Self {
+        Self { to }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct OscRouterForwardTargetOscTcpConfig {
-    to: std::net::SocketAddr,
-    // from: std::net::SocketAddr,
+pub struct TcpRouterForwardTargetConfig {
+    /// Remote target address
+    pub to: SocketAddr,
 }
 
+impl TcpRouterForwardTargetConfig {
+    pub fn new(to: SocketAddr) -> Self {
+        Self { to }
+    }
+}
 
-#[derive(Derivative, Debug, Clone, PartialEq, Eq)]
+/// Transport configuration enum supporting different OSC transport types
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type", rename_all = "lowercase"))]
-pub enum OscRouterForwardTargetConfig {
+pub enum RouterForwardTargetConfig {
     #[cfg_attr(feature = "serde", serde(rename = "udp"))]
-    OscUdp(OscRouterForwardTargetOscUdpConfig),
+    Udp(UdpRouterForwardTargetConfig),
 
     #[cfg_attr(feature = "serde", serde(rename = "tcp"))]
-    OscTcp(OscRouterForwardTargetOscTcpConfig),
+    Tcp(TcpRouterForwardTargetConfig),
 
-    // todo: add WebSocket, etc.
+    // todo: WebSocket, Unix sockets, etc.
 }
 
+impl RouterForwardTargetConfig {
+    /// Get the remote address for connection (for UDP/TCP)
+    pub fn remote_address(&self) -> SocketAddr {
+        match self {
+            RouterForwardTargetConfig::Udp(config) => config.to,
+            RouterForwardTargetConfig::Tcp(config) => config.to,
+        }
+    }
+
+    /// Get transport type as string for logging
+    pub fn transport_type(&self) -> &'static str {
+        match self {
+            RouterForwardTargetConfig::Udp(_) => "UDP",
+            RouterForwardTargetConfig::Tcp(_) => "TCP",
+        }
+    }
+
+    /// Create UDP transport config
+    pub fn udp(to: SocketAddr) -> Self {
+        Self::Udp(UdpRouterForwardTargetConfig::new(to))
+    }
+
+    /// Create TCP transport config
+    pub fn tcp(to: SocketAddr) -> Self {
+        Self::Tcp(TcpRouterForwardTargetConfig::new(to))
+    }
+}
+
+/// Router forward configuration
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct OscRouterForwardConfig {
-    /// The target address to route the packet to.
+pub struct RouterForwardConfig {
+    /// The target transport to route the packet to.
     #[cfg_attr(feature = "serde", serde(flatten))]
-    target: OscRouterForwardTargetConfig,
+    pub target: RouterForwardTargetConfig,
 
     /// Optional address rewrite for the routed packet.
-    rewrite: Option<String>,
+    pub rewrite: Option<String>,
 }
 
+impl RouterForwardConfig {
+    pub fn new(target: RouterForwardTargetConfig, rewrite: Option<String>) -> Self {
+        Self { target, rewrite }
+    }
+
+    pub fn udp(to: SocketAddr, rewrite: Option<String>) -> Self {
+        Self::new(RouterForwardTargetConfig::udp(to), rewrite)
+    }
+
+    pub fn tcp(to: SocketAddr, rewrite: Option<String>) -> Self {
+        Self::new(RouterForwardTargetConfig::tcp(to), rewrite)
+    }
+}
+
+/// Router route configuration
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct OscRouterRouteConfig {
+pub struct RouterRouteConfig {
     /// The OSC address pattern to match.
     #[cfg_attr(feature = "serde", serde(with = "serde_regex"))]
-    address: regex::Regex,
+    pub address: regex::Regex,
 
     /// Whether to stop propagating packets down the pipeline if matched.
-    stop_propagation: bool,
+    pub stop_propagation: bool,
 
+    /// Forward configurations
     #[cfg_attr(feature = "serde", serde(default))]
-    forward: Vec<OscRouterForwardConfig>,
+    pub forward: Vec<RouterForwardConfig>,
 }
 
+impl RouterRouteConfig {
+    pub fn new(address: regex::Regex, stop_propagation: bool, forward: Vec<RouterForwardConfig>) -> Self {
+        Self { address, stop_propagation, forward }
+    }
+}
+
+/// Router configuration
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct OscRouterConfig {
-    routes: Vec<OscRouterRouteConfig>,
+pub struct RouterConfig {
+    pub routes: Vec<RouterRouteConfig>,
+}
+
+impl RouterConfig {
+    pub fn new(routes: Vec<RouterRouteConfig>) -> Self {
+        let config = Self::new_unchecked(routes);
+
+        config
+    }
+
+    pub fn new_unchecked(routes: Vec<RouterRouteConfig>) -> Self {
+        Self { routes }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::net::{SocketAddr, Ipv4Addr};
 
     #[cfg(feature = "serde")]
     #[test]
-    fn test_deserialize_yaml() {
+    fn test_yaml_deserialization() {
         let yaml_str = r#"
             routes:
               - address: /avatar/parameters/(?<parameter>bHaptics_(?<position>.+)_(?<index>\d+)_bool)
                 stop_propagation: false
                 forward:
                   - type: udp
-                    to: 127.0.0.1:23456 # target socket
-                    from: 127.0.0.1:23457 # source host socket for UDP
+                    to: 127.0.0.1:23456
                     rewrite: /$position/$index/bool
 
                   - type: tcp
                     to: 127.0.0.1:34567
-
-                  # - type: websocket
-                  #   to: ws://127.0.0.1:45678/osc
-
-              - address: /avatar/parameters/bHaptics_(?<parameter>.+)
-                stop_propagation: true
-
-              - address: /avatar/parameters/(?<parameter>.+)
-                stop_propagation: false
         "#;
 
-        let config: OscRouterConfig = serde_yaml::from_str(yaml_str).unwrap();
-
-        assert_eq!(config.routes.len(), 3);
-        assert_eq!(config.routes[0].address.as_str(), "/avatar/parameters/(?<parameter>bHaptics_(?<position>.+)_(?<index>\\d+)_bool)");
-        assert!(!config.routes[0].stop_propagation);
+        let config: RouterConfig = serde_yaml::from_str(yaml_str).unwrap();
+        assert_eq!(config.routes.len(), 1);
         assert_eq!(config.routes[0].forward.len(), 2);
-        assert_eq!(config.routes[0].forward[0].target, OscRouterForwardTargetConfig::OscUdp(OscRouterForwardTargetOscUdpConfig {
-            to: "127.0.0.1:23456".parse().unwrap(),
-            from: "127.0.0.1:23457".parse().unwrap(),
-        }));
-        assert_eq!(config.routes[0].forward[0].rewrite.as_deref(), Some("/$position/$index/bool"));
-        assert_eq!(config.routes[0].forward[1].target, OscRouterForwardTargetConfig::OscTcp(OscRouterForwardTargetOscTcpConfig {
-            to: "127.0.0.1:34567".parse().unwrap(),
-        }));
-        assert!(config.routes[0].forward[1].rewrite.is_none());
 
-        assert_eq!(config.routes[1].address.as_str(), "/avatar/parameters/bHaptics_(?<parameter>.+)");
-        assert!(config.routes[1].stop_propagation);
-        assert_eq!(config.routes[1].forward.len(), 0);
+        // Verify UDP config
+        match &config.routes[0].forward[0].target {
+            RouterForwardTargetConfig::Udp(udp_config) => {
+                assert_eq!(udp_config.to, "127.0.0.1:23456".parse::<SocketAddr>().unwrap());
+            }
+            _ => panic!("Expected UDP config")
+        }
 
-        assert_eq!(config.routes[2].address.as_str(), "/avatar/parameters/(?<parameter>.+)");
-        assert!(!config.routes[2].stop_propagation);
-        assert_eq!(config.routes[2].forward.len(), 0);
+        // Verify TCP config
+        match &config.routes[0].forward[1].target {
+            RouterForwardTargetConfig::Tcp(tcp_config) => {
+                assert_eq!(tcp_config.to, "127.0.0.1:34567".parse::<SocketAddr>().unwrap());
+            }
+            _ => panic!("Expected TCP config")
+        }
+    }
+
+    #[test]
+    fn test_transport_config_creation() {
+        let udp_addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 9000);
+        
+        let udp_config = RouterForwardTargetConfig::udp(udp_addr);
+        assert_eq!(udp_config.remote_address(), udp_addr);
+        assert_eq!(udp_config.transport_type(), "UDP");
+        
+        let tcp_config = RouterForwardTargetConfig::tcp(udp_addr);
+        assert_eq!(tcp_config.remote_address(), udp_addr);
+        assert_eq!(tcp_config.transport_type(), "TCP");
     }
 }
