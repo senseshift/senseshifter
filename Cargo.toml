@@ -26,6 +26,8 @@ xrc-device-protocol-bhaptics = { path = "crates/xrc-device-protocol-bhaptics" }
 xrc-haptics-manager = { path = "crates/xrc-haptics-manager" }
 xrc-haptics-body = { path = "crates/xrc-haptics-body" }
 
+ss-osc = { path = "crates/ss-osc" }
+
 # Common dependencies
 # btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }
 btleplug = { path = "../btleplug" }
