@@ -3,11 +3,13 @@ use xrc_commons::Result;
 use tokio_util::sync::CancellationToken;
 use tokio::net::{
     UdpSocket,
+    TcpListener,
 };
 use tokio::sync::{broadcast};
 use std::net::{
     SocketAddr,
 };
+use derivative::Derivative;
 
 #[derive(Debug)]
 pub enum OscServerEvent {
@@ -17,20 +19,33 @@ pub enum OscServerEvent {
     },
 }
 
+#[derive(Debug)]
 pub(crate) struct OscServerTask {
-    socket_addr: SocketAddr,
+    udp_addrs: Vec<SocketAddr>,
+    tcp_addrs: Vec<SocketAddr>,
+
     cancellation_token: CancellationToken,
     event_sender: broadcast::Sender<OscServerEvent>,
 }
 
 impl OscServerTask {
     pub(crate) fn new(
-        socket_addr: SocketAddr,
+        udp_addrs: Vec<SocketAddr>,
+        tcp_addrs: Vec<SocketAddr>,
         cancellation_token: CancellationToken,
         event_sender: broadcast::Sender<OscServerEvent>,
     ) -> Self {
+        if udp_addrs.is_empty() && tcp_addrs.is_empty() {
+            panic!("At least one UDP or TCP address must be provided for the OSC server.");
+        }
+
+        if tcp_addrs.len() > 0 {
+            unimplemented!("TCP transport is not yet implemented.");
+        }
+
         Self {
-            socket_addr,
+            udp_addrs,
+            tcp_addrs,
             cancellation_token,
             event_sender,
         }
@@ -39,16 +54,27 @@ impl OscServerTask {
     pub(crate) async fn run(
         &mut self,
     ) -> Result<()> {
-        // todo: bind to multiple addresses (IPv4 + IPv6)
-        let udp_socket = UdpSocket::bind(self.socket_addr).await?;
+        if self.udp_addrs.is_empty() && self.tcp_addrs.is_empty() {
+            return Err(anyhow::anyhow!("At least one UDP or TCP address must be provided for the OSC server."));
+        }
 
-        // todo: bind TCP socket
+        let mut udp_socket = None;
+
+        if self.udp_addrs.len() > 0 {
+            udp_socket = Some(UdpSocket::bind(&self.udp_addrs[..]).await?);
+            println!("OSC Server listening on UDP: {:?}", udp_socket.as_ref().unwrap().local_addr()?);
+        }
+
+        if self.tcp_addrs.len() > 0 {
+            // todo: bind TCP sockets
+            unimplemented!("TCP transport is not yet implemented.");
+        }
 
         let mut buf = [0u8; rosc::decoder::MTU];
 
         loop {
             tokio::select! {
-                result = udp_socket.recv_from(&mut buf) => {
+                result = udp_socket.as_ref().unwrap().recv_from(&mut buf), if udp_socket.is_some() => {
                     match result {
                         Ok((size, addr)) => {
                             self.handle_udp_packet(&buf[..size], &addr).await;
