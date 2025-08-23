@@ -195,6 +195,26 @@ mod tests {
         assert_eq!(new_addr, "/new/bar/baz");
     }
 
+    #[test]
+    fn test_rewrite_address_nested_named_groups() {
+        let router = OscRouter::new(vec![], std::collections::HashMap::new());
+
+        let regex = Regex::new(r"^/avatar/parameters/(?P<parameter>test_(?P<name1>.*)_(?P<name2>.*))$").unwrap();
+
+        let msg = OscMessage {
+            addr: "/avatar/parameters/test_bar_baz".to_string(),
+            args: vec![],
+        };
+
+        let captures = regex.captures(&msg.addr).unwrap();
+
+        let rewrite = "/new/$parameter/$name1/$name2";
+
+        let new_addr = router.rewrite_address(rewrite, &captures, regex.capture_names());
+
+        assert_eq!(new_addr, "/new/test_bar_baz/bar/baz");
+    }
+
     #[tokio::test]
     async fn test_route() {
         let (tx_foo, mut rx_foo) = tokio::sync::mpsc::channel(1);
