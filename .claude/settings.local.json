@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:github.com)",
       "WebFetch(domain:github.com)",
-      "Bash(cargo check:*)"
+      "Bash(cargo check:*)",
+      "Bash(cargo build:*)"
     ],
     "deny": [],
     "ask": []

@@ -15,6 +15,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-device-transport-serialport/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/xrc-transport-serialport/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/apps/senseshifter-cli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/apps/osc-proxy/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/ss-osc/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/ss-osc/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

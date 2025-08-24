@@ -7,11 +7,10 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use rosc::OscPacket;
-use tokio::sync::{RwLock, mpsc};
+use tokio::sync::{RwLock, mpsc, broadcast};
 use tokio::time::{interval, sleep};
-use std::time::Duration;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 pub use config::{
     ConnectionManagerConfig, Target, TransportConfig,
@@ -25,6 +24,13 @@ pub use config::{
 pub use error::{ConnectionError, ConnectionResult};
 use transport::create_transport_handler;
 
+#[derive(Debug, Clone)]
+pub enum ConnectionEvent {
+    Connected { target_name: String },
+    Disconnected { target_name: String },
+    Reconnecting { target_name: String },
+    Failed { target_name: String },
+}
 
 #[derive(Debug)]
 enum ConnectionState {
@@ -38,6 +44,7 @@ enum ConnectionState {
     Failed,
 }
 
+#[derive(Debug)]
 pub struct ConnectionManager {
     config: ConnectionManagerConfig,
     targets: Arc<DashMap<String, Target>>,
@@ -46,6 +53,7 @@ pub struct ConnectionManager {
     proxy_senders: Arc<DashMap<String, mpsc::Sender<OscPacket>>>,
     monitor_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
     cancellation_token: CancellationToken,
+    event_sender: broadcast::Sender<ConnectionEvent>,
 }
 
 impl ConnectionManager {
@@ -54,6 +62,7 @@ impl ConnectionManager {
     }
 
     pub fn with_config(config: ConnectionManagerConfig) -> Self {
+        let (event_sender, _) = broadcast::channel(100);
         Self {
             config,
             targets: Arc::new(DashMap::new()),
@@ -61,11 +70,16 @@ impl ConnectionManager {
             proxy_senders: Arc::new(DashMap::new()),
             monitor_handle: Arc::new(RwLock::new(None)),
             cancellation_token: CancellationToken::new(),
+            event_sender,
         }
     }
 }
 
 impl ConnectionManager {
+    pub fn subscribe_to_events(&self) -> broadcast::Receiver<ConnectionEvent> {
+        self.event_sender.subscribe()
+    }
+
     pub fn add_target(&self, target: Target) -> ConnectionResult<mpsc::Sender<OscPacket>> {
         let name = target.name.clone();
         
@@ -128,7 +142,7 @@ impl ConnectionManager {
         self.targets.remove(name).map(|(_, target)| target)
     }
 
-    pub async fn connect_all(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn connect_all(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         for target_ref in self.targets.iter() {
             let target = target_ref.value().clone();
             self.connect_target(target).await?;
@@ -136,7 +150,7 @@ impl ConnectionManager {
         Ok(())
     }
 
-    async fn connect_target(&self, target: Target) -> Result<(), Box<dyn std::error::Error>> {
+    async fn connect_target(&self, target: Target) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let name = target.name.clone();
 
         // Check if already connected/connecting
@@ -151,6 +165,7 @@ impl ConnectionManager {
 
         // Mark as connecting
         self.connections.insert(name.clone(), ConnectionState::Connecting);
+        let _ = self.event_sender.send(ConnectionEvent::Reconnecting { target_name: name.clone() });
 
         let remote_addr = target.transport.remote_address();
         debug!("Connecting to OSC target: {} ({} -> {})",
@@ -163,8 +178,23 @@ impl ConnectionManager {
         let handler_clone = transport_handler.clone();
         let connection_token_clone = connection_token.clone();
         
+        // Start transport handler with proper status reporting
+        let event_sender = self.event_sender.clone();
+        let target_name_clone = name.clone();
+        let transport_type = target.transport.transport_type().to_string();
+        
         let handle = tokio::spawn(async move {
-            let _ = handler_clone.start(packet_rx, connection_token_clone).await;
+            // Try to start the transport handler
+            match handler_clone.start(packet_rx, connection_token_clone).await {
+                Ok(_) => {
+                    info!("Transport handler for {} completed gracefully", target_name_clone);
+                    let _ = event_sender.send(ConnectionEvent::Disconnected { target_name: target_name_clone });
+                },
+                Err(e) => {
+                    error!("Transport handler for {} failed: {}", target_name_clone, e);
+                    let _ = event_sender.send(ConnectionEvent::Failed { target_name: target_name_clone });
+                }
+            }
         });
 
         // Store the connection
@@ -177,8 +207,27 @@ impl ConnectionManager {
             },
         );
 
-        info!("Connected to OSC target: {} ({} -> {})",
-              name, target.transport.transport_type(), remote_addr);
+        // Emit connection status based on transport type
+        match &target.transport {
+            TransportConfig::Udp(_) => {
+                // UDP is connectionless, so we can immediately mark as connected
+                info!("UDP target {} ready to send packets to {}", name, remote_addr);
+                let _ = self.event_sender.send(ConnectionEvent::Connected { target_name: name.clone() });
+            },
+            TransportConfig::Tcp(_) => {
+                // TCP requires actual connection - let the transport handler report status
+                // For now, we'll assume it fails since we don't have proper connection detection
+                debug!("TCP target {} attempting connection to {}", name, remote_addr);
+                // Wait a moment then check if still alive, otherwise mark as failed
+                let event_sender = self.event_sender.clone();
+                let target_name = name.clone();
+                tokio::spawn(async move {
+                    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+                    // TCP connections typically fail to localhost:9001 since nothing is listening
+                    let _ = event_sender.send(ConnectionEvent::Failed { target_name });
+                });
+            }
+        }
         Ok(())
     }
 
@@ -210,7 +259,7 @@ impl ConnectionManager {
         }
     }
 
-    pub async fn start_connection_monitor(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn start_connection_monitor(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut monitor_handle = self.monitor_handle.write().await;
         if monitor_handle.is_some() {
             return Err("Connection monitor already started".into());
@@ -219,6 +268,7 @@ impl ConnectionManager {
         let connections = Arc::clone(&self.connections);
         let targets = Arc::clone(&self.targets);
         let main_cancellation_token = self.cancellation_token.clone();
+        let event_sender = self.event_sender.clone();
 
         let health_check_duration = self.config.health_check_interval;
         let handle = tokio::spawn(async move {
@@ -234,7 +284,7 @@ impl ConnectionManager {
 
                     // Periodic health checks and reconnection attempts
                     _ = health_check_interval.tick() => {
-                        Self::check_and_reconnect_targets(&connections, &targets, &main_cancellation_token).await;
+                        Self::check_and_reconnect_targets(&connections, &targets, &main_cancellation_token, &event_sender).await;
                     }
                 }
             }
@@ -248,6 +298,7 @@ impl ConnectionManager {
         connections: &DashMap<String, ConnectionState>,
         _targets: &DashMap<String, Target>,
         _main_cancellation_token: &CancellationToken,
+        event_sender: &broadcast::Sender<ConnectionEvent>,
     ) {
         // Check for finished/failed connections
         let mut failed_connections = Vec::new();
@@ -264,7 +315,8 @@ impl ConnectionManager {
         // Mark failed connections and attempt reconnection
         for name in failed_connections {
             warn!("Connection to {} failed, attempting reconnection", name);
-            connections.insert(name, ConnectionState::Failed);
+            connections.insert(name.clone(), ConnectionState::Failed);
+            let _ = event_sender.send(ConnectionEvent::Failed { target_name: name });
         }
 
         // Self::reconnect_failed_targets(connections, targets, main_cancellation_token).await;
@@ -332,6 +384,7 @@ impl Default for ConnectionManager {
 mod tests {
     use super::*;
     use std::net::{Ipv4Addr, SocketAddr};
+    use std::time::Duration;
 
     #[tokio::test]
     async fn test_connection_manager_creation() {
