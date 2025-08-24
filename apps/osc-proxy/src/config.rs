@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::net::SocketAddr;
 use std::path::Path;
-use std::time::Duration;
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -38,9 +37,6 @@ pub struct ServerConfig {
 pub struct TargetConfig {
     /// Transport type and address
     pub transport: TransportConfig,
-    /// Reconnection interval in seconds
-    #[serde(default = "default_reconnect_interval")]
-    pub reconnect_interval: u64,
     /// Optional description for display
     pub description: Option<String>,
 }
@@ -111,9 +107,6 @@ fn default_udp_addresses() -> Vec<SocketAddr> {
     vec!["127.0.0.1:8000".parse().unwrap()]
 }
 
-fn default_reconnect_interval() -> u64 {
-    5
-}
 
 fn default_log_level() -> String {
     "info".to_string()
@@ -173,7 +166,6 @@ impl ProxyConfig {
             targets.push(ss_osc::server::connection_manager::Target {
                 name: name.clone(),
                 transport,
-                reconnect_interval: Duration::from_secs(config.reconnect_interval),
             });
         }
         
@@ -235,7 +227,6 @@ impl ProxyConfig {
             transport: TransportConfig::Udp { 
                 to: "127.0.0.1:9000".parse().unwrap() 
             },
-            reconnect_interval: 5,
             description: Some("VRChat OSC input".to_string()),
         });
         
@@ -243,7 +234,6 @@ impl ProxyConfig {
             transport: TransportConfig::Tcp { 
                 to: "127.0.0.1:9001".parse().unwrap() 
             },
-            reconnect_interval: 3,
             description: Some("TouchDesigner visualization".to_string()),
         });
         
@@ -251,7 +241,6 @@ impl ProxyConfig {
             transport: TransportConfig::Udp { 
                 to: "127.0.0.1:9002".parse().unwrap() 
             },
-            reconnect_interval: 10,
             description: Some("Ableton Live control".to_string()),
         });
         

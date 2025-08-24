@@ -138,22 +138,19 @@ impl TransportConfig {
 pub struct Target {
     pub name: String,
     pub transport: TransportConfig,
-    /// Reconnect interval for failed connections
-    #[derivative(Default(value = "Duration::from_secs(5)"))]
-    pub reconnect_interval: Duration,
 }
 
 impl Target {
-    pub fn new(name: String, transport: TransportConfig, reconnect_interval: Duration) -> Self {
-        Self { name, transport, reconnect_interval }
+    pub fn new(name: String, transport: TransportConfig) -> Self {
+        Self { name, transport }
     }
     
-    pub fn udp(name: String, to: SocketAddr, reconnect_interval: Duration) -> Self {
-        Self::new(name, TransportConfig::udp(to), reconnect_interval)
+    pub fn udp(name: String, to: SocketAddr) -> Self {
+        Self::new(name, TransportConfig::udp(to))
     }
     
-    pub fn tcp(name: String, to: SocketAddr, reconnect_interval: Duration) -> Self {
-        Self::new(name, TransportConfig::tcp(to), reconnect_interval)
+    pub fn tcp(name: String, to: SocketAddr) -> Self {
+        Self::new(name, TransportConfig::tcp(to))
     }
 
     pub fn builder(name: impl Into<String>) -> TargetBuilder {
@@ -167,8 +164,6 @@ pub struct TargetBuilder {
     name: String,
     #[derivative(Default(value = "None"))]
     transport: Option<TransportConfig>,
-    #[derivative(Default(value = "None"))]
-    reconnect_interval: Option<Duration>,
 }
 
 impl TargetBuilder {
@@ -176,7 +171,6 @@ impl TargetBuilder {
         Self {
             name,
             transport: None,
-            reconnect_interval: None,
         }
     }
 
@@ -190,16 +184,10 @@ impl TargetBuilder {
         self
     }
 
-    pub fn reconnect_interval(mut self, interval: Duration) -> Self {
-        self.reconnect_interval = Some(interval);
-        self
-    }
-
     pub fn build(self) -> Result<Target, &'static str> {
         let transport = self.transport.ok_or("Transport configuration is required")?;
-        let reconnect_interval = self.reconnect_interval.unwrap_or(Duration::from_secs(5));
         
-        Ok(Target::new(self.name, transport, reconnect_interval))
+        Ok(Target::new(self.name, transport))
     }
 }
 
@@ -255,11 +243,10 @@ mod tests {
         
         let target = Target::builder("test")
             .udp(addr)
-            .reconnect_interval(Duration::from_secs(10))
             .build()
             .unwrap();
             
         assert_eq!(target.name, "test");
-        assert_eq!(target.reconnect_interval, Duration::from_secs(10));
+        // Reconnect interval is now handled automatically with logarithmic backoff
     }
 }
