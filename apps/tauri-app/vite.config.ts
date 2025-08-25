@@ -37,11 +37,15 @@ export default defineConfig(async () => ({
     },
   },
 
-  output: {
-    manualChunks: {
-      vendors: ["react", "react-dom"],
-      senseshifter: ["@senseshifter/ui"],
-    },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendors: ["react", "react-dom"],
+          senseshifter: ["@senseshifter/ui"],
+        },
+      },
+    }
   },
 
   resolve: {
