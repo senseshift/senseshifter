@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io;
-use std::time::SystemTime;
+use std::time::{SystemTime, Duration, Instant};
 
 use chrono::{DateTime, Local};
 use crossterm::{
@@ -54,7 +54,7 @@ impl ConnectionStatus {
         match self {
             ConnectionStatus::Online => "Online",
             ConnectionStatus::Offline => "Offline",
-            ConnectionStatus::Reconnecting => "Reconnecting",
+            ConnectionStatus::Reconnecting => "Reconnecting...",
             ConnectionStatus::Failed => "Failed",
         }
     }
@@ -69,6 +69,7 @@ pub struct TargetInfo {
     pub status: ConnectionStatus,
     pub last_packet_time: Option<SystemTime>,
     pub packet_count: u64,
+    pub next_attempt_at: Option<Instant>,
 }
 
 /// Log entry for display
@@ -88,6 +89,7 @@ pub enum UiEvent {
         address: String,
         transport: String,
         status: ConnectionStatus,
+        next_attempt_at: Option<Instant>,
     },
     LogEntry(LogEntry),
     PacketReceived {
@@ -177,12 +179,13 @@ impl App {
         // Process all available UI events
         while let Ok(event) = self.ui_rx.try_recv() {
             match event {
-                UiEvent::TargetInfo { name, address, transport, status } => {
+                UiEvent::TargetInfo { name, address, transport, status, next_attempt_at } => {
                     if let Some(target) = self.targets.get_mut(&name) {
                         // Update existing target
                         target.status = status;
                         target.address = address;
                         target.transport = transport;
+                        target.next_attempt_at = next_attempt_at;
                         debug!("Updated target {} info", name);
                     } else {
                         // Create new target
@@ -194,6 +197,7 @@ impl App {
                             status,
                             last_packet_time: None,
                             packet_count: 0,
+                            next_attempt_at,
                         };
                         self.targets.insert(name, target_info);
                     }
@@ -320,6 +324,24 @@ impl App {
                     String::new()
                 };
                 
+                let timing_info = if let Some(next_attempt_at) = target.next_attempt_at {
+                    // Calculate remaining time until next attempt
+                    if next_attempt_at > Instant::now() {
+                        let remaining = next_attempt_at - Instant::now();
+                        let seconds = remaining.as_secs();
+                        if seconds > 0 {
+                            format!(" (retry in {}s)", seconds)
+                        } else {
+                            " (retrying...)".to_string()
+                        }
+                    } else {
+                        // Time has passed, should be retrying
+                        " (retrying...)".to_string()
+                    }
+                } else {
+                    String::new()
+                };
+                
                 let content = vec![
                     Line::from(vec![
                         Span::raw(format!("{} ", status_emoji)),
@@ -329,6 +351,7 @@ impl App {
                         Span::raw("  "),
                         Span::styled(status_text, Style::default().fg(status_color)),
                         Span::styled(packet_info, Style::default().fg(Color::DarkGray)),
+                        Span::styled(timing_info, Style::default().fg(Color::Yellow)),
                     ]),
                     Line::from(vec![
                         Span::raw("  "),
@@ -365,7 +388,7 @@ impl App {
             Line::from("OSC Proxy - Keyboard Shortcuts"),
             Line::raw(""),
             Line::from(vec![
-                Span::styled("q, Esc, Ctrl+C", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                Span::styled("Ctrl+C", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
                 Span::raw(" : Quit application"),
             ]),
             Line::from(vec![
@@ -445,8 +468,8 @@ pub async fn run_tui(
         // Draw UI
         terminal.draw(|f| app.draw(f))?;
         
-        // Handle input events (non-blocking)
-        if event::poll(std::time::Duration::from_millis(100))? {
+        // Handle input events (non-blocking) - poll every 100ms for smoother countdown updates
+        if event::poll(Duration::from_millis(100))? {
             app.handle_event(event::read()?)?;
         }
         

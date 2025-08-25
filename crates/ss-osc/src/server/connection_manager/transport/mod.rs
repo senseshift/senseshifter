@@ -3,10 +3,11 @@ pub mod tcp;
 
 use rosc::OscPacket;
 use tokio_util::sync::CancellationToken;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, broadcast};
 
-use super::config::TransportConfig;
+use super::config::{TransportConfig, Target};
 use super::error::ConnectionError;
+use super::ConnectionEvent;
 
 pub use udp::UdpHandler;
 pub use tcp::TcpHandler;
@@ -24,10 +25,12 @@ impl TransportHandler {
         &self,
         packet_rx: mpsc::Receiver<OscPacket>,
         cancellation_token: CancellationToken,
+        target: Target,
+        event_sender: broadcast::Sender<ConnectionEvent>,
     ) -> Result<(), ConnectionError> {
         match self {
-            TransportHandler::Udp(handler) => handler.start(packet_rx, cancellation_token).await,
-            TransportHandler::Tcp(handler) => handler.start(packet_rx, cancellation_token).await,
+            TransportHandler::Udp(handler) => handler.start(packet_rx, cancellation_token, target, event_sender).await,
+            TransportHandler::Tcp(handler) => handler.start(packet_rx, cancellation_token, target, event_sender).await,
         }
     }
 
@@ -40,10 +43,10 @@ impl TransportHandler {
     }
 
     /// Get a display name for this transport instance
-    pub fn display_name(&self) -> String {
+    pub fn display_name(&self, target: &Target) -> String {
         match self {
-            TransportHandler::Udp(handler) => handler.display_name(),
-            TransportHandler::Tcp(handler) => handler.display_name(),
+            TransportHandler::Udp(handler) => handler.display_name(target),
+            TransportHandler::Tcp(handler) => handler.display_name(target),
         }
     }
 }
@@ -51,8 +54,8 @@ impl TransportHandler {
 /// Factory for creating transport handlers
 pub fn create_transport_handler(config: &TransportConfig) -> TransportHandler {
     match config {
-        TransportConfig::Udp(udp_config) => TransportHandler::Udp(UdpHandler::new(udp_config.clone())),
-        TransportConfig::Tcp(tcp_config) => TransportHandler::Tcp(TcpHandler::new(tcp_config.clone())),
+        TransportConfig::Udp(_) => TransportHandler::Udp(UdpHandler::new()),
+        TransportConfig::Tcp(_) => TransportHandler::Tcp(TcpHandler::new()),
     }
 }
 
@@ -63,15 +66,13 @@ mod tests {
 
     #[test]
     fn test_create_transport_handler() {
-        let udp_config = TransportConfig::udp(
-            SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 9000)
-        );
+        let addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 9000);
+        
+        let udp_config = TransportConfig::udp(addr);
         let handler = create_transport_handler(&udp_config);
         assert_eq!(handler.transport_type(), "UDP");
 
-        let tcp_config = TransportConfig::tcp(
-            SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 9000)
-        );
+        let tcp_config = TransportConfig::tcp(addr);
         let handler = create_transport_handler(&tcp_config);
         assert_eq!(handler.transport_type(), "TCP");
     }

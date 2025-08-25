@@ -75,22 +75,22 @@ async fn main() -> Result<()> {
                 event = conn_events_rx.recv() => {
                     match event {
                         Ok(conn_event) => {
-                            let (status, target) = match &conn_event {
+                            let (status, target, next_attempt_at) = match &conn_event {
                                 ConnectionEvent::Connected { target } => {
                                     info!("Target {} connected", target.name);
-                                    (ConnectionStatus::Online, target)
+                                    (ConnectionStatus::Online, target, None)
                                 }
                                 ConnectionEvent::Disconnected { target } => {
                                     info!("Target {} disconnected", target.name);
-                                    (ConnectionStatus::Offline, target)
+                                    (ConnectionStatus::Offline, target, None)
                                 }
                                 ConnectionEvent::Reconnecting { target } => {
                                     info!("Target {} reconnecting", target.name);
-                                    (ConnectionStatus::Reconnecting, target)
+                                    (ConnectionStatus::Reconnecting, target, None)
                                 }
-                                ConnectionEvent::Failed { target } => {
+                                ConnectionEvent::Failed { target, next_attempt_at } => {
                                     error!("Target {} connection failed", target.name);
-                                    (ConnectionStatus::Failed, target)
+                                    (ConnectionStatus::Failed, target, Some(*next_attempt_at))
                                 }
                             };
                             
@@ -109,6 +109,7 @@ async fn main() -> Result<()> {
                                 address,
                                 transport: transport.clone(),
                                 status,
+                                next_attempt_at,
                             };
                             
                             if let Err(e) = ui_tx_clone.send(ui_event) {

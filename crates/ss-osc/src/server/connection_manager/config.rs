@@ -11,55 +11,10 @@ pub struct ConnectionManagerConfig {
     /// Buffer size for packet channels
     #[derivative(Default(value = "1000"))]
     pub packet_buffer_size: usize,
-    /// Health check interval in seconds
-    #[derivative(Default(value = "Duration::from_secs(5)"))]
-    pub health_check_interval: Duration,
+
     /// Maximum concurrent reconnection attempts
     #[derivative(Default(value = "10"))]
     pub max_concurrent_reconnections: usize,
-}
-
-impl ConnectionManagerConfig {
-    pub fn builder() -> ConnectionManagerConfigBuilder {
-        ConnectionManagerConfigBuilder::default()
-    }
-}
-
-#[derive(Derivative)]
-#[derivative(Debug, Clone, Default)]
-pub struct ConnectionManagerConfigBuilder {
-    #[derivative(Default(value = "None"))]
-    packet_buffer_size: Option<usize>,
-    #[derivative(Default(value = "None"))]
-    health_check_interval: Option<Duration>,
-    #[derivative(Default(value = "None"))]
-    max_concurrent_reconnections: Option<usize>,
-}
-
-impl ConnectionManagerConfigBuilder {
-    pub fn packet_buffer_size(mut self, size: usize) -> Self {
-        self.packet_buffer_size = Some(size);
-        self
-    }
-
-    pub fn health_check_interval(mut self, interval: Duration) -> Self {
-        self.health_check_interval = Some(interval);
-        self
-    }
-
-    pub fn max_concurrent_reconnections(mut self, max: usize) -> Self {
-        self.max_concurrent_reconnections = Some(max);
-        self
-    }
-
-    pub fn build(self) -> ConnectionManagerConfig {
-        let default = ConnectionManagerConfig::default();
-        ConnectionManagerConfig {
-            packet_buffer_size: self.packet_buffer_size.unwrap_or(default.packet_buffer_size),
-            health_check_interval: self.health_check_interval.unwrap_or(default.health_check_interval),
-            max_concurrent_reconnections: self.max_concurrent_reconnections.unwrap_or(default.max_concurrent_reconnections),
-        }
-    }
 }
 
 // ============================================================================
@@ -172,27 +127,6 @@ mod tests {
     use super::*;
     use std::net::{SocketAddr, Ipv4Addr};
     use std::time::Duration;
-
-    #[test]
-    fn test_connection_manager_config_defaults() {
-        let config = ConnectionManagerConfig::default();
-        assert_eq!(config.packet_buffer_size, 1000);
-        assert_eq!(config.health_check_interval, Duration::from_secs(5));
-        assert_eq!(config.max_concurrent_reconnections, 10);
-    }
-
-    #[test]
-    fn test_connection_manager_config_builder() {
-        let config = ConnectionManagerConfig::builder()
-            .packet_buffer_size(500)
-            .health_check_interval(Duration::from_secs(10))
-            .max_concurrent_reconnections(5)
-            .build();
-            
-        assert_eq!(config.packet_buffer_size, 500);
-        assert_eq!(config.health_check_interval, Duration::from_secs(10));
-        assert_eq!(config.max_concurrent_reconnections, 5);
-    }
 
     #[test]
     fn test_transport_config() {
