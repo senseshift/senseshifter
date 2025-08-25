@@ -10,13 +10,6 @@
       "cache": false,
       "persistent": true
     },
-    "clean": {
-      "cache": false
-    },
-    "check-types": {
-      "dependsOn": ["^build"],
-      "cache": false
-    },
     "tauri": {
       "cache": false,
       "persistent": true
