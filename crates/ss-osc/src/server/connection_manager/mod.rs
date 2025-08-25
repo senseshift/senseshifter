@@ -242,7 +242,6 @@ impl ConnectionManager {
         let event_sender = self.event_sender.clone();
         let target_name_clone = name.clone();
         let _transport_type = target.transport.transport_type().to_string();
-        // Removed unused reconnect_attempts_clone
 
         let target_clone = target.clone();
         
