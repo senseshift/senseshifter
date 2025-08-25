@@ -29,7 +29,7 @@ pub enum ConnectionEvent {
     Connected { target: Target },
     Disconnected { target: Target },
     Reconnecting { target: Target },
-    Failed { target: Target, next_attempt_at: std::time::SystemTime },
+    Failed { target: Target, next_attempt_at: std::time::Instant },
 }
 
 #[derive(Debug, Clone)]
@@ -242,6 +242,7 @@ impl ConnectionManager {
         let event_sender = self.event_sender.clone();
         let target_name_clone = name.clone();
         let _transport_type = target.transport.transport_type().to_string();
+        // Removed unused reconnect_attempts_clone
 
         let target_clone = target.clone();
         
@@ -280,7 +281,7 @@ impl ConnectionManager {
                         
                         // Calculate retry delay
                         let delay = Self::calculate_reconnect_delay(attempt_count);
-                        let next_attempt_at = std::time::SystemTime::now() + delay;
+                        let next_attempt_at = std::time::Instant::now() + delay;
                         
                         // Emit failure event with timing
                         let _ = event_sender.send(ConnectionEvent::Failed {

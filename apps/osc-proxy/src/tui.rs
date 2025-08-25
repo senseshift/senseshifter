@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io;
-use std::time::{SystemTime, Duration};
+use std::time::{SystemTime, Duration, Instant};
 
 use chrono::{DateTime, Local};
 use crossterm::{
@@ -69,7 +69,7 @@ pub struct TargetInfo {
     pub status: ConnectionStatus,
     pub last_packet_time: Option<SystemTime>,
     pub packet_count: u64,
-    pub next_attempt_at: Option<SystemTime>,
+    pub next_attempt_at: Option<Instant>,
 }
 
 /// Log entry for display
@@ -89,7 +89,7 @@ pub enum UiEvent {
         address: String,
         transport: String,
         status: ConnectionStatus,
-        next_attempt_at: Option<SystemTime>,
+        next_attempt_at: Option<Instant>,
     },
     LogEntry(LogEntry),
     PacketReceived {
@@ -326,19 +326,17 @@ impl App {
                 
                 let timing_info = if let Some(next_attempt_at) = target.next_attempt_at {
                     // Calculate remaining time until next attempt
-                    match next_attempt_at.duration_since(SystemTime::now()) {
-                        Ok(remaining) => {
-                            let seconds = remaining.as_secs();
-                            if seconds > 0 {
-                                format!(" (retry in {}s)", seconds)
-                            } else {
-                                " (retrying...)".to_string()
-                            }
-                        }
-                        Err(_) => {
-                            // Time has passed, should be retrying
+                    if next_attempt_at > Instant::now() {
+                        let remaining = next_attempt_at - Instant::now();
+                        let seconds = remaining.as_secs();
+                        if seconds > 0 {
+                            format!(" (retry in {}s)", seconds)
+                        } else {
                             " (retrying...)".to_string()
                         }
+                    } else {
+                        // Time has passed, should be retrying
+                        " (retrying...)".to_string()
                     }
                 } else {
                     String::new()
