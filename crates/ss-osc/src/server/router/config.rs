@@ -1,4 +1,6 @@
 use std::net::SocketAddr;
+use derivative::Derivative;
+use getset::Getters;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -77,6 +79,7 @@ pub struct RouterForwardConfig {
     pub target: RouterForwardTargetConfig,
 
     /// Optional address rewrite for the routed packet.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub rewrite: Option<String>,
 }
 
@@ -95,43 +98,33 @@ impl RouterForwardConfig {
 }
 
 /// Router route configuration
-#[derive(Debug)]
+#[derive(Derivative, Debug, Clone, Getters)]
+#[derivative(PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct RouterRouteConfig {
     /// The OSC address pattern to match.
+    #[getset(get = "pub")]
     #[cfg_attr(feature = "serde", serde(with = "serde_regex"))]
+    #[derivative(PartialEq(compare_with = "compare_regex"))]
     pub address: regex::Regex,
 
     /// Whether to stop propagating packets down the pipeline if matched.
+    #[getset(get = "pub")]
     pub stop_propagation: bool,
 
     /// Forward configurations
+    #[getset(get = "pub")]
     #[cfg_attr(feature = "serde", serde(default))]
     pub forward: Vec<RouterForwardConfig>,
+}
+
+fn compare_regex(a: &regex::Regex, b: &regex::Regex) -> bool {
+    a.as_str() == b.as_str()
 }
 
 impl RouterRouteConfig {
     pub fn new(address: regex::Regex, stop_propagation: bool, forward: Vec<RouterForwardConfig>) -> Self {
         Self { address, stop_propagation, forward }
-    }
-}
-
-/// Router configuration
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct RouterConfig {
-    pub routes: Vec<RouterRouteConfig>,
-}
-
-impl RouterConfig {
-    pub fn new(routes: Vec<RouterRouteConfig>) -> Self {
-        let config = Self::new_unchecked(routes);
-
-        config
-    }
-
-    pub fn new_unchecked(routes: Vec<RouterRouteConfig>) -> Self {
-        Self { routes }
     }
 }
 
@@ -144,37 +137,40 @@ mod tests {
     #[test]
     fn test_yaml_deserialization() {
         let yaml_str = r#"
-            routes:
-              - address: /avatar/parameters/(?<parameter>bHaptics_(?<position>.+)_(?<index>\d+)_bool)
-                stop_propagation: false
-                forward:
-                  - type: udp
-                    to: 127.0.0.1:23456
-                    rewrite: /$position/$index/bool
+            address: /avatar/parameters/(?<parameter>bHaptics_(?<position>.+)_(?<index>\d+)_bool)
+            stop_propagation: false
+            forward:
+              - type: udp
+                to: 127.0.0.1:23456
+                rewrite: /$position/$index/bool
 
-                  - type: tcp
-                    to: 127.0.0.1:34567
+              - type: tcp
+                to: 127.0.0.1:34567
         "#;
 
-        let config: RouterConfig = serde_yaml::from_str(yaml_str).unwrap();
-        assert_eq!(config.routes.len(), 1);
-        assert_eq!(config.routes[0].forward.len(), 2);
+        let config: RouterRouteConfig = serde_yaml::from_str(yaml_str).unwrap();
 
-        // Verify UDP config
-        match &config.routes[0].forward[0].target {
-            RouterForwardTargetConfig::Udp(udp_config) => {
-                assert_eq!(udp_config.to, "127.0.0.1:23456".parse::<SocketAddr>().unwrap());
-            }
-            _ => panic!("Expected UDP config")
-        }
-
-        // Verify TCP config
-        match &config.routes[0].forward[1].target {
-            RouterForwardTargetConfig::Tcp(tcp_config) => {
-                assert_eq!(tcp_config.to, "127.0.0.1:34567".parse::<SocketAddr>().unwrap());
-            }
-            _ => panic!("Expected TCP config")
-        }
+        assert_eq!(
+            config,
+            RouterRouteConfig {
+                address: regex::Regex::new(r"/avatar/parameters/(?<parameter>bHaptics_(?<position>.+)_(?<index>\d+)_bool)").unwrap(),
+                stop_propagation: false,
+                forward: vec![
+                    RouterForwardConfig {
+                        target: RouterForwardTargetConfig::Udp(UdpRouterForwardTargetConfig {
+                            to: "127.0.0.1:23456".parse().unwrap(),
+                        }),
+                        rewrite: Some("/$position/$index/bool".to_string()),
+                    },
+                    RouterForwardConfig {
+                        target: RouterForwardTargetConfig::Tcp(TcpRouterForwardTargetConfig {
+                            to: "127.0.0.1:34567".parse().unwrap(),
+                        }),
+                        rewrite: None,
+                    },
+                ],
+            },
+        )
     }
 
     #[test]

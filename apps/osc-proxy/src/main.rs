@@ -3,15 +3,14 @@ use std::collections::HashMap;
 use anyhow::Result;
 use clap::{Arg, Command};
 use tokio::sync::mpsc;
-use tokio_util::sync::CancellationToken;
-use tracing::{error, info, warn};
+use tracing::{error, info};
+use ss_osc::server::{config::OscServerConfig, OscServerBuilder};
+use ss_osc::server::connection_manager::{ConnectionEvent, TransportConfig};
 
-mod config;
 mod logging;
 mod tui;
 
-use config::ProxyConfig;
-use tui::{ConnectionStatus, TargetInfo, UiEvent, run_tui};
+use tui::{ConnectionStatus, UiEvent, run_tui};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -36,9 +35,9 @@ async fn main() -> Result<()> {
 
     // Generate sample config if requested
     if matches.get_flag("generate-config") {
-        let sample_config = ProxyConfig::create_sample();
+        let sample_config = OscServerConfig::default();
         let yaml_content = serde_yaml::to_string(&sample_config)?;
-        println!("# Sample OSC Proxy Configuration");
+        println!("# Sample OSC Server Configuration");
         println!("{}", yaml_content);
         return Ok(());
     }
@@ -46,135 +45,87 @@ async fn main() -> Result<()> {
     // Load configuration
     let config_path = matches.get_one::<String>("config")
         .ok_or_else(|| anyhow::anyhow!("Config file path is required"))?;
-    let config = ProxyConfig::load(config_path)?;
+    let config: OscServerConfig = serde_yaml::from_str(&std::fs::read_to_string(config_path)?)?;
     
-    // Validate configuration
-    config.validate()?;
     info!("Loaded configuration from {}", config_path);
 
     // Setup channels for UI communication
     let (ui_tx, ui_rx) = mpsc::unbounded_channel::<UiEvent>();
     
     // Setup logging with TUI integration
-    logging::setup_logging(
-        &config.logging.level,
-        config.logging.file,
-        &config.logging.file_path,
-        ui_tx.clone(),
-    )?;
+    logging::setup_logging(ui_tx.clone())?;
 
     info!("Starting OSC Proxy with TUI interface");
+    
+    // Build OSC server
+    let builder = OscServerBuilder::new(config);
+    let server = builder.build()?;
+    
+    // Create initial target info for TUI (empty for now, will be populated by events)
+    let initial_targets = HashMap::new();
 
-    // Convert config to ss-osc types
-    let (targets, routes) = config.to_ss_osc_config()?;
-    
-    // Create initial target info for TUI
-    let mut initial_targets = HashMap::new();
-    for target in &targets {
-        let transport_str = match &target.transport {
-            ss_osc::server::connection_manager::TransportConfig::Udp(_udp_config) => {
-                format!("UDP")
-            }
-            ss_osc::server::connection_manager::TransportConfig::Tcp(_tcp_config) => {
-                format!("TCP")
-            }
-        };
-        
-        let address = match &target.transport {
-            ss_osc::server::connection_manager::TransportConfig::Udp(udp_config) => {
-                udp_config.to.to_string()
-            }
-            ss_osc::server::connection_manager::TransportConfig::Tcp(tcp_config) => {
-                tcp_config.to.to_string()
-            }
-        };
-
-        // Find description from original config
-        let description = config.targets.get(&target.name)
-            .and_then(|t| t.description.clone());
-
-        initial_targets.insert(target.name.clone(), TargetInfo {
-            name: target.name.clone(),
-            address,
-            transport: transport_str,
-            status: ConnectionStatus::Offline,
-            description,
-            last_packet_time: None,
-            packet_count: 0,
-        });
-    }
-
-    // Create cancellation token for graceful shutdown
-    let cancellation_token = CancellationToken::new();
-    let server_cancel_token = cancellation_token.clone();
-    
-    // Create event channel for server events  
-    let (event_tx, _event_rx) = tokio::sync::broadcast::channel(100);
-    
-    // Create connection manager
-    let connection_manager = ss_osc::server::connection_manager::ConnectionManager::new();
-    
-    // Subscribe to connection events
-    let mut connection_event_rx = connection_manager.subscribe_to_events();
-    
-    // Add targets to connection manager
-    for target in targets {
-        if let Err(e) = connection_manager.add_target(target) {
-            error!("Failed to add target: {}", e);
-        }
-    }
-    
-    // Start connection event handler task
+    // Start event handler task
     let ui_tx_clone = ui_tx.clone();
-    let connection_event_handle = tokio::spawn(async move {
-        while let Ok(event) = connection_event_rx.recv().await {
-            let (status, target_name) = match &event {
-                ss_osc::server::connection_manager::ConnectionEvent::Connected { target_name } => {
-                    info!("Target {} connected", target_name);
-                    (ConnectionStatus::Online, target_name.clone())
-                }
-                ss_osc::server::connection_manager::ConnectionEvent::Disconnected { target_name } => {
-                    info!("Target {} disconnected", target_name);
-                    (ConnectionStatus::Offline, target_name.clone())
-                }
-                ss_osc::server::connection_manager::ConnectionEvent::Reconnecting { target_name } => {
-                    info!("Target {} reconnecting", target_name);
-                    (ConnectionStatus::Reconnecting, target_name.clone())
-                }
-                ss_osc::server::connection_manager::ConnectionEvent::Failed { target_name } => {
-                    warn!("Target {} connection failed", target_name);
-                    (ConnectionStatus::Failed, target_name.clone())
-                }
-            };
-            
-            let ui_event = UiEvent::TargetStatusUpdate {
-                name: target_name,
-                status,
-            };
-            
-            if let Err(e) = ui_tx_clone.send(ui_event) {
-                error!("Failed to send UI event: {}", e);
-            }
-        }
-    });
+    let (shutdown_tx, mut shutdown_rx) = tokio::sync::oneshot::channel();
+    let (_server_events_rx, mut conn_events_rx) = server.subscribe_to_events();
     
-    // Start OSC server task
-    let server_handle = tokio::spawn(async move {
-        let server_addresses = config.server.udp.clone();
-        
-        // Create server with integrated routing
-        let mut server = ss_osc::server::task::OscServerTask::with_integrated_routing(
-            connection_manager,
-            routes,
-            server_addresses,
-            vec![], // no TCP addresses for now
-            server_cancel_token.clone(),
-            event_tx,
-        );
-        
-        info!("OSC server created successfully");
-        if let Err(e) = server.run().await {
-            error!("OSC server error: {}", e);
+    let event_handle = tokio::spawn(async move {
+        loop {
+            tokio::select! {
+                event = conn_events_rx.recv() => {
+                    match event {
+                        Ok(conn_event) => {
+                            let (status, target) = match &conn_event {
+                                ConnectionEvent::Connected { target } => {
+                                    info!("Target {} connected", target.name);
+                                    (ConnectionStatus::Online, target)
+                                }
+                                ConnectionEvent::Disconnected { target } => {
+                                    info!("Target {} disconnected", target.name);
+                                    (ConnectionStatus::Offline, target)
+                                }
+                                ConnectionEvent::Reconnecting { target } => {
+                                    info!("Target {} reconnecting", target.name);
+                                    (ConnectionStatus::Reconnecting, target)
+                                }
+                                ConnectionEvent::Failed { target } => {
+                                    error!("Target {} connection failed", target.name);
+                                    (ConnectionStatus::Failed, target)
+                                }
+                            };
+                            
+                            // Extract transport and address info from target config
+                            let (transport, address) = match &target.transport {
+                                TransportConfig::Udp(udp_config) => {
+                                    ("UDP".to_string(), udp_config.to.to_string())
+                                }
+                                TransportConfig::Tcp(tcp_config) => {
+                                    ("TCP".to_string(), tcp_config.to.to_string())
+                                }
+                            };
+                            
+                            let ui_event = UiEvent::TargetInfo {
+                                name: target.name.clone(),
+                                address,
+                                transport: transport.clone(),
+                                status,
+                            };
+                            
+                            if let Err(e) = ui_tx_clone.send(ui_event) {
+                                error!("Failed to send UI event: {}", e);
+                            }
+                        }
+                        Err(_) => {
+                            // Channel closed or lagged
+                            break;
+                        }
+                    }
+                }
+                _ = &mut shutdown_rx => {
+                    info!("Event handler shutdown requested");
+                    break;
+                }
+            }
         }
     });
 
@@ -187,19 +138,17 @@ async fn main() -> Result<()> {
 
     // Wait for any task to complete or be cancelled
     tokio::select! {
-        _ = server_handle => {
-            info!("OSC server task completed");
-        }
         _ = tui_handle => {
             info!("TUI task completed");
         }
-        _ = connection_event_handle => {
-            info!("Connection event handler completed");
+        _ = event_handle => {
+            info!("Event handler completed");
         }
     }
 
-    // Cancel all tasks
-    cancellation_token.cancel();
+    // Shutdown server and event handler
+    let _ = shutdown_tx.send(());
+    server.shutdown().await;
     
     info!("OSC Proxy shutting down");
     Ok(())

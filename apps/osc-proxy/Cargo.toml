@@ -21,6 +21,7 @@ toml = "0.8"
 # Async runtime
 tokio = { workspace = true, features = ["full"] }
 tokio-util = { workspace = true }
+futures-util = { workspace = true }
 
 # Error handling
 anyhow = { workspace = true }

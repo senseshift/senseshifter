@@ -11,16 +11,25 @@ This crate provides OSC (Open Sound Control) connection management and routing f
 - **Individual Connection Control**: Each connection can be cancelled independently using child tokens
 - **Persistent Routing**: Router connections remain valid across reconnections via proxy senders
 
+## Applications
+
+This crate is used by:
+
+- **[OSC Proxy](../../apps/osc-proxy/README.md)**: Terminal-based OSC routing proxy with real-time monitoring
+- **SenseShifter**: Main application for haptic feedback routing
+
+For configuration examples and user documentation, see the [OSC Proxy README](../../apps/osc-proxy/README.md).
+
 ## Architecture
 
 ### Connection Manager (`server::connection_manager`)
 
-The `OscConnectionManager` handles:
+The `ConnectionManager` handles:
 - Managing multiple OSC targets (UDP/TCP)
 - Establishing and maintaining connections
-- Auto-reconnecting failed connections with health checks
+- Auto-reconnecting failed connections with logarithmic backoff
 - Providing MPSC channels for the router
-- Hierarchical cancellation using parent/child tokens
+- Event broadcasting for connection status updates
 
 ### Router (`server::router`)
 
@@ -30,28 +39,14 @@ The `OscRouter` handles:
 - Address rewriting with capture groups
 - Stop propagation for exclusive routing
 
-## Examples
+### Server Configuration (`server::config`)
 
-This crate includes several comprehensive examples that demonstrate different aspects of the OSC system:
+The `OscServerConfig` provides:
+- YAML/TOML configuration file loading
+- Auto-target creation from route forwards
+- Configuration validation with meaningful error messages
+- Default values using derivative crate
 
-### Running Examples
-
-```bash
-# Configuration system with builder patterns and defaults
-cargo run --example configuration
-
-# Connection manager with auto-reconnection and dynamic targets
-cargo run --example connection_manager
-
-# Full router integration with realistic OSC routing scenarios
-cargo run --example router_integration
-```
-
-### Example Overview
-
-- **`configuration`**: Shows how to use the configuration system with builder patterns and derivative-based defaults
-- **`connection_manager`**: Demonstrates connection management, auto-reconnection, and dynamic target management
-- **`router_integration`**: Full end-to-end example of OSC routing for creative applications (VRChat, TouchDesigner, Ableton Live, etc.)
 
 ## Usage Example
 

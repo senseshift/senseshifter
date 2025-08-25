@@ -1,10 +1,12 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 use derivative::Derivative;
+use crate::server::config::RouterForwardTargetConfig;
 
 /// Configuration for connection management
 #[derive(Derivative)]
-#[derivative(Debug, Clone, Default)]
+#[derivative(Debug, Clone, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConnectionManagerConfig {
     /// Buffer size for packet channels
     #[derivative(Default(value = "1000"))]
@@ -98,9 +100,7 @@ impl TcpTransportConfig {
 pub enum TransportConfig {
     Udp(UdpTransportConfig),
     Tcp(TcpTransportConfig),
-    // Future extensibility - these will be easy to add
-    // WebSocket(WebSocketTransportConfig),
-    // Grpc(GrpcTransportConfig),
+    // todo: add WebSocket, etc.
 }
 
 impl TransportConfig {
@@ -132,6 +132,19 @@ impl TransportConfig {
     }
 }
 
+impl From<RouterForwardTargetConfig> for TransportConfig {
+    fn from(config: RouterForwardTargetConfig) -> Self {
+        match config {
+            RouterForwardTargetConfig::Udp(udp_config) => {
+                TransportConfig::Udp(UdpTransportConfig::new(udp_config.to))
+            }
+            RouterForwardTargetConfig::Tcp(tcp_config) => {
+                TransportConfig::Tcp(TcpTransportConfig::new(tcp_config.to))
+            }
+        }
+    }
+}
+
 /// OSC connection target configuration
 #[derive(Derivative)]
 #[derivative(Debug, Clone)]
@@ -152,50 +165,7 @@ impl Target {
     pub fn tcp(name: String, to: SocketAddr) -> Self {
         Self::new(name, TransportConfig::tcp(to))
     }
-
-    pub fn builder(name: impl Into<String>) -> TargetBuilder {
-        TargetBuilder::new(name.into())
-    }
 }
-
-#[derive(Derivative)]
-#[derivative(Debug)]
-pub struct TargetBuilder {
-    name: String,
-    #[derivative(Default(value = "None"))]
-    transport: Option<TransportConfig>,
-}
-
-impl TargetBuilder {
-    fn new(name: String) -> Self {
-        Self {
-            name,
-            transport: None,
-        }
-    }
-
-    pub fn udp(mut self, to: SocketAddr) -> Self {
-        self.transport = Some(TransportConfig::udp(to));
-        self
-    }
-
-    pub fn tcp(mut self, to: SocketAddr) -> Self {
-        self.transport = Some(TransportConfig::tcp(to));
-        self
-    }
-
-    pub fn build(self) -> Result<Target, &'static str> {
-        let transport = self.transport.ok_or("Transport configuration is required")?;
-        
-        Ok(Target::new(self.name, transport))
-    }
-}
-
-// Re-export for backward compatibility
-pub use UdpTransportConfig as OscTransportUdpConfig;
-pub use TcpTransportConfig as OscTransportTcpConfig;
-pub use TransportConfig as OscTransportConfig;
-pub use Target as OscTarget;
 
 #[cfg(test)]
 mod tests {
@@ -235,18 +205,5 @@ mod tests {
         let tcp_config = TransportConfig::tcp(addr);
         assert_eq!(tcp_config.remote_address(), addr.to_string());
         assert_eq!(tcp_config.transport_type(), "TCP");
-    }
-
-    #[test]
-    fn test_target_builder() {
-        let addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 9000);
-        
-        let target = Target::builder("test")
-            .udp(addr)
-            .build()
-            .unwrap();
-            
-        assert_eq!(target.name, "test");
-        // Reconnect interval is now handled automatically with logarithmic backoff
     }
 }

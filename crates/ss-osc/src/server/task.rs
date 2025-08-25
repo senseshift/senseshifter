@@ -1,4 +1,4 @@
-use xrc_commons::Result;
+use crate::Result;
 
 use tokio_util::sync::CancellationToken;
 use tokio::net::UdpSocket;
@@ -10,14 +10,7 @@ use tracing::{debug, error, info, warn};
 
 use crate::server::router::OscRouter;
 use crate::server::connection_manager::ConnectionManager;
-
-#[derive(Debug, Clone)]
-pub enum OscServerEvent {
-    InboundPacket {
-        packet: rosc::OscPacket,
-        from: SocketAddr,
-    },
-}
+use crate::server::OscServerEvent;
 
 #[derive(Debug)]
 pub struct OscServerTask {
@@ -62,37 +55,6 @@ impl OscServerTask {
             cancellation_token,
             event_sender,
         }
-    }
-
-    /// Create an integrated OSC server with router and connection manager using the forward targets
-    pub fn with_integrated_routing(
-        connection_manager: ConnectionManager,
-        router_routes: Vec<crate::server::router::OscRouterRouteRuntime>,
-        udp_addrs: Vec<SocketAddr>,
-        tcp_addrs: Vec<SocketAddr>,
-        cancellation_token: CancellationToken,
-        event_sender: broadcast::Sender<OscServerEvent>,
-    ) -> Self {
-        info!("Creating integrated OSC server with {} routes", router_routes.len());
-        
-        // Get the forward targets from the connection manager
-        let forward_targets = connection_manager.get_forward_targets();
-        
-        info!("Connection manager provides {} forward targets: {:?}", 
-              forward_targets.len(),
-              forward_targets.keys().collect::<Vec<_>>());
-
-        // Create the router with the forward targets
-        let router = OscRouter::new(router_routes, forward_targets);
-
-        Self::new(
-            router,
-            connection_manager,
-            udp_addrs,
-            tcp_addrs,
-            cancellation_token,
-            event_sender,
-        )
     }
 
     pub async fn run(

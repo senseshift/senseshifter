@@ -26,10 +26,10 @@ use transport::create_transport_handler;
 
 #[derive(Debug, Clone)]
 pub enum ConnectionEvent {
-    Connected { target_name: String },
-    Disconnected { target_name: String },
-    Reconnecting { target_name: String },
-    Failed { target_name: String },
+    Connected { target: Target },
+    Disconnected { target: Target },
+    Reconnecting { target: Target },
+    Failed { target: Target },
 }
 
 #[derive(Debug)]
@@ -47,6 +47,7 @@ enum ConnectionState {
 #[derive(Debug)]
 pub struct ConnectionManager {
     config: ConnectionManagerConfig,
+
     targets: Arc<DashMap<String, Target>>,
     connections: Arc<DashMap<String, ConnectionState>>,
     // Persistent proxy senders that forward to current active connections
@@ -151,6 +152,21 @@ impl ConnectionManager {
         Ok(proxy_tx)
     }
 
+    pub fn add_targets(&self, targets: Vec<Target>) -> ConnectionResult<HashMap<String, mpsc::Sender<OscPacket>>> {
+        let mut senders = HashMap::new();
+
+        for target in targets {
+            let name = target.name.clone();
+            if self.targets.contains_key(&name) {
+                return Err(ConnectionError::TargetExists(name));
+            }
+            let sender = self.add_target(target)?;
+            senders.insert(name, sender);
+        }
+
+        Ok(senders)
+    }
+
     pub fn remove_target(&self, name: &str) -> Option<Target> {
         // Cancel the connection if it exists
         if let Some((_, connection)) = self.connections.remove(name) {
@@ -189,7 +205,7 @@ impl ConnectionManager {
 
         // Mark as connecting
         self.connections.insert(name.clone(), ConnectionState::Connecting);
-        let _ = self.event_sender.send(ConnectionEvent::Reconnecting { target_name: name.clone() });
+        let _ = self.event_sender.send(ConnectionEvent::Reconnecting { target: target.clone() });
 
         let remote_addr = target.transport.remote_address();
         debug!("Connecting to OSC target: {} ({} -> {})",
@@ -206,17 +222,19 @@ impl ConnectionManager {
         let event_sender = self.event_sender.clone();
         let target_name_clone = name.clone();
         let _transport_type = target.transport.transport_type().to_string();
+
+        let target_clone = target.clone();
         
         let handle = tokio::spawn(async move {
             // Try to start the transport handler
             match handler_clone.start(packet_rx, connection_token_clone).await {
                 Ok(_) => {
                     info!("Transport handler for {} completed gracefully", target_name_clone);
-                    let _ = event_sender.send(ConnectionEvent::Disconnected { target_name: target_name_clone });
+                    let _ = event_sender.send(ConnectionEvent::Disconnected { target: target_clone.clone() });
                 },
                 Err(e) => {
                     error!("Transport handler for {} failed: {}", target_name_clone, e);
-                    let _ = event_sender.send(ConnectionEvent::Failed { target_name: target_name_clone });
+                    let _ = event_sender.send(ConnectionEvent::Failed { target: target_clone.clone() });
                 }
             }
         });
@@ -239,7 +257,7 @@ impl ConnectionManager {
             TransportConfig::Udp(_) => {
                 // UDP is connectionless, so we can immediately mark as connected
                 info!("UDP target {} ready to send packets to {}", name, remote_addr);
-                let _ = self.event_sender.send(ConnectionEvent::Connected { target_name: name.clone() });
+                let _ = self.event_sender.send(ConnectionEvent::Connected { target: target.clone() });
             },
             TransportConfig::Tcp(_) => {
                 // TCP requires actual connection - let the transport handler report status
@@ -255,7 +273,7 @@ impl ConnectionManager {
                     // Increment attempt counter for backoff
                     let current_attempts = reconnect_attempts.get(&target_name).map(|v| *v).unwrap_or(0);
                     reconnect_attempts.insert(target_name.clone(), current_attempts + 1);
-                    let _ = event_sender.send(ConnectionEvent::Failed { target_name });
+                    let _ = event_sender.send(ConnectionEvent::Failed { target: target.clone() });
                 });
             }
         }
@@ -355,7 +373,7 @@ impl ConnectionManager {
                   name, next_attempt, delay);
             
             connections.insert(name.clone(), ConnectionState::Failed);
-            let _ = event_sender.send(ConnectionEvent::Failed { target_name: name.clone() });
+            let _ = event_sender.send(ConnectionEvent::Failed { target: targets.get(&name).unwrap().clone() });
             
             // Schedule reconnection with logarithmic backoff
             if let Some(target_ref) = targets.get(&name) {
@@ -378,7 +396,7 @@ impl ConnectionManager {
                     reconnect_attempts_clone.insert(name.clone(), next_attempt);
                     
                     // Emit reconnecting event
-                    let _ = event_sender_clone.send(ConnectionEvent::Reconnecting { target_name: name.clone() });
+                    let _ = event_sender_clone.send(ConnectionEvent::Reconnecting { target: target.clone() });
                     
                     // Attempt reconnection
                     Self::attempt_single_reconnection(
@@ -411,21 +429,21 @@ impl ConnectionManager {
         let handler_clone = transport_handler.clone();
         let connection_token_clone = connection_token.clone();
         let event_sender_clone = event_sender.clone();
-        let target_name_clone = target_name.to_string();
+        let target_clone = target.clone();
         let reconnect_attempts_clone = reconnect_attempts.clone();
         
         let handle = tokio::spawn(async move {
             match handler_clone.start(packet_rx, connection_token_clone).await {
                 Ok(_) => {
-                    info!("Transport handler for {} completed gracefully", target_name_clone);
-                    let _ = event_sender_clone.send(ConnectionEvent::Disconnected { target_name: target_name_clone.clone() });
+                    info!("Transport handler for {} completed gracefully", target_clone.name);
+                    let _ = event_sender_clone.send(ConnectionEvent::Disconnected { target: target_clone.clone() });
                 },
                 Err(e) => {
-                    error!("Transport handler for {} failed: {}", target_name_clone, e);
+                    error!("Transport handler for {} failed: {}", target_clone.name, e);
                     // Increment attempts and schedule next reconnection
-                    let current_attempts = reconnect_attempts_clone.get(&target_name_clone).map(|v| *v).unwrap_or(0);
-                    reconnect_attempts_clone.insert(target_name_clone.clone(), current_attempts + 1);
-                    let _ = event_sender_clone.send(ConnectionEvent::Failed { target_name: target_name_clone });
+                    let current_attempts = reconnect_attempts_clone.get(&target_clone.name).map(|v| *v).unwrap_or(0);
+                    reconnect_attempts_clone.insert(target_clone.name.clone(), current_attempts + 1);
+                    let _ = event_sender_clone.send(ConnectionEvent::Failed { target: target_clone.clone() });
                 }
             }
         });
@@ -440,13 +458,15 @@ impl ConnectionManager {
             },
         );
 
+        let target_clone = target.clone();
+
         // Check if connection succeeds based on transport type
-        match &target.transport {
+        match &target_clone.transport {
             TransportConfig::Udp(_) => {
                 // UDP is connectionless, consider it successful
                 info!("UDP target {} reconnected successfully", target_name);
                 reconnect_attempts.insert(target_name.to_string(), 0); // Reset attempts
-                let _ = event_sender.send(ConnectionEvent::Connected { target_name: target_name.to_string() });
+                let _ = event_sender.send(ConnectionEvent::Connected { target: target_clone.clone() });
             },
             TransportConfig::Tcp(_) => {
                 // TCP requires actual connection - wait and see if it fails
@@ -462,7 +482,7 @@ impl ConnectionManager {
                     // For now, assume TCP to localhost:9001 fails
                     let current_attempts = reconnect_attempts_clone.get(&target_name_clone).map(|v| *v).unwrap_or(0);
                     reconnect_attempts_clone.insert(target_name_clone.clone(), current_attempts + 1);
-                    let _ = event_sender_clone.send(ConnectionEvent::Failed { target_name: target_name_clone });
+                    let _ = event_sender_clone.send(ConnectionEvent::Failed { target: target_clone.clone() });
                 });
             }
         }

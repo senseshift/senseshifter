@@ -91,44 +91,15 @@ fn level_to_string(level: &Level) -> String {
     }
 }
 
-/// Setup logging with both console and TUI output
-pub fn setup_logging(
-    log_level: &str,
-    file_logging: bool,
-    log_file: &str,
-    ui_sender: mpsc::UnboundedSender<UiEvent>,
-) -> Result<()> {
-    use tracing_subscriber::{fmt, EnvFilter, Registry};
-    
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(log_level));
-    
-    let registry = Registry::default().with(env_filter);
-    
-    // Add TUI layer
-    let registry = registry.with(TuiLayer::new(ui_sender));
-    
-    // Add file logging if enabled
-    if file_logging {
-        use tracing_appender::rolling::{RollingFileAppender, Rotation};
-        
-        let file_appender = RollingFileAppender::new(Rotation::DAILY, ".", log_file);
-        let (non_blocking_file, _guard) = tracing_appender::non_blocking(file_appender);
-        
-        let registry = registry.with(
-            fmt::Layer::default()
-                .with_writer(non_blocking_file)
-                .with_ansi(false)
-        );
-        
-        tracing::subscriber::set_global_default(registry)?;
-        
-        // We need to keep the guard alive for the duration of the program
-        // In a real application, you'd want to store this somewhere
-        std::mem::forget(_guard);
-    } else {
-        tracing::subscriber::set_global_default(registry)?;
-    }
-    
+/// Setup logging with TUI output only (no console output to avoid conflicts)
+pub fn setup_logging(ui_sender: mpsc::UnboundedSender<UiEvent>) -> Result<()> {
+    let tui_layer = TuiLayer::new(ui_sender);
+
+    let subscriber = tracing_subscriber::registry()
+        .with(tui_layer);
+
+    tracing::subscriber::set_global_default(subscriber)
+        .map_err(|e| anyhow::anyhow!("Failed to set global subscriber: {}", e))?;
+
     Ok(())
 }

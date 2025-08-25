@@ -67,7 +67,6 @@ pub struct TargetInfo {
     pub address: String,
     pub transport: String,
     pub status: ConnectionStatus,
-    pub description: Option<String>,
     pub last_packet_time: Option<SystemTime>,
     pub packet_count: u64,
 }
@@ -84,8 +83,10 @@ pub struct LogEntry {
 /// UI event types
 #[derive(Debug)]
 pub enum UiEvent {
-    TargetStatusUpdate {
+    TargetInfo {
         name: String,
+        address: String,
+        transport: String,
         status: ConnectionStatus,
     },
     LogEntry(LogEntry),
@@ -133,7 +134,7 @@ impl App {
         if let Event::Key(key) = event {
             if key.kind == KeyEventKind::Press {
                 match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => {
+                    KeyCode::Char('c') if key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) => {
                         self.should_quit = true;
                     }
                     KeyCode::Char('h') | KeyCode::F(1) => {
@@ -176,10 +177,25 @@ impl App {
         // Process all available UI events
         while let Ok(event) = self.ui_rx.try_recv() {
             match event {
-                UiEvent::TargetStatusUpdate { name, status } => {
+                UiEvent::TargetInfo { name, address, transport, status } => {
                     if let Some(target) = self.targets.get_mut(&name) {
+                        // Update existing target
                         target.status = status;
-                        debug!("Updated target {} status", name);
+                        target.address = address;
+                        target.transport = transport;
+                        debug!("Updated target {} info", name);
+                    } else {
+                        // Create new target
+                        debug!("Adding new target: {}", name);
+                        let target_info = TargetInfo {
+                            name: name.clone(),
+                            address,
+                            transport,
+                            status,
+                            last_packet_time: None,
+                            packet_count: 0,
+                        };
+                        self.targets.insert(name, target_info);
                     }
                 }
                 UiEvent::LogEntry(log_entry) => {
@@ -316,17 +332,13 @@ impl App {
                     ]),
                     Line::from(vec![
                         Span::raw("  "),
-                        Span::styled(format!("{} {}", target.transport, target.address), Style::default().fg(Color::DarkGray)),
+                        Span::styled(&target.transport, Style::default().fg(Color::Cyan)),
+                        Span::raw(" "),
+                        Span::styled(&target.address, Style::default().fg(Color::DarkGray)),
                     ]),
                 ];
                 
                 let mut lines = content;
-                if let Some(desc) = &target.description {
-                    lines.push(Line::from(vec![
-                        Span::raw("  "),
-                        Span::styled(desc, Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC)),
-                    ]));
-                }
                 lines.push(Line::raw(""));
                 
                 ListItem::new(Text::from(lines))
@@ -353,8 +365,8 @@ impl App {
             Line::from("OSC Proxy - Keyboard Shortcuts"),
             Line::raw(""),
             Line::from(vec![
-                Span::styled("q, Esc", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-                Span::raw("    : Quit application"),
+                Span::styled("q, Esc, Ctrl+C", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                Span::raw(" : Quit application"),
             ]),
             Line::from(vec![
                 Span::styled("h, F1", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),

@@ -29,7 +29,6 @@ pub struct OscRouter {
 
     /// Pre-Connected proxy targets
     forward_targets: HashMap<String, mpsc::Sender<OscPacket>>,
-    // todo: ^ support multiple transport types (e.g., TCP, WebSocket)
 }
 
 impl OscRouter {
@@ -77,7 +76,7 @@ impl OscRouter {
                         Box::pin(self.route_packet(p, from, depth - 1)).await;
                     } else {
                         warn!(
-                            "Max bundle depth reached (255), skipping further routing for packet from {}",
+                            "Max bundle depth reached, skipping further routing for packet from {}",
                             from
                         );
                     }
