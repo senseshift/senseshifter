@@ -29,7 +29,13 @@ pub enum ConnectionEvent {
     Connected { target: Target },
     Disconnected { target: Target },
     Reconnecting { target: Target },
-    Failed { target: Target },
+    Failed { target: Target, next_attempt_at: std::time::SystemTime },
+}
+
+#[derive(Debug, Clone)]
+pub enum ConnectionCommand {
+    ManualReconnect { target_name: String },
+    Disconnect { target_name: String },
 }
 
 #[derive(Debug)]
@@ -55,6 +61,8 @@ pub struct ConnectionManager {
     monitor_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
     cancellation_token: CancellationToken,
     event_sender: broadcast::Sender<ConnectionEvent>,
+    command_sender: mpsc::Sender<ConnectionCommand>,
+    command_receiver: Arc<RwLock<Option<mpsc::Receiver<ConnectionCommand>>>>,
     // Track reconnection attempts per target for logarithmic backoff
     reconnect_attempts: Arc<DashMap<String, u32>>,
 }
@@ -66,6 +74,7 @@ impl ConnectionManager {
 
     pub fn with_config(config: ConnectionManagerConfig) -> Self {
         let (event_sender, _) = broadcast::channel(100);
+        let (command_sender, command_receiver) = mpsc::channel(100);
         Self {
             config,
             targets: Arc::new(DashMap::new()),
@@ -74,6 +83,8 @@ impl ConnectionManager {
             monitor_handle: Arc::new(RwLock::new(None)),
             cancellation_token: CancellationToken::new(),
             event_sender,
+            command_sender,
+            command_receiver: Arc::new(RwLock::new(Some(command_receiver))),
             reconnect_attempts: Arc::new(DashMap::new()),
         }
     }
@@ -82,6 +93,14 @@ impl ConnectionManager {
 impl ConnectionManager {
     pub fn subscribe_to_events(&self) -> broadcast::Receiver<ConnectionEvent> {
         self.event_sender.subscribe()
+    }
+
+    pub fn get_command_sender(&self) -> mpsc::Sender<ConnectionCommand> {
+        self.command_sender.clone()
+    }
+
+    pub async fn send_command(&self, command: ConnectionCommand) -> Result<(), mpsc::error::SendError<ConnectionCommand>> {
+        self.command_sender.send(command).await
     }
 
     /// Calculate reconnection delay using logarithmic backoff
@@ -104,6 +123,8 @@ impl ConnectionManager {
         
         Duration::from_millis(base_delay_ms)
     }
+
+    // Removed handle_transport_failure - now handled by self-reconnecting transport tasks
 
     pub fn add_target(&self, target: Target) -> ConnectionResult<mpsc::Sender<OscPacket>> {
         let name = target.name.clone();
@@ -215,26 +236,85 @@ impl ConnectionManager {
         let connection_token = self.cancellation_token.child_token();
 
         let transport_handler = create_transport_handler(&target.transport);
-        let handler_clone = transport_handler.clone();
+        let mut handler_clone = transport_handler.clone();
         let connection_token_clone = connection_token.clone();
         
         // Start transport handler with proper status reporting
         let event_sender = self.event_sender.clone();
         let target_name_clone = name.clone();
         let _transport_type = target.transport.transport_type().to_string();
+        // Removed unused reconnect_attempts_clone
 
         let target_clone = target.clone();
         
+        // Clone references needed for the self-reconnecting task
+        let connections_for_task = Arc::clone(&self.connections);
+        let reconnect_attempts_for_task = Arc::clone(&self.reconnect_attempts);
+        
         let handle = tokio::spawn(async move {
-            // Try to start the transport handler
-            match handler_clone.start(packet_rx, connection_token_clone).await {
-                Ok(_) => {
-                    info!("Transport handler for {} completed gracefully", target_name_clone);
-                    let _ = event_sender.send(ConnectionEvent::Disconnected { target: target_clone.clone() });
-                },
-                Err(e) => {
-                    error!("Transport handler for {} failed: {}", target_name_clone, e);
-                    let _ = event_sender.send(ConnectionEvent::Failed { target: target_clone.clone() });
+            let mut attempt_count = 0u32;
+            let mut current_packet_rx = packet_rx;
+            
+            loop {
+                
+                tokio::select! {
+                    _ = connection_token_clone.cancelled() => {
+                        debug!("Transport task for {} cancelled", target_name_clone);
+                        break;
+                    }
+                    result = handler_clone.start(current_packet_rx, connection_token_clone.child_token(), target_clone.clone(), event_sender.clone()) => {
+                        // Both Ok and Err are treated as failures in OSC proxy context
+                        // Transport should run forever; if it stops (Ok) or errors (Err), retry
+                        match result {
+                            Ok(_) => {
+                                warn!("Transport handler for {} completed unexpectedly - treating as failure", target_name_clone);
+                            },
+                            Err(e) => {
+                                error!("Transport handler for {} failed (attempt {}): {}", target_name_clone, attempt_count + 1, e);
+                            }
+                        }
+                        
+                        // Common failure handling for both Ok and Err cases
+                        
+                        // Increment attempt count
+                        attempt_count += 1;
+                        reconnect_attempts_for_task.insert(target_name_clone.clone(), attempt_count);
+                        
+                        // Calculate retry delay
+                        let delay = Self::calculate_reconnect_delay(attempt_count);
+                        let next_attempt_at = std::time::SystemTime::now() + delay;
+                        
+                        // Emit failure event with timing
+                        let _ = event_sender.send(ConnectionEvent::Failed {
+                            target: target_clone.clone(),
+                            next_attempt_at,
+                        });
+                        
+                        // Wait for retry delay
+                        if delay > Duration::from_millis(0) {
+                            tokio::select! {
+                                _ = connection_token_clone.cancelled() => break,
+                                _ = tokio::time::sleep(delay) => {}
+                            }
+                        }
+                        
+                        // Create new packet channel and transport handler for retry
+                        let (new_packet_tx, new_packet_rx) = mpsc::channel(1000);
+                        current_packet_rx = new_packet_rx;
+                        handler_clone = create_transport_handler(&target_clone.transport);
+                        
+                        // Update the connection state with new packet sender
+                        if let Some(mut connection_ref) = connections_for_task.get_mut(&target_name_clone) {
+                            if let ConnectionState::Connected { sender, .. } = connection_ref.value_mut() {
+                                *sender = new_packet_tx;
+                            }
+                        }
+                        
+                        // Emit reconnecting event and continue loop  
+                        let _ = event_sender.send(ConnectionEvent::Reconnecting { target: target_clone.clone() });
+                        
+                        // Transport handlers will emit Connected events when they successfully establish connections
+                    }
                 }
             }
         });
@@ -252,31 +332,7 @@ impl ConnectionManager {
         // Reset reconnection attempts on successful connection start
         self.reconnect_attempts.insert(name.clone(), 0);
 
-        // Emit connection status based on transport type
-        match &target.transport {
-            TransportConfig::Udp(_) => {
-                // UDP is connectionless, so we can immediately mark as connected
-                info!("UDP target {} ready to send packets to {}", name, remote_addr);
-                let _ = self.event_sender.send(ConnectionEvent::Connected { target: target.clone() });
-            },
-            TransportConfig::Tcp(_) => {
-                // TCP requires actual connection - let the transport handler report status
-                // For now, we'll assume it fails since we don't have proper connection detection
-                debug!("TCP target {} attempting connection to {}", name, remote_addr);
-                // Wait a moment then check if still alive, otherwise mark as failed
-                let event_sender = self.event_sender.clone();
-                let target_name = name.clone();
-                let reconnect_attempts = self.reconnect_attempts.clone();
-                tokio::spawn(async move {
-                    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-                    // TCP connections typically fail to localhost:9001 since nothing is listening
-                    // Increment attempt counter for backoff
-                    let current_attempts = reconnect_attempts.get(&target_name).map(|v| *v).unwrap_or(0);
-                    reconnect_attempts.insert(target_name.clone(), current_attempts + 1);
-                    let _ = event_sender.send(ConnectionEvent::Failed { target: target.clone() });
-                });
-            }
-        }
+        // Transport handlers will emit Connected events when they successfully establish connections
         Ok(())
     }
 
@@ -308,10 +364,10 @@ impl ConnectionManager {
         }
     }
 
-    pub async fn start_connection_monitor(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn start_command_listener(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut monitor_handle = self.monitor_handle.write().await;
         if monitor_handle.is_some() {
-            return Err("Connection monitor already started".into());
+            return Err("Command listener already started".into());
         }
 
         let connections = Arc::clone(&self.connections);
@@ -319,22 +375,49 @@ impl ConnectionManager {
         let main_cancellation_token = self.cancellation_token.clone();
         let event_sender = self.event_sender.clone();
         let reconnect_attempts = self.reconnect_attempts.clone();
+        let command_receiver = self.command_receiver.clone();
 
-        let health_check_duration = self.config.health_check_interval;
         let handle = tokio::spawn(async move {
-            let mut health_check_interval = interval(health_check_duration);
+            let mut command_rx = command_receiver.write().await.take().expect("Command receiver should be available");
 
             loop {
                 tokio::select! {
-                    // Handle cancellation
                     _ = main_cancellation_token.cancelled() => {
-                        info!("Connection manager shutting down");
+                        info!("Command listener shutting down");
                         break;
                     }
+                    Some(command) = command_rx.recv() => {
+                        match command {
+                            ConnectionCommand::ManualReconnect { target_name } => {
+                                info!("Manual reconnect requested for target: {}", target_name);
 
-                    // Periodic health checks and reconnection attempts
-                    _ = health_check_interval.tick() => {
-                        Self::check_and_reconnect_targets(&connections, &targets, &main_cancellation_token, &event_sender, &reconnect_attempts).await;
+                                // Reset attempt counter and cancel current connection
+                                reconnect_attempts.insert(target_name.clone(), 0);
+
+                                if let Some(connection_ref) = connections.get(&target_name) {
+                                    if let ConnectionState::Connected { cancellation_token, .. } = connection_ref.value() {
+                                        cancellation_token.cancel();
+                                        // Self-reconnecting transport will handle the restart
+                                    }
+                                }
+                            },
+                            ConnectionCommand::Disconnect { target_name } => {
+                                info!("Manual disconnect requested for target: {}", target_name);
+
+                                // Cancel the self-reconnecting transport task
+                                if let Some((_, connection)) = connections.remove(&target_name) {
+                                    if let ConnectionState::Connected { cancellation_token, .. } = connection {
+                                        cancellation_token.cancel();
+                                    }
+                                }
+
+                                connections.insert(target_name.clone(), ConnectionState::Disconnected);
+
+                                if let Some(target_ref) = targets.get(&target_name) {
+                                    let _ = event_sender.send(ConnectionEvent::Disconnected { target: target_ref.value().clone() });
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -343,153 +426,6 @@ impl ConnectionManager {
         *monitor_handle = Some(handle);
         Ok(())
     }
-
-    async fn check_and_reconnect_targets(
-        connections: &Arc<DashMap<String, ConnectionState>>,
-        targets: &Arc<DashMap<String, Target>>,
-        main_cancellation_token: &CancellationToken,
-        event_sender: &broadcast::Sender<ConnectionEvent>,
-        reconnect_attempts: &Arc<DashMap<String, u32>>,
-    ) {
-        // Check for finished/failed connections
-        let mut failed_connections = Vec::new();
-
-        for connection_ref in connections.iter() {
-            let name = connection_ref.key();
-            if let ConnectionState::Connected { handle, .. } = connection_ref.value() {
-                if handle.is_finished() {
-                    failed_connections.push(name.clone());
-                }
-            }
-        }
-
-        // Mark failed connections and schedule reconnection with backoff
-        for name in failed_connections {
-            let current_attempts = reconnect_attempts.get(&name).map(|v| *v).unwrap_or(0);
-            let next_attempt = current_attempts + 1;
-            let delay = Self::calculate_reconnect_delay(next_attempt);
-            
-            warn!("Connection to {} failed, scheduling reconnection attempt {} in {:?}", 
-                  name, next_attempt, delay);
-            
-            connections.insert(name.clone(), ConnectionState::Failed);
-            let _ = event_sender.send(ConnectionEvent::Failed { target: targets.get(&name).unwrap().clone() });
-            
-            // Schedule reconnection with logarithmic backoff
-            if let Some(target_ref) = targets.get(&name) {
-                let target = target_ref.value().clone();
-                let connections_clone = Arc::clone(connections);
-                let event_sender_clone = event_sender.clone();
-                let reconnect_attempts_clone = Arc::clone(reconnect_attempts);
-                let cancellation_token = main_cancellation_token.child_token();
-                
-                tokio::spawn(async move {
-                    // Wait for backoff delay
-                    if delay > Duration::from_millis(0) {
-                        tokio::select! {
-                            _ = sleep(delay) => {},
-                            _ = cancellation_token.cancelled() => return,
-                        }
-                    }
-                    
-                    // Update attempt counter
-                    reconnect_attempts_clone.insert(name.clone(), next_attempt);
-                    
-                    // Emit reconnecting event
-                    let _ = event_sender_clone.send(ConnectionEvent::Reconnecting { target: target.clone() });
-                    
-                    // Attempt reconnection
-                    Self::attempt_single_reconnection(
-                        &name,
-                        &target,
-                        &connections_clone,
-                        &event_sender_clone,
-                        &reconnect_attempts_clone,
-                        cancellation_token,
-                    ).await;
-                });
-            }
-        }
-    }
-
-    async fn attempt_single_reconnection(
-        target_name: &str,
-        target: &Target,
-        connections: &Arc<DashMap<String, ConnectionState>>,
-        event_sender: &broadcast::Sender<ConnectionEvent>,
-        reconnect_attempts: &Arc<DashMap<String, u32>>,
-        cancellation_token: CancellationToken,
-    ) {
-        info!("Attempting to reconnect to target: {}", target_name);
-        
-        let (packet_tx, packet_rx) = mpsc::channel(1000);
-        let connection_token = cancellation_token.child_token();
-
-        let transport_handler = create_transport_handler(&target.transport);
-        let handler_clone = transport_handler.clone();
-        let connection_token_clone = connection_token.clone();
-        let event_sender_clone = event_sender.clone();
-        let target_clone = target.clone();
-        let reconnect_attempts_clone = reconnect_attempts.clone();
-        
-        let handle = tokio::spawn(async move {
-            match handler_clone.start(packet_rx, connection_token_clone).await {
-                Ok(_) => {
-                    info!("Transport handler for {} completed gracefully", target_clone.name);
-                    let _ = event_sender_clone.send(ConnectionEvent::Disconnected { target: target_clone.clone() });
-                },
-                Err(e) => {
-                    error!("Transport handler for {} failed: {}", target_clone.name, e);
-                    // Increment attempts and schedule next reconnection
-                    let current_attempts = reconnect_attempts_clone.get(&target_clone.name).map(|v| *v).unwrap_or(0);
-                    reconnect_attempts_clone.insert(target_clone.name.clone(), current_attempts + 1);
-                    let _ = event_sender_clone.send(ConnectionEvent::Failed { target: target_clone.clone() });
-                }
-            }
-        });
-
-        // Store the new connection
-        connections.insert(
-            target_name.to_string(),
-            ConnectionState::Connected {
-                sender: packet_tx,
-                handle,
-                cancellation_token: connection_token,
-            },
-        );
-
-        let target_clone = target.clone();
-
-        // Check if connection succeeds based on transport type
-        match &target_clone.transport {
-            TransportConfig::Udp(_) => {
-                // UDP is connectionless, consider it successful
-                info!("UDP target {} reconnected successfully", target_name);
-                reconnect_attempts.insert(target_name.to_string(), 0); // Reset attempts
-                let _ = event_sender.send(ConnectionEvent::Connected { target: target_clone.clone() });
-            },
-            TransportConfig::Tcp(_) => {
-                // TCP requires actual connection - wait and see if it fails
-                let event_sender_clone = event_sender.clone();
-                let target_name_clone = target_name.to_string();
-                let reconnect_attempts_clone = reconnect_attempts.clone();
-                
-                tokio::spawn(async move {
-                    tokio::time::sleep(Duration::from_millis(500)).await;
-                    
-                    // Check if connection is still alive (simplified check)
-                    // In reality, we'd need proper connection health checking
-                    // For now, assume TCP to localhost:9001 fails
-                    let current_attempts = reconnect_attempts_clone.get(&target_name_clone).map(|v| *v).unwrap_or(0);
-                    reconnect_attempts_clone.insert(target_name_clone.clone(), current_attempts + 1);
-                    let _ = event_sender_clone.send(ConnectionEvent::Failed { target: target_clone.clone() });
-                });
-            }
-        }
-    }
-
-    // Old reconnection method - removed in favor of logarithmic backoff approach
-    // Reconnection is now handled automatically by check_and_reconnect_targets with backoff
 }
 
 impl Default for ConnectionManager {

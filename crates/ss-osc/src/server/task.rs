@@ -71,10 +71,10 @@ impl OscServerTask {
             anyhow::anyhow!("Failed to connect to targets: {}", e)
         })?;
         
-        // Start connection monitoring for auto-reconnection
-        self.connection_manager.start_connection_monitor().await.map_err(|e| {
-            error!("Failed to start connection monitor: {}", e);
-            anyhow::anyhow!("Failed to start connection monitor: {}", e)
+        // Start command listener for manual reconnect/disconnect
+        self.connection_manager.start_command_listener().await.map_err(|e| {
+            error!("Failed to start command listener: {}", e);
+            anyhow::anyhow!("Failed to start command listener: {}", e)
         })?;
         
         info!("Connection manager started successfully");
