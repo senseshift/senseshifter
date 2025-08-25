@@ -1,23 +1,13 @@
 [package]
-name = "xrc-device-manager"
+name = "ss-osc"
 version.workspace = true
 edition.workspace = true
 
-[features]
-default = ["manager"]
-
-manager = []
-
-serde = ["dep:serde", "uuid/serde", "xrc-haptics-manager/serde"]
-
-mockall = ["dep:mockall", "xrc-haptics-manager/mockall"]
+[lib]
+path = "src/lib.rs"
 
 [dependencies]
 xrc-commons = { workspace = true }
-
-xrc-haptics-manager = { workspace = true, default-features = false }
-
-uuid = { workspace = true }
 
 anyhow = { workspace = true }
 derivative = { workspace = true }
@@ -31,12 +21,21 @@ async-trait = { workspace = true }
 futures = { workspace = true }
 futures-util = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
-tokio-stream = { workspace = true }
+tokio-stream = { workspace = true, features = ["sync"] }
 tokio-util = { workspace = true }
 dashmap = { workspace = true }
 dyn-clone = { workspace = true }
 
-mockall = { workspace = true, optional = true }
+rosc = { version = "^0.11.4" }
+regex = { version = "^1.11.1"}
+serde_regex = { version = "^1.1.0", optional = true }
+
+toml = { version = "0.9.5" }
+serde_yaml = { version = "^0.9.33" }
+
+[features]
+default = ["serde"]
+serde = ["dep:serde", "serde_regex"]
 
 [dev-dependencies]
-mockall = { workspace = true }
+tracing-subscriber = { workspace = true }
