@@ -1,0 +1,24 @@
+{
+  "name": "@senseshifter/ui",
+  "private": true,
+  "version": "0.1.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./styles": "./styles.css"
+  },
+  "scripts": {
+    "clean": "rm -rf dist .turbo node_modules",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  }
+}
