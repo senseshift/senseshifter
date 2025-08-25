@@ -124,7 +124,6 @@ impl ConnectionManager {
         Duration::from_millis(base_delay_ms)
     }
 
-    // Removed handle_transport_failure - now handled by self-reconnecting transport tasks
 
     pub fn add_target(&self, target: Target) -> ConnectionResult<mpsc::Sender<OscPacket>> {
         let name = target.name.clone();
