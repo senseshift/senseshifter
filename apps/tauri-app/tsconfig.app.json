@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@senseshifter/config-typescript/tsconfig.app.json",
+  "include": ["src"],
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@senseshifter/ui/*": ["../../packages/ui/src/*"],
+    }
+  },
+}

@@ -4,7 +4,11 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:github.com)",
       "Bash(cargo check:*)",
-      "Bash(cargo build:*)"
+      "Bash(cargo build:*)",
+      "WebFetch(domain:docs.tauri.app)",
+      "WebSearch",
+      "WebFetch(domain:v2.tauri.app)",
+      "WebFetch(domain:melvinoostendorp.nl)"
     ],
     "deny": [],
     "ask": []

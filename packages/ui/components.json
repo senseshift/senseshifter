@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@senseshifter/ui/components",
+    "utils": "@senseshifter/ui/lib/utils",
+    "hooks": "@senseshifter/ui/hooks",
+    "lib": "@senseshifter/ui/lib",
+    "ui": "@senseshifter/ui/components"
+  }
+}
