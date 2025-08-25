@@ -110,6 +110,7 @@ pub struct RouterRouteConfig {
 
     /// Whether to stop propagating packets down the pipeline if matched.
     #[getset(get = "pub")]
+    #[cfg_attr(feature = "serde", serde(default))]
     pub stop_propagation: bool,
 
     /// Forward configurations

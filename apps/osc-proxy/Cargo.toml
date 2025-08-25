@@ -10,7 +10,7 @@ path = "src/main.rs"
 [dependencies]
 # Workspace dependencies
 xrc-commons = { workspace = true }
-ss-osc = { path = "../../crates/ss-osc" }
+ss-osc = { workspace = true, features = ["server"] }
 
 # CLI and config
 clap = { version = "4.4", features = ["derive"] }
