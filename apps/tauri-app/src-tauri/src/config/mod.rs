@@ -172,7 +172,7 @@ mod tests {
     fn create_test_config_manager() -> (ConfigManager, TempDir) {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let config_manager = ConfigManager {
-            config_dir: temp_dir.path().to_path_buf(),
+            config_dir: temp_dir.path().join("config"),
         };
         (config_manager, temp_dir)
     }

@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc, RwLock, oneshot};
+use tokio::sync::{mpsc, RwLock};
+use tokio_util::sync::CancellationToken;
 use tracing::{info, error, warn};
 use uuid::Uuid;
 
@@ -80,7 +81,7 @@ impl Default for OscRuntimeConfig {
 struct ServerInstance {
     config: OscServerRuntimeConfig,
     server: Option<OscServer>,
-    shutdown_tx: Option<oneshot::Sender<()>>,
+    cancel_token: Option<CancellationToken>,
 }
 
 /// OSC Server Manager that handles multiple server instances
@@ -138,7 +139,7 @@ impl OscServerManager {
             servers.insert(id, ServerInstance {
                 config: server_config,
                 server: None,
-                shutdown_tx: None,
+                cancel_token: None,
             });
         }
 
@@ -222,21 +223,30 @@ impl OscServerManager {
 
         info!("Starting OSC server instance: {}", server_instance.config.name);
 
+        // Create cancellation token for this server
+        let cancel_token = CancellationToken::new();
+
         // Build and start the server
-        let builder = OscServerBuilder::new(server_instance.config.config.clone());
+        let builder = OscServerBuilder::new(server_instance.config.config.clone())
+            .with_cancel_token(cancel_token.clone());
         let server = builder.build()?;
 
         // Setup event handling
         let (_server_events_rx, mut conn_events_rx) = server.subscribe_to_events();
-        let (shutdown_tx, mut shutdown_rx) = oneshot::channel();
 
         let event_tx = self.event_tx.clone();
         let server_name = server_instance.config.name.clone();
+        let cancel_token_clone = cancel_token.clone();
+        let server_id_clone = server_id;
 
         // Spawn event handler task
         tokio::spawn(async move {
             loop {
                 tokio::select! {
+                    _ = cancel_token_clone.cancelled() => {
+                        info!("Event handler for {} cancelled", server_name);
+                        break;
+                    }
                     event = conn_events_rx.recv() => {
                         match event {
                             Ok(conn_event) => {
@@ -265,7 +275,7 @@ impl OscServerManager {
                                 };
 
                                 let event = ConnectionStatusEvent {
-                                    server_id,
+                                    server_id: server_id_clone,
                                     target_name: target.name.clone(),
                                     address: target.transport.remote_address(),
                                     transport: target.transport.transport_type().to_string(),
@@ -285,17 +295,13 @@ impl OscServerManager {
                             }
                         }
                     }
-                    _ = &mut shutdown_rx => {
-                        info!("Event handler shutdown for server {}", server_name);
-                        break;
-                    }
                 }
             }
         });
 
-        // Store server and shutdown channel
+        // Store server and cancellation token
         server_instance.server = Some(server);
-        server_instance.shutdown_tx = Some(shutdown_tx);
+        server_instance.cancel_token = Some(cancel_token);
 
         // Release the lock before sending event to avoid potential deadlock
         drop(servers);
@@ -312,9 +318,9 @@ impl OscServerManager {
         if let Some(server) = server_instance.server.take() {
             info!("Stopping OSC server instance: {}", server_instance.config.name);
             
-            // Send shutdown signal to event handler
-            if let Some(shutdown_tx) = server_instance.shutdown_tx.take() {
-                let _ = shutdown_tx.send(());
+            // Cancel the event handler and server tasks
+            if let Some(cancel_token) = server_instance.cancel_token.take() {
+                cancel_token.cancel();
             }
             
             // Shutdown the server
