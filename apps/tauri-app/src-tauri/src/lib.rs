@@ -3,15 +3,16 @@ use tokio::sync::mpsc;
 use tauri::{Manager, State, Emitter};
 use uuid::Uuid;
 
-mod config;
-mod osc_manager;
+mod osc;
 
-use config::AppConfig;
-use osc_manager::OscManager;
+use osc::{
+    OscServerManager, OscRuntimeConfig, OscServerModuleConfig,
+    ServerStatusEvent, ConnectionStatusEvent
+};
 
 // Application state
 pub struct AppState {
-    osc_manager: Arc<OscManager>,
+    osc_manager: Arc<OscServerManager>,
 }
 
 #[tauri::command]
@@ -20,7 +21,7 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-async fn get_osc_config(state: State<'_, AppState>) -> Result<AppConfig, String> {
+async fn get_osc_config(state: State<'_, AppState>) -> Result<OscRuntimeConfig, String> {
     tracing::info!("get_osc_config called");
     let config = state.osc_manager.get_config().await;
     tracing::info!("get_osc_config returning: {:?}", config);
@@ -50,7 +51,7 @@ async fn toggle_osc_server(
 #[tauri::command]
 async fn get_server_statuses(
     state: State<'_, AppState>,
-) -> Result<Vec<osc_manager::ServerStatusEvent>, String> {
+) -> Result<Vec<ServerStatusEvent>, String> {
     tracing::info!("get_server_statuses called");
     let statuses = state.osc_manager.get_all_server_statuses().await;
     tracing::info!("get_server_statuses returning: {:?}", statuses);
@@ -69,18 +70,20 @@ pub fn run() {
             let (event_tx, mut event_rx) = mpsc::unbounded_channel();
             
             // Create OSC manager
-            tracing::info!("Creating OSC manager");
-            let osc_manager = Arc::new(OscManager::new(event_tx));
+            tracing::info!("Creating OSC server manager");
+            let osc_manager = Arc::new(OscServerManager::new(event_tx));
             
-            // Initialize with default config synchronously
-            tracing::info!("Initializing OSC manager with default config");
-            let default_config = AppConfig::default();
+            // Generate runtime config from module config and initialize
+            tracing::info!("Generating runtime config and initializing OSC server manager");
+            let module_config = OscServerModuleConfig::default();
+            let runtime_config = OscServerManager::generate_runtime_config(module_config);
+            
             let osc_manager_clone = osc_manager.clone();
             tauri::async_runtime::block_on(async move {
-                if let Err(e) = osc_manager_clone.initialize(default_config).await {
-                    tracing::error!("Failed to initialize OSC manager: {}", e);
+                if let Err(e) = osc_manager_clone.initialize(runtime_config).await {
+                    tracing::error!("Failed to initialize OSC server manager: {}", e);
                 } else {
-                    tracing::info!("OSC manager initialized successfully");
+                    tracing::info!("OSC server manager initialized successfully");
                 }
             });
             

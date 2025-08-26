@@ -9,7 +9,21 @@ use uuid::Uuid;
 use ss_osc::server::{OscServerBuilder, OscServer};
 use ss_osc::server::connection_manager::ConnectionEvent;
 
-use crate::config::{AppConfig, OscServerInstanceConfig};
+use super::config::{OscServerModuleConfig, OscServerModuleInstanceConfig};
+
+/// Runtime configuration for a single OSC server instance
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OscServerRuntimeConfig {
+    /// Unique identifier for this server instance
+    pub id: Uuid,
+    /// Display name for this server instance
+    pub name: String,
+    /// Whether this server instance is enabled
+    pub enabled: bool,
+    /// The OSC server configuration
+    pub config: ss_osc::server::config::OscServerConfig,
+}
 
 /// Connection status for UI display
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,7 +35,7 @@ pub enum ConnectionStatus {
     Failed,
 }
 
-/// Event sent to UI for status updates
+/// Event sent to UI for server status updates
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerStatusEvent {
@@ -43,32 +57,75 @@ pub struct ConnectionStatusEvent {
     pub next_attempt_at: Option<i64>,
 }
 
+/// Runtime configuration combining all server instances
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OscRuntimeConfig {
+    /// Global enable/disable switch for all OSC functionality
+    pub osc_enabled: bool,
+    /// Map of OSC server instances by their UUID
+    pub osc_servers: HashMap<Uuid, OscServerRuntimeConfig>,
+}
+
+impl Default for OscRuntimeConfig {
+    fn default() -> Self {
+        Self {
+            osc_enabled: false,
+            osc_servers: HashMap::new(),
+        }
+    }
+}
+
 /// Internal server instance state
 struct ServerInstance {
-    config: OscServerInstanceConfig,
+    config: OscServerRuntimeConfig,
     server: Option<OscServer>,
     shutdown_tx: Option<oneshot::Sender<()>>,
 }
 
 /// OSC Server Manager that handles multiple server instances
-pub struct OscManager {
+pub struct OscServerManager {
     servers: Arc<RwLock<HashMap<Uuid, ServerInstance>>>,
     event_tx: mpsc::UnboundedSender<serde_json::Value>,
-    config: Arc<RwLock<AppConfig>>,
+    config: Arc<RwLock<OscRuntimeConfig>>,
 }
 
-impl OscManager {
+impl OscServerManager {
     pub fn new(event_tx: mpsc::UnboundedSender<serde_json::Value>) -> Self {
         Self {
             servers: Arc::new(RwLock::new(HashMap::new())),
             event_tx,
-            config: Arc::new(RwLock::new(AppConfig::default())),
+            config: Arc::new(RwLock::new(OscRuntimeConfig::default())),
         }
     }
 
-    /// Initialize the manager with the app config
-    pub async fn initialize(&self, config: AppConfig) -> Result<()> {
-        tracing::info!("Initializing OSC manager with config: {:?}", config);
+    /// Generate runtime configuration from module configuration
+    pub fn generate_runtime_config(module_config: OscServerModuleConfig) -> OscRuntimeConfig {
+        let mut osc_servers = HashMap::new();
+        
+        for (index, instance_config) in module_config.servers.into_iter().enumerate() {
+            let server_id = Uuid::new_v4();
+            let server_name = format!("OSC Server {}", index + 1);
+            
+            let runtime_config = OscServerRuntimeConfig {
+                id: server_id,
+                name: server_name,
+                enabled: instance_config.enabled,
+                config: instance_config.server,
+            };
+            
+            osc_servers.insert(server_id, runtime_config);
+        }
+        
+        OscRuntimeConfig {
+            osc_enabled: module_config.enabled,
+            osc_servers,
+        }
+    }
+
+    /// Initialize the manager with runtime config
+    pub async fn initialize(&self, config: OscRuntimeConfig) -> Result<()> {
+        info!("Initializing OSC server manager with config: {:?}", config);
         
         let mut config_guard = self.config.write().await;
         *config_guard = config.clone();
@@ -77,7 +134,7 @@ impl OscManager {
         // Initialize all server instances from config
         let mut servers = self.servers.write().await;
         for (id, server_config) in config.osc_servers {
-            tracing::info!("Adding server instance: {} ({})", server_config.name, id);
+            info!("Adding server instance: {} ({})", server_config.name, id);
             servers.insert(id, ServerInstance {
                 config: server_config,
                 server: None,
@@ -85,22 +142,15 @@ impl OscManager {
             });
         }
 
-        tracing::info!("OSC manager initialization completed");
+        info!("OSC server manager initialization completed");
         Ok(())
     }
 
-    /// Get current app config
-    pub async fn get_config(&self) -> AppConfig {
+    /// Get current runtime config
+    pub async fn get_config(&self) -> OscRuntimeConfig {
         let config = self.config.read().await.clone();
-        tracing::info!("get_config returning: {:?}", config);
+        info!("get_config returning: {:?}", config);
         config
-    }
-
-    /// Update app config
-    pub async fn update_config(&self, config: AppConfig) -> Result<()> {
-        let mut config_guard = self.config.write().await;
-        *config_guard = config;
-        Ok(())
     }
 
     /// Toggle global OSC functionality
@@ -294,7 +344,7 @@ impl OscManager {
 
     /// Send server status event to UI
     async fn send_server_status_event(&self, server_id: Uuid) {
-        tracing::info!("Sending server status event for server {}", server_id);
+        info!("Sending server status event for server {}", server_id);
         let servers = self.servers.read().await;
         
         if let Some(server_instance) = servers.get(&server_id) {
@@ -305,20 +355,20 @@ impl OscManager {
                 running: server_instance.server.is_some(),
             };
 
-            tracing::info!("Server status event: {:?}", event);
+            info!("Server status event: {:?}", event);
 
             if let Ok(json_event) = serde_json::to_value(&event) {
-                tracing::info!("Serialized server status event: {:?}", json_event);
+                info!("Serialized server status event: {:?}", json_event);
                 if let Err(e) = self.event_tx.send(json_event) {
                     error!("Failed to send server status event: {}", e);
                 } else {
-                    tracing::info!("Server status event sent successfully to channel");
+                    info!("Server status event sent successfully to channel");
                 }
             } else {
                 error!("Failed to serialize server status event");
             }
         } else {
-            tracing::warn!("Server {} not found when trying to send status event", server_id);
+            warn!("Server {} not found when trying to send status event", server_id);
         }
     }
 

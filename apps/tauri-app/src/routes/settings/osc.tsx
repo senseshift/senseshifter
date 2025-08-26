@@ -16,10 +16,10 @@ export const Route = createFileRoute('/settings/osc')({
 
 interface AppConfig {
   oscEnabled: boolean
-  oscServers: Record<string, OscServerInstanceConfig>
+  oscServers: Record<string, OscServerRuntimeConfig>
 }
 
-interface OscServerInstanceConfig {
+interface OscServerRuntimeConfig {
   id: string
   name: string
   enabled: boolean
