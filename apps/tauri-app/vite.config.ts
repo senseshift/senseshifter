@@ -2,6 +2,7 @@ import path from "path"
 
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 
 import {defineConfig} from "vite";
 
@@ -10,6 +11,7 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
   plugins: [
+    TanStackRouterVite(),
     react(),
     tailwindcss(),
   ],
