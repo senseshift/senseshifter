@@ -4730,11 +4730,21 @@ dependencies = [
 name = "tauri-app"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "regex",
  "serde",
  "serde_json",
+ "serde_yaml",
+ "ss-osc",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

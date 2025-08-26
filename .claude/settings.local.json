@@ -8,7 +8,8 @@
       "WebFetch(domain:docs.tauri.app)",
       "WebSearch",
       "WebFetch(domain:v2.tauri.app)",
-      "WebFetch(domain:melvinoostendorp.nl)"
+      "WebFetch(domain:melvinoostendorp.nl)",
+      "Bash(pnpm shadcn add:*)"
     ],
     "deny": [],
     "ask": []

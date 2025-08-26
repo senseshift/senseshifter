@@ -23,6 +23,7 @@ pub enum OscServerEvent {
 
 pub struct OscServerBuilder {
     config: config::OscServerConfig,
+    cancel_token: Option<tokio_util::sync::CancellationToken>,
 }
 
 impl OscServerBuilder {
@@ -31,7 +32,14 @@ impl OscServerBuilder {
     ) -> Self {
         Self {
             config,
+            cancel_token: None,
         }
+    }
+
+    /// Add an optional cancellation token that will be used to control the server task
+    pub fn with_cancel_token(mut self, token: tokio_util::sync::CancellationToken) -> Self {
+        self.cancel_token = Some(token);
+        self
     }
 }
 
@@ -75,7 +83,7 @@ impl OscServerBuilder {
             forward_targets,
         );
 
-        let cancellation_token = tokio_util::sync::CancellationToken::new();
+        let cancellation_token = self.cancel_token.unwrap_or_else(|| tokio_util::sync::CancellationToken::new());
         let (tx, rx) = tokio::sync::broadcast::channel(10);
         let connection_manager_event_receiver = connection_manager.subscribe_to_events();
 
