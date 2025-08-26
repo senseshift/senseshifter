@@ -70,7 +70,7 @@ pub struct OscRuntimeConfig {
 impl Default for OscRuntimeConfig {
     fn default() -> Self {
         Self {
-            osc_enabled: false,
+            osc_enabled: true,
             osc_servers: HashMap::new(),
         }
     }
@@ -387,5 +387,22 @@ impl OscServerManager {
         }
 
         statuses
+    }
+
+    /// Get server index in configuration by UUID
+    /// This finds the server's position in the original configuration array
+    pub async fn get_server_index_by_uuid(&self, server_id: Uuid) -> Option<usize> {
+        let servers = self.servers.read().await;
+        
+        // Get all server UUIDs in the order they were created (by name)
+        let mut server_names: Vec<(Uuid, String)> = servers.iter()
+            .map(|(id, instance)| (*id, instance.config.name.clone()))
+            .collect();
+        
+        // Sort by server name to maintain consistent ordering (e.g., "OSC Server 1", "OSC Server 2")
+        server_names.sort_by(|a, b| a.1.cmp(&b.1));
+        
+        // Find the index of the requested server
+        server_names.iter().position(|(id, _)| *id == server_id)
     }
 }
