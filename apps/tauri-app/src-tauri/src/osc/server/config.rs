@@ -5,7 +5,7 @@ use std::net::{Ipv4Addr, SocketAddr};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OscServerModuleConfig {
-    #[serde(default = "default_true")]
+    #[serde(default = "default_bool::<true>")]
     pub enabled: bool,
 
     pub servers: Vec<OscServerModuleInstanceConfig>,
@@ -13,7 +13,7 @@ pub struct OscServerModuleConfig {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OscServerModuleInstanceConfig {
-    #[serde(default = "default_true")]
+    #[serde(default = "default_bool::<true>")]
     pub enabled: bool,
 
     pub server: OscServerConfig,
@@ -37,8 +37,8 @@ impl Default for OscServerModuleConfig {
     }
 }
 
-fn default_true() -> bool {
-    true
+pub const fn default_bool<const V: bool>() -> bool {
+    V
 }
 
 /// Create a default OSC server configuration

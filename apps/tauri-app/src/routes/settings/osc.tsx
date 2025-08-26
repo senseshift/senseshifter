@@ -9,6 +9,7 @@ import { Button } from '@senseshifter/ui/components/button'
 import { Card } from '@senseshifter/ui/components/card'
 import { Switch } from '@senseshifter/ui/components/switch'
 import { Separator } from '@senseshifter/ui/components/separator'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@senseshifter/ui/components/collapsible'
 
 export const Route = createFileRoute('/settings/osc')({
   component: SettingsOSC,
@@ -276,138 +277,166 @@ function SettingsOSC() {
         description="Configure Open Sound Control settings"
       />
 
-      {/* Global OSC Toggle */}
+      {/* OSC Server Collapsible */}
+      <Collapsible defaultOpen>
+        <Card className="p-0">
+          <CollapsibleTrigger className="w-full px-6 py-3 hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <Server className="h-5 w-5 text-muted-foreground" />
+                <div className="text-left">
+                  <h3 className="font-semibold">OSC Server</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enable or disable OSC server functionality
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={config.oscEnabled}
+                  onCheckedChange={handleGlobalToggle}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-6 pb-3">
+              <div className="space-y-3">
+                <Separator />
+                <div>
+                  <h4 className="font-medium mb-3">Server Instances</h4>
+                  <div className="space-y-3">
+
+                    {Object.entries(config.oscServers || {}).map(([serverId, serverConfig]) => {
+                      const status = serverStatuses.find(s => s.serverId === serverId)
+                      const connections = connectionStatuses[serverId] || []
+                      console.log(`Rendering server ${serverId}:`, { status, connections })
+
+                      return (
+                        <div key={serverId} className="p-4 bg-muted/30 rounded-lg border border-muted">
+                          <div className="space-y-3">
+                            {/* Server Instance Header */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                  <div className={`h-2 w-2 rounded-full ${
+                                    status?.running ? 'bg-green-500' : 'bg-gray-400'
+                                  }`} />
+                                  <h5 className="font-medium">{serverConfig.name}</h5>
+                                </div>
+                                <span className="text-xs px-2 py-1 bg-background rounded-md border">
+                                  {status?.running ? 'Running' : 'Stopped'}
+                                </span>
+                              </div>
+                              <Switch
+                                checked={serverConfig.enabled}
+                                onCheckedChange={(enabled) => handleServerToggle(serverId, enabled)}
+                                disabled={!config.oscEnabled}
+                              />
+                            </div>
+
+                            {/* Server Configuration Info */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <h6 className="font-medium mb-1 text-xs text-muted-foreground uppercase tracking-wide">Listening On</h6>
+                                <div className="space-y-1">
+                                  {(serverConfig.config.server?.udp || []).map((addr, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 text-muted-foreground">
+                                      <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">UDP</span>
+                                      <code className="text-xs">{addr}</code>
+                                    </div>
+                                  ))}
+                                  {(serverConfig.config.server?.tcp || []).map((addr, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 text-muted-foreground">
+                                      <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">TCP</span>
+                                      <code className="text-xs">{addr}</code>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <h6 className="font-medium mb-1 text-xs text-muted-foreground uppercase tracking-wide">Routes ({(serverConfig.config.routes || []).length})</h6>
+                                <div className="space-y-1">
+                                  {(serverConfig.config.routes || []).slice(0, 2).map((route, idx) => (
+                                    <div key={idx} className="text-muted-foreground">
+                                      <code className="text-xs">{route.address || 'N/A'}</code>
+                                    </div>
+                                  ))}
+                                  {(serverConfig.config.routes || []).length > 2 && (
+                                    <p className="text-xs text-muted-foreground">
+                                      +{(serverConfig.config.routes || []).length - 2} more...
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Connection Status */}
+                            {console.log('Checking connection status display:', { connectionsLength: connections.length, connections }) || (serverConfig.enabled && connections.length > 0) && (
+                              <>
+                                <Separator className="bg-muted" />
+                                <div>
+                                  <h6 className="font-medium mb-2 text-xs text-muted-foreground uppercase tracking-wide">Connection Status</h6>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {connections.map((conn, idx) => {
+                                      console.log('Rendering connection:', conn)
+                                      return (
+                                        <div key={idx} className="flex items-center gap-2 p-2 bg-background rounded-md border">
+                                          {getStatusIcon(conn.status)}
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium truncate">{conn.targetName}</p>
+                                            <p className="text-xs text-muted-foreground truncate">
+                                              {conn.transport} {conn.address}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {Object.keys(config.oscServers || {}).length === 0 && (
+                  <div className="p-8 text-center border border-dashed rounded-lg">
+                    <Server className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="font-semibold mb-2">No OSC Server Instances</h3>
+                    <p className="text-muted-foreground mb-4">
+                      No OSC server instances have been configured yet.
+                    </p>
+                    <Button variant="outline">Add Server Instance</Button>
+                  </div>
+                )}
+              </div>
+            </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Placeholder for future OSC Client section */}
       <Card className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Radio className="h-5 w-5 text-muted-foreground" />
             <div>
-              <h3 className="font-semibold">OSC Integration</h3>
+              <h3 className="font-semibold">OSC Client</h3>
               <p className="text-sm text-muted-foreground">
-                Enable or disable all OSC functionality
+                OSC client functionality (coming soon)
               </p>
             </div>
           </div>
           <Switch
-            checked={config.oscEnabled}
-            onCheckedChange={handleGlobalToggle}
+            checked={false}
+            disabled={true}
           />
         </div>
       </Card>
-
-      {/* Server Instances */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Server className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Server Instances</h2>
-        </div>
-
-        {Object.entries(config.oscServers || {}).map(([serverId, serverConfig]) => {
-          const status = serverStatuses.find(s => s.serverId === serverId)
-          const connections = connectionStatuses[serverId] || []
-          console.log(`Rendering server ${serverId}:`, { status, connections })
-
-          return (
-            <Card key={serverId} className="p-6">
-              <div className="space-y-4">
-                {/* Server Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <div className={`h-2 w-2 rounded-full ${
-                        status?.running ? 'bg-green-500' : 'bg-gray-400'
-                      }`} />
-                      <h3 className="font-semibold">{serverConfig.name}</h3>
-                    </div>
-                    <span className="text-xs px-2 py-1 bg-muted rounded-md">
-                      {status?.running ? 'Running' : 'Stopped'}
-                    </span>
-                  </div>
-                  <Switch
-                    checked={serverConfig.enabled}
-                    onCheckedChange={(enabled) => handleServerToggle(serverId, enabled)}
-                    disabled={!config.oscEnabled}
-                  />
-                </div>
-
-                {/* Server Configuration Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <h4 className="font-medium mb-2">Listening On</h4>
-                    <div className="space-y-1">
-                      {(serverConfig.config.server?.udp || []).map((addr, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-muted-foreground">
-                          <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">UDP</span>
-                          <code className="text-xs">{addr}</code>
-                        </div>
-                      ))}
-                      {(serverConfig.config.server?.tcp || []).map((addr, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-muted-foreground">
-                          <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">TCP</span>
-                          <code className="text-xs">{addr}</code>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Routes ({(serverConfig.config.routes || []).length})</h4>
-                    <div className="space-y-1">
-                      {(serverConfig.config.routes || []).slice(0, 3).map((route, idx) => (
-                        <div key={idx} className="text-muted-foreground">
-                          <code className="text-xs">{route.address || 'N/A'}</code>
-                        </div>
-                      ))}
-                      {(serverConfig.config.routes || []).length > 3 && (
-                        <p className="text-xs text-muted-foreground">
-                          +{(serverConfig.config.routes || []).length - 3} more...
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connection Status */}
-                {console.log('Checking connection status display:', { connectionsLength: connections.length, connections }) || connections.length > 0 && (
-                  <>
-                    <Separator />
-                    <div>
-                      <h4 className="font-medium mb-3">Connection Status</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {connections.map((conn, idx) => {
-                          console.log('Rendering connection:', conn)
-                          return (
-                            <div key={idx} className="flex items-center gap-3 p-2 bg-muted/50 rounded-md">
-                              {getStatusIcon(conn.status)}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{conn.targetName}</p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {conn.transport} {conn.address}
-                                </p>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </Card>
-          )
-        })}
-      </div>
-
-      {Object.keys(config.oscServers || {}).length === 0 && (
-        <Card className="p-8 text-center">
-          <Server className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="font-semibold mb-2">No Server Instances</h3>
-          <p className="text-muted-foreground mb-4">
-            No OSC server instances have been configured yet.
-          </p>
-          <Button variant="outline">Add Server Instance</Button>
-        </Card>
-      )}
     </div>
   )
 }
