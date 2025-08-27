@@ -49,21 +49,16 @@ async fn handle_v2_message(msg: &str, ws_sender: &mut futures_util::stream::Spli
 
     info!("Parsed BhV2Message: {:?}", message);
 
-    match message {
-        BhV2Message::Register(registers) => {
-            for reg in registers {
-                if !registered_keys.contains(&reg.key()) {
-                    registered_keys.push(reg.key().to_string());
-                }
+    if let Some(registers) = message.register() {
+        for reg in registers {
+            if !registered_keys.contains(&reg.key()) {
+                registered_keys.push(reg.key().to_string());
             }
+        }
 
-            let response = BhV2ResponseMessage::RegisteredKeys(registered_keys.clone());
-            let response_text = serde_json::to_string(&response).unwrap();
-            ws_sender.send(Message::Text(response_text.into())).await?;
-        }
-        _ => {
-            warn!("Unhandled BhV2Message type");
-        }
+        let response = BhV2ResponseMessage::RegisteredKeys(registered_keys.clone());
+        let response_text = serde_json::to_string(&response).unwrap();
+        ws_sender.send(Message::Text(response_text.into())).await?;
     }
     
     Ok(())

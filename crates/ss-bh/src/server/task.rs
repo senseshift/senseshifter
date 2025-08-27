@@ -1,3 +1,5 @@
+use crate::server::handler::v2::V2Handler;
+use crate::server::handler::Handler;
 use crate::Result;
 use anyhow::Context;
 use futures_util::{SinkExt, StreamExt};
@@ -7,8 +9,9 @@ use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::mpsc::unbounded_channel;
 use tokio_tungstenite::tungstenite::handshake::server::{Request, Response};
-use tokio_tungstenite::tungstenite::{Error, Message};
+use tokio_tungstenite::tungstenite::{Error as TungsteniteError, Message as TungsteniteMessage};
 use tokio_tungstenite::{accept_hdr_async, WebSocketStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, *};
@@ -148,7 +151,7 @@ impl BhServerConnectionTask {
   async fn handle_connection(
     &self,
     request: &Request,
-    stream: WebSocketStream<TcpStream>,
+    mut stream: WebSocketStream<TcpStream>,
   ) -> Result<()> {
     let sniff_files = self.sniff_into.clone().map(|p| {
       let timestamp: String = std::time::SystemTime::now()
@@ -157,16 +160,18 @@ impl BhServerConnectionTask {
         .as_secs()
         .to_string();
 
-      let file_name = format!("{}_{}_{}", timestamp, self.peer.ip(), self.peer.port());
-
       let prefix = timestamp
         .to_string()
         .get(0..5)
         .map(|s| s.to_string())
-        .unwrap_or_else(|| "unknown".to_string());
+        .unwrap_or_else(|| "00000".to_string());
 
-      let file_path = p.join(prefix.clone()).join(format!("{}.jsonl", file_name));
-      let metadata_file_path = p.join(prefix).join(format!("{}.metadata", file_name));
+      let p = p.join(prefix);
+
+      let file_name = format!("{}_{}_{}", timestamp, self.peer.ip(), self.peer.port());
+
+      let file_path = p.join(format!("{}.jsonl", file_name));
+      let metadata_file_path = p.join(format!("{}.metadata", file_name));
 
       (file_path, metadata_file_path)
     });
@@ -198,46 +203,54 @@ impl BhServerConnectionTask {
     let path = request.uri().path();
     let version = extract_api_version_from_path(path);
 
-    match version {
+    let (sender, mut receiver) = unbounded_channel::<TungsteniteMessage>();
+
+    let handler: Handler = match version {
       #[cfg(feature = "v1")]
       Some(1) => {
         info!("Handling V1 API request");
+        Handler::Undefined
         // TODO: Route to V1 handler
       }
       #[cfg(feature = "v2")]
       Some(2) => {
         info!("Handling V2 API request");
+        Handler::V2(V2Handler::new(sender))
         // TODO: Route to V2 handler
       }
       #[cfg(feature = "v3")]
       Some(3) => {
         info!("Handling V3 API request");
+        Handler::Undefined
         // TODO: Route to V3 handler
       }
       #[cfg(feature = "v4")]
       Some(4) => {
         info!("Handling V4 API request");
+        Handler::Undefined
         // TODO: Route to V4 handler
       }
       Some(version) => {
         warn!("Unsupported API version: v{} for path: {}", version, path);
+        Handler::Undefined
       }
       None => {
         warn!("No API version detected in path: {}", path);
+        Handler::Undefined
       }
-    }
+    };
 
-    let (mut ws_sender, mut ws_receiver) = stream.split();
+    let ping_interval = std::time::Duration::from_secs(10);
 
     loop {
       tokio::select! {
-        result = ws_receiver.next() => {
+        result = stream.next() => {
           match result {
             Some(Ok(msg)) => {
               debug!("Received message: {:?}", msg);
 
               match msg {
-                Message::Text(_) | Message::Binary(_) => {
+                TungsteniteMessage::Text(_) | TungsteniteMessage::Binary(_) => {
                   if let Some(mut sniff_file) = sniff_file.as_ref() {
                     match sniff_file.write_all([msg.to_text()?.as_bytes(), b"\n"].concat().as_slice()) {
                       Ok(_) => {
@@ -249,31 +262,38 @@ impl BhServerConnectionTask {
                     }
                   }
 
-                  // todo: handle & route message
+                  match handler.handle_message(msg).await {
+                    Ok(_) => {
+
+                    }
+                    Err(e) => {
+                      error!("Error handling message: {}", e);
+                    }
+                  }
                 }
-                Message::Close(close_frame) => {
+                TungsteniteMessage::Close(close_frame) => {
                   info!("Received close message from peer: {:?}", close_frame);
                   // Respond with a close frame to complete the close handshake
-                  let _ = ws_sender.close().await;
+                  let _ = stream.close(None).await;
                   break;
                 }
-                Message::Ping(data) => {
+                TungsteniteMessage::Ping(data) => {
                   debug!("Received ping from peer");
                   // Respond with pong
-                  if let Err(e) = ws_sender.send(Message::Pong(data)).await {
+                  if let Err(e) = stream.send(TungsteniteMessage::Pong(data)).await {
                     error!("Failed to send pong: {}", e);
                   }
                 }
-                Message::Pong(_) => {
+                TungsteniteMessage::Pong(_) => {
                   debug!("Received pong from peer");
                   // Just acknowledge, no action needed
                 }
-                Message::Frame(_) => {
+                TungsteniteMessage::Frame(_) => {
                   warn!("Received raw frame, this shouldn't happen in high-level API");
                 }
               }
             }
-            Some(Err(Error::ConnectionClosed | Error::Protocol(_) | Error::Utf8(_))) => {
+            Some(Err(TungsteniteError::ConnectionClosed | TungsteniteError::Protocol(_) | TungsteniteError::Utf8(_))) => {
               info!("Connection closed by peer: {}", self.peer);
               break;
             }
@@ -286,17 +306,31 @@ impl BhServerConnectionTask {
               break;
             }
           }
-        }
+        },
+        Some(msg) = receiver.recv() => {
+          match stream.send(msg).await {
+            Ok(_) => {
+              trace!("Sent message to peer");
+            }
+            Err(e) => {
+              error!("Failed to send message to peer: {}", e);
+            }
+          }
+        },
+        _ = tokio::time::sleep(ping_interval) => {
+          trace!("Sending ping to peer");
+          stream.send(TungsteniteMessage::Ping(vec![].into())).await?;
+        },
         _ = self.cancellation_token.cancelled() => {
           info!("Cancellation token triggered, closing connection");
-          ws_sender.close().await?;
+          stream.close(None).await?;
           break;
         }
       }
     }
 
     if let Some(mut metadata_file) = sniff_metadata_file.as_ref() {
-      metadata_file.sync_all()?;
+      let _ = metadata_file.sync_all();
 
       // write close time
       let close_time = std::time::SystemTime::now()
@@ -358,6 +392,7 @@ fn open_or_none(p: &Path) -> Option<File> {
   if !ensure_parent(p) {
     return None;
   }
+
   match OpenOptions::new()
     .write(true)
     .create(true) // create if missing; don’t truncate existing content
