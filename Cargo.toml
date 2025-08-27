@@ -16,6 +16,8 @@ edition = "2021"
 
 [workspace.dependencies]
 # Workspace members
+bh-sdk = { path = "crates/bh-sdk" }
+
 xrc-commons = { path = "crates/xrc-commons" }
 
 xrc-device-manager = { path = "crates/xrc-device-manager" }
@@ -29,6 +31,7 @@ xrc-haptics-manager = { path = "crates/xrc-haptics-manager" }
 xrc-haptics-body = { path = "crates/xrc-haptics-body" }
 
 ss-osc = { path = "crates/ss-osc" }
+ss-bh = { path = "crates/ss-bh" }
 
 # Common dependencies
 # btleplug = { git = "https://github.com/senseshift/btleplug.git", branch = "appearance" }

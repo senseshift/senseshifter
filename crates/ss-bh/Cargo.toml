@@ -1,0 +1,47 @@
+[package]
+name = "ss-bh"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bh-sdk = { workspace = true, features = ["default", "serde"] }
+tokio-tungstenite = "0.27.0"
+
+xrc-commons = { workspace = true }
+
+anyhow = { workspace = true }
+derivative = { workspace = true }
+getset = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+async-stream = { workspace = true }
+async-trait = { workspace = true }
+futures = { workspace = true }
+futures-util = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-stream = { workspace = true, features = ["sync"] }
+tokio-util = { workspace = true }
+dashmap = { workspace = true }
+dyn-clone = { workspace = true }
+
+[dev-dependencies]
+tracing-subscriber = { workspace = true }
+
+[features]
+default = ["server", "client", "v1", "v2", "v3", "v4"]
+
+server = []
+
+v1 = ["bh-sdk/v1"]
+v2 = ["bh-sdk/v2"]
+v3 = ["bh-sdk/v3"]
+v4 = ["bh-sdk/v4"]
+
+client = []
+
+[[example]]
+name = "simple_server"
+path = "examples/simple_server/main.rs"
+required-features = ["server"]

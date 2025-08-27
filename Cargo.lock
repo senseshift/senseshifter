@@ -4526,6 +4526,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "ss-bh"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "async-trait",
+ "bh-sdk",
+ "dashmap",
+ "derivative",
+ "dyn-clone",
+ "futures",
+ "futures-util",
+ "getset",
+ "serde",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-stream",
+ "tokio-tungstenite",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+ "xrc-commons",
+]
+
+[[package]]
 name = "ss-osc"
 version = "0.1.0"
 dependencies = [

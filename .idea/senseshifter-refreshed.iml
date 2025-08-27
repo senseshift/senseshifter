@@ -21,6 +21,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/ss-osc/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/bh-sdk/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/bh-sdk/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/ss-bh/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/ss-bh/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
