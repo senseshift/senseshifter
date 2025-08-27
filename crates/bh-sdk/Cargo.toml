@@ -1,0 +1,29 @@
+[package]
+name = "bh-sdk"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tungstenite = "0.27.0"
+
+anyhow = { workspace = true }
+derivative = { workspace = true }
+getset = { workspace = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true, optional = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+futures-channel = "0.3.31"
+futures-util = "0.3.31"
+tokio-tungstenite = "0.27.0"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
+tracing-subscriber = { workspace = true }
+futures = { workspace = true }
+
+[features]
+
+[[example]]
+name = "ws-logging-server"
+path = "examples/ws-logging-server/main.rs"
