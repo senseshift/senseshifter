@@ -7,6 +7,8 @@ use tokio_tungstenite::{
     tungstenite::{Error, Message, Result},
 };
 
+use bh_sdk::v2::{Message as BhMessage, SubmitMessage as BhSubmitMessage};
+
 async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
     if let Err(e) = handle_connection(peer, stream).await {
         match e {
@@ -21,7 +23,10 @@ async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
     info!("New WebSocket connection: {}", peer);
     let (_ws_sender, mut ws_receiver) = ws_stream.split();
 
-    // Echo incoming WebSocket messages and send a message periodically every second.
+    // create file to log messages
+    let log_file_path = format!("data/ws_log_{}_{}_{}.jsonl", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(), peer.ip(), peer.port());
+    let mut log_file = tokio::fs::File::create(&log_file_path).await?;
+    info!("Logging messages to {}", log_file_path);
 
     loop {
         tokio::select! {
@@ -29,8 +34,21 @@ async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
                 match msg {
                     Some(msg) => {
                         let msg = msg?;
-                        if msg.is_text() ||msg.is_binary() {
-                            info!("Received a message from {}: {}", peer, msg.to_text()?);
+                        if msg.is_text() || msg.is_binary() {
+                            info!("Received a message from {}", peer);
+                            // Try to parse the message as a BhMessage
+
+                            match serde_json::from_str::<BhMessage>(msg.to_text()?) {
+                                Ok(bh_msg) => {
+                                    info!("Parsed BhMessage: {:?}", bh_msg);
+                                }
+                                Err(e) => {
+                                    warn!("Failed to parse BhMessage: {}", e);
+                                }
+                            }
+
+                            tokio::io::AsyncWriteExt::write_all(&mut log_file, msg.to_text()?.as_bytes()).await?;
+                            tokio::io::AsyncWriteExt::write_all(&mut log_file, b"\n").await?;
                         } else if msg.is_close() {
                             info!("Received close message from {}", peer);
                             break;
@@ -41,6 +59,8 @@ async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
             }
         }
     }
+
+    info!("Connection to {} closed.", peer);
 
     Ok(())
 }

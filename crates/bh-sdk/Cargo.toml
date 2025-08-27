@@ -11,6 +11,7 @@ derivative = { workspace = true }
 getset = { workspace = true }
 serde = { workspace = true, optional = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
+strum = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 futures-channel = "0.3.31"
@@ -23,6 +24,14 @@ tracing-subscriber = { workspace = true }
 futures = { workspace = true }
 
 [features]
+default = ["serde", "v1", "v2", "v3", "v4"]
+
+serde = ["dep:serde", "dep:serde_json"]
+
+v1 = []
+v2 = []
+v3 = []
+v4 = []
 
 [[example]]
 name = "ws-logging-server"
