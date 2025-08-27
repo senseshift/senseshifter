@@ -9,7 +9,9 @@ async fn main() {
     let config = BhServerConfig::default();
 
     let cancellation_token = CancellationToken::new();
-    let builder = BhServerBuilder::new(config).with_cancellation_token(cancellation_token.clone());
+    let builder = BhServerBuilder::new(config)
+        .with_cancellation_token(cancellation_token.clone())
+        .with_sniff_into(std::path::PathBuf::from("data"));
 
     let server = builder.build();
 

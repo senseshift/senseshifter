@@ -13,5 +13,8 @@ pub struct BhServerConfig {
 }
 
 fn default_listen() -> Vec<SocketAddr> {
-    vec![SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 15881)]
+    vec![
+        SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 15881),
+        SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 15882),
+    ]
 }

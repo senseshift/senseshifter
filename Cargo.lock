@@ -4540,6 +4540,7 @@ dependencies = [
  "futures-util",
  "getset",
  "serde",
+ "serde_json",
  "thiserror 1.0.69",
  "tokio",
  "tokio-stream",

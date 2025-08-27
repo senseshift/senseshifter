@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use futures::pin_mut;
 use tokio_util::sync::CancellationToken;
 
@@ -7,6 +8,7 @@ mod task;
 pub struct BhServerBuilder {
     config: config::BhServerConfig,
     cancellation_token: Option<CancellationToken>,
+    sniff_into: Option<PathBuf>,
 }
 
 impl BhServerBuilder {
@@ -16,6 +18,7 @@ impl BhServerBuilder {
         Self {
             config,
             cancellation_token: None,
+            sniff_into: None,
         }
     }
 
@@ -24,12 +27,18 @@ impl BhServerBuilder {
         self
     }
 
+    pub fn with_sniff_into(mut self, path: PathBuf) -> Self {
+        self.sniff_into = Some(path);
+        self 
+    }
+
     pub fn build(self) -> BhServer {
         let cancellation_token = self.cancellation_token.unwrap_or_else(|| CancellationToken::new());
 
         let task = task::BhServerTask::new(
             self.config.listen().clone(),
             cancellation_token,
+            self.sniff_into,
         );
 
         let _join_token = tokio::spawn(
