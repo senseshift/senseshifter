@@ -104,3 +104,7 @@
 3. I discoveded this project, also in Rust, that seems to be emulate a bH WebSocket server: `https://github.com/VRC-Haptics/VRCH-Server/blob/main/src-tauri/src/bhaptics/game/v3/mod.rs`, though v2 is empty.
 4. Found this C# MIT project that implements the protocol: `https://github.com/HerpDerpinstine/bHapticsLib`
 5. Also these: https://github.com/V1perN3st/bHaptics-Firebot/blob/main/src/bHaptics/bHapticsPlayer.ts, 
+6. After implementing some essential structs, game now connects, but effects are not played. 
+   It appears that the game sends preliminary `Register` messages to save possible haptic effects in advance, and then sends `Submit` messages to actually play them.
+   And for it to be played, the server must respond with `RegisteredKeys` message.
+7. In the headers, games send their name and id (`?app_id={tld.company.game}&app_name={game}`), so I added a logger for that.

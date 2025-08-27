@@ -3,10 +3,10 @@ use tracing::*;
 use std::{net::SocketAddr, time::Duration};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::{
-    accept_async,
+    accept_hdr_async,
     tungstenite::{Error, Message, Result},
 };
-
+use tungstenite::handshake::server::{Request, Response};
 use bh_sdk::v2::{Message as BhMessage, ResponseMessage, SubmitMessage as BhSubmitMessage};
 
 async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
@@ -19,7 +19,22 @@ async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
 }
 
 async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
-    let ws_stream = accept_async(stream).await.expect("Failed to accept");
+    let callback = |req: &Request, mut response: Response| {
+        info!("Received a new ws handshake");
+
+        info!("The request's URI is: {}", req.uri());
+        info!("The request's headers are:");
+        for (ref header, _value) in req.headers() {
+            info!("* {}: {:?}", header, _value);
+        }
+
+        let headers = response.headers_mut();
+        headers.append("MyCustomHeader", ":)".parse().unwrap());
+
+        Ok(response)
+    };
+
+    let ws_stream = accept_hdr_async(stream, callback).await.expect("Failed to accept");
     info!("New WebSocket connection: {}", peer);
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
