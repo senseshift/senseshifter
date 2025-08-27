@@ -7,7 +7,7 @@ use tokio_tungstenite::{
     tungstenite::{Error, Message, Result},
 };
 use tungstenite::handshake::server::{Request, Response};
-use bh_sdk::v2::{Message as BhV2Message, ResponseMessage as BhV2ResponseMessage};
+use bh_sdk::v2::{ClientMessage as BhV2Message, ServerMessage as BhV2ResponseMessage};
 
 #[derive(Debug, Clone)]
 enum ApiVersion {
