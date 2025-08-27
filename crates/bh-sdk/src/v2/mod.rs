@@ -1,4 +1,5 @@
 use derivative::Derivative;
+use getset::Getters;
 use serde::Deserialize;
 
 #[derive(Derivative)]
@@ -10,7 +11,8 @@ pub enum Message {
     Submit(Vec<SubmitMessage>)
 }
 
-#[derive(Derivative)]
+#[derive(Derivative, Getters)]
+#[get = "pub"]
 #[derivative(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RegisterMessage {
@@ -23,8 +25,8 @@ pub struct RegisterMessage {
 #[derivative(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Project {
-    id: String,
-    name: String,
+    id: Option<String>,
+    name: Option<String>,
     description: Option<String>,
 
     layout: serde_json::Value,
@@ -46,6 +48,11 @@ pub enum SubmitMessage {
         #[serde(rename = "Key", deserialize_with = "deserialize_key_to_string")]
         key: String,
     },
+    #[serde(rename = "key", rename_all = "PascalCase")]
+    Key {
+        #[serde(rename = "Key", deserialize_with = "deserialize_key_to_string")]
+        key: String,
+    },
     #[serde(rename = "frame", rename_all = "PascalCase")]
     Frame {
         #[serde(rename = "Key", deserialize_with = "deserialize_key_to_string")]
@@ -58,10 +65,14 @@ pub enum SubmitMessage {
 //     position: String,
 // }
 
+#[derive(Derivative)]
+#[derivative(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[serde(rename_all = "PascalCase")]
 pub enum ResponseMessage {
     ConnectedDeviceCount(u32),
     ActiveKeys,
-    RegisteredKeys,
+    RegisteredKeys(Vec<String>),
     ConnectedPositions,
     ConnectionPositions,
     Status,

@@ -7,7 +7,7 @@ use tokio_tungstenite::{
     tungstenite::{Error, Message, Result},
 };
 
-use bh_sdk::v2::{Message as BhMessage, SubmitMessage as BhSubmitMessage};
+use bh_sdk::v2::{Message as BhMessage, ResponseMessage, SubmitMessage as BhSubmitMessage};
 
 async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
     if let Err(e) = handle_connection(peer, stream).await {
@@ -21,12 +21,14 @@ async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
 async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
     let ws_stream = accept_async(stream).await.expect("Failed to accept");
     info!("New WebSocket connection: {}", peer);
-    let (_ws_sender, mut ws_receiver) = ws_stream.split();
+    let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
     // create file to log messages
     let log_file_path = format!("data/ws_log_{}_{}_{}.jsonl", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(), peer.ip(), peer.port());
     let mut log_file = tokio::fs::File::create(&log_file_path).await?;
     info!("Logging messages to {}", log_file_path);
+
+    let mut registered_keys: Vec<String> = Vec::new();
 
     loop {
         tokio::select! {
@@ -38,17 +40,36 @@ async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
                             info!("Received a message from {}", peer);
                             // Try to parse the message as a BhMessage
 
-                            match serde_json::from_str::<BhMessage>(msg.to_text()?) {
-                                Ok(bh_msg) => {
-                                    info!("Parsed BhMessage: {:?}", bh_msg);
-                                }
-                                Err(e) => {
-                                    warn!("Failed to parse BhMessage: {}", e);
-                                }
-                            }
-
                             tokio::io::AsyncWriteExt::write_all(&mut log_file, msg.to_text()?.as_bytes()).await?;
                             tokio::io::AsyncWriteExt::write_all(&mut log_file, b"\n").await?;
+
+                            let message = match serde_json::from_str::<BhMessage>(msg.to_text()?) {
+                                Ok(bh_msg) => bh_msg,
+                                Err(e) => {
+                                    warn!("Failed to parse BhMessage: {}", e);
+                                    continue;
+                                }
+                            };
+
+                            info!("Parsed BhMessage: {:?}", message);
+
+                            match message {
+                                BhMessage::Register(registers) => {
+                                    for reg in registers {
+                                        if !registered_keys.contains(&reg.key()) {
+                                            registered_keys.push(reg.key().to_string());
+                                        }
+                                    }
+
+                                    let response = ResponseMessage::RegisteredKeys(registered_keys.clone());
+
+                                    let response_text = serde_json::to_string(&response).unwrap();
+                                    ws_sender.send(Message::Text(response_text.into())).await?;
+                                }
+                                _ => {
+                                    warn!("Unhandled BhMessage type");
+                                }
+                            }
                         } else if msg.is_close() {
                             info!("Received close message from {}", peer);
                             break;
