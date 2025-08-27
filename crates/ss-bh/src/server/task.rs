@@ -10,7 +10,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::{accept_hdr_async, WebSocketStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{*, Instrument};
-use tokio_tungstenite::tungstenite::{Error as TungsteniteError, Error};
+use tokio_tungstenite::tungstenite::{Error, Message};
 use tokio_tungstenite::tungstenite::handshake::server::{Request, Response};
 
 pub(crate) struct BhServerTask {
@@ -137,6 +137,12 @@ impl BhServerConnectionTask {
         self.handle_connection(&request, ws_stream).await
     }
 
+    #[tracing::instrument(
+        skip(self, request, stream),
+        fields(
+            uri = %request.uri()
+        )
+    )]
     async fn handle_connection(
         &self,
         request: &Request,
@@ -152,8 +158,12 @@ impl BhServerConnectionTask {
 
                 let file_name = format!("{}_{}_{}", timestamp, self.peer.ip(), self.peer.port());
 
-                let file_path = p.join(format!("{}.jsonl", file_name));
-                let metadata_file_path = p.join(format!("{}.metadata", file_name));
+                let prefix = timestamp.to_string().get(0..5)
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
+
+                let file_path = p.join(prefix.clone()).join(format!("{}.jsonl", file_name));
+                let metadata_file_path = p.join(prefix).join(format!("{}.metadata", file_name));
 
                 (file_path, metadata_file_path)
             });
@@ -176,26 +186,35 @@ impl BhServerConnectionTask {
             }
         }
 
-        match request.uri().path().split("/").nth(1) {
+        let path = request.uri().path();
+        let version = extract_api_version_from_path(path);
+        
+        match version {
             #[cfg(feature = "v1")]
-            Some("v1") => {
-                // unimplemented!("v1 SDK is not yet!")
+            Some(1) => {
+                info!("Handling V1 API request");
+                // TODO: Route to V1 handler
             },
             #[cfg(feature = "v2")]
-            Some("v2") => {
-                // unimplemented!("v2 SDK is not yet!")
+            Some(2) => {
+                info!("Handling V2 API request");
+                // TODO: Route to V2 handler  
             },
             #[cfg(feature = "v3")]
-            Some("v3") => {
-                // unimplemented!("v3 SDK is not yet!")
+            Some(3) => {
+                info!("Handling V3 API request");
+                // TODO: Route to V3 handler
             }
             #[cfg(feature = "v4")]
-            Some("v4") => {
-                // unimplemented!("v4 SDK is not yet!")
+            Some(4) => {
+                info!("Handling V4 API request");
+                // TODO: Route to V4 handler
             }
-            _ => {
-                warn!("Unsupported path: {}", request.uri().path());
-                // return Err(anyhow::anyhow!("Unsupported API"));
+            Some(version) => {
+                warn!("Unsupported API version: v{} for path: {}", version, path);
+            }
+            None => {
+                warn!("No API version detected in path: {}", path);
             }
         }
 
@@ -208,24 +227,42 @@ impl BhServerConnectionTask {
                         Some(Ok(msg)) => {
                             debug!("Received message: {:?}", msg);
 
-                            if msg.is_text() || msg.is_binary() {
-                                if let Some(mut sniff_file) = sniff_file.as_ref() {
-                                    match sniff_file.write_all([msg.to_text()?.as_bytes(), b"\n"].concat().as_slice()) {
-                                        Ok(_) => {
-                                            trace!("Wrote message to {:?}", sniff_file);
-                                        }
-                                        Err(e) => {
-                                            error!("Failed to write message to {:?}: {}", sniff_file, e);
+                            match msg {
+                                Message::Text(_) | Message::Binary(_) => {
+                                    if let Some(mut sniff_file) = sniff_file.as_ref() {
+                                        match sniff_file.write_all([msg.to_text()?.as_bytes(), b"\n"].concat().as_slice()) {
+                                            Ok(_) => {
+                                                trace!("Wrote message to {:?}", sniff_file);
+                                            }
+                                            Err(e) => {
+                                                error!("Failed to write message to {:?}: {}", sniff_file, e);
+                                            }
                                         }
                                     }
-                                }
-                            } else if msg.is_close() {
-                                info!("Received close message from peer");
-                                break;
-                            }
 
-                            // Echo the message back
-                            ws_sender.send(msg).await?;
+                                    // todo: handle & route message
+                                }
+                                Message::Close(close_frame) => {
+                                    info!("Received close message from peer: {:?}", close_frame);
+                                    // Respond with a close frame to complete the close handshake
+                                    let _ = ws_sender.close().await;
+                                    break;
+                                }
+                                Message::Ping(data) => {
+                                    debug!("Received ping from peer");
+                                    // Respond with pong
+                                    if let Err(e) = ws_sender.send(Message::Pong(data)).await {
+                                        error!("Failed to send pong: {}", e);
+                                    }
+                                }
+                                Message::Pong(_) => {
+                                    debug!("Received pong from peer");
+                                    // Just acknowledge, no action needed
+                                }
+                                Message::Frame(_) => {
+                                    warn!("Received raw frame, this shouldn't happen in high-level API");
+                                }
+                            }
                         }
                         Some(Err(Error::ConnectionClosed | Error::Protocol(_) | Error::Utf8(_))) => {
                             info!("Connection closed by peer: {}", self.peer);
@@ -249,7 +286,52 @@ impl BhServerConnectionTask {
             }
         }
 
+        if let Some(mut metadata_file) = sniff_metadata_file.as_ref() {
+            metadata_file.sync_all()?;
+
+            // write close time
+            let close_time = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+
+            match metadata_file.write_all(format!("close_time: {}\n", close_time).as_bytes()) {
+                Ok(_) => {
+                    trace!("Wrote close time to {:?}", metadata_file);
+                }
+                Err(e) => {
+                    error!("Failed to write close time to {:?}: {}", metadata_file, e);
+                }
+            }
+        }
+
         Ok(())
+    }
+}
+
+/// Extract API version from path like "/v2/feedbacks" -> Some(2)
+fn extract_api_version_from_path(path: &str) -> Option<u8> {
+    // Match patterns like "/v1/...", "/v2/...", "/v3/...", "/v4/..."
+    let parts: Vec<&str> = path.split('/').collect();
+    
+    // Path should be like ["", "v2", "feedbacks", ...] after splitting "/"
+    if parts.len() >= 2 {
+        let version_part = parts[1];
+        
+        // Check if it starts with "v" followed by a number
+        if version_part.starts_with('v') && version_part.len() >= 2 {
+            let version_str = &version_part[1..]; // Remove the "v" prefix
+            
+            // Try to parse the version number
+            match version_str.parse::<u8>() {
+                Ok(version) if (1..=255).contains(&version) => Some(version),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    } else {
+        None
     }
 }
 
