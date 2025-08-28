@@ -22,6 +22,13 @@ tokio-tungstenite = "0.27.0"
 tokio = { workspace = true, features = ["full"] }
 tracing-subscriber = { workspace = true }
 futures = { workspace = true }
+# Crypto dependencies for encrypted examples
+aes-gcm = "0.10"
+rsa = "0.9"
+base64 = "0.22"
+rand = "0.8"
+hex = "0.4"
+url = "2.5"
 
 [features]
 default = ["serde", "v1", "v2", "v3", "v4"]
@@ -36,3 +43,11 @@ v4 = []
 [[example]]
 name = "ws-logging-server"
 path = "examples/ws-logging-server/main.rs"
+
+[[example]]
+name = "v4-client"
+path = "examples/v4-client.rs"
+
+[[example]]
+name = "v4-server"
+path = "examples/v4-server.rs"
