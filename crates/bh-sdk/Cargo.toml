@@ -29,6 +29,8 @@ base64 = "0.22"
 rand = "0.8"
 hex = "0.4"
 url = "2.5"
+http = "0.2"
+httparse = "1.8"
 
 [features]
 default = ["serde", "v1", "v2", "v3", "v4"]
@@ -51,3 +53,7 @@ path = "examples/v4-client.rs"
 [[example]]
 name = "v4-server"
 path = "examples/v4-server.rs"
+
+[[example]]
+name = "mitm-server"
+path = "examples/mitm-server.rs"

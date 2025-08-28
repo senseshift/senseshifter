@@ -1,26 +1,16 @@
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose::STANDARD, Engine};
-use bh_sdk::v4::SdkEncryptedMessage;
+use bh_sdk::v4::{SdkEncryptedMessage, SdkData, SdkDataType};
 use futures_util::{SinkExt, StreamExt};
 use rand::RngCore;
 use rsa::{
     pkcs1::DecodeRsaPublicKey, pkcs8::DecodePublicKey, Pkcs1v15Encrypt, RsaPublicKey,
 };
-use serde::{Deserialize, Serialize};
 use std::env;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 use tracing::{error, info};
-use bh_sdk::v4::SdkEncryptedMessageType::{SdkClientKey, SdkData};
+use bh_sdk::v4::SdkEncryptedMessageType::{SdkClientKey, SdkData as SdkDataEncryptedType};
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-struct SdkMessage {
-    r#type: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    ts: Option<u64>,
-}
 
 struct CryptoClient {
     aes_key: Option<[u8; 32]>,
@@ -179,16 +169,15 @@ async fn main() -> Result<()> {
                                                 // Send a ping after establishing AES
                                                 tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
                                                 
-                                                let ping_msg = SdkMessage {
-                                                    r#type: "SdkPingAll".to_string(),
-                                                    message: Some("".to_string()),
-                                                    ts: None,
-                                                };
+                                                let ping_data = SdkData::new(
+                                                    SdkDataType::SdkPingAll,
+                                                    Some("".to_string())
+                                                );
 
-                                                if let Ok(ping_json) = serde_json::to_string(&ping_msg) {
+                                                if let Ok(ping_json) = serde_json::to_string(&ping_data) {
                                                     if let Ok(encrypted_data) = crypto_client.encrypt_aes_gcm(&ping_json) {
                                                         let encrypted_msg = SdkEncryptedMessage::new(
-                                                            SdkData,
+                                                            SdkDataEncryptedType,
                                                             None,
                                                             Some(encrypted_data),
                                                         );
@@ -207,17 +196,18 @@ async fn main() -> Result<()> {
                                         }
                                     }
                                 }
-                                SdkData => {
+                                bh_sdk::v4::SdkEncryptedMessageType::SdkData => {
                                     if let Some(encrypted_data) = sdk_msg.data() {
                                         match crypto_client.decrypt_aes_gcm(encrypted_data) {
                                             Ok(plaintext) => {
                                                 info!("SdkData ← {}", plaintext);
                                                 
                                                 // Handle specific message types
-                                                if let Ok(parsed_msg) = serde_json::from_str::<SdkMessage>(&plaintext) {
-                                                    if parsed_msg.r#type == "SdkPongAll" {
-                                                        info!("Got pong: {:?}", parsed_msg);
-                                                    }
+                                                if let Ok(parsed_data) = serde_json::from_str::<SdkData>(&plaintext) {
+                                                    info!("Got SdkData: {:?}", parsed_data);
+                                                } else {
+                                                    // Handle generic JSON for test responses
+                                                    info!("Got plaintext response: {}", plaintext);
                                                 }
                                             }
                                             Err(e) => error!("AES decrypt error: {}", e),

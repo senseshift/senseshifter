@@ -1,12 +1,11 @@
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose::STANDARD, Engine};
-use bh_sdk::v4::{SdkEncryptedMessage, SdkEncryptedMessageType};
+use bh_sdk::v4::{SdkEncryptedMessage, SdkEncryptedMessageType, SdkData, SdkDataType};
 use futures_util::{SinkExt, StreamExt};
 use rand::RngCore;
 use rsa::{
     pkcs8::EncodePublicKey, Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey
 };
-use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
@@ -15,17 +14,8 @@ use tokio_tungstenite::{
     tungstenite::Message,
 };
 use tracing::{error, info, warn};
-use bh_sdk::v4::SdkEncryptedMessageType::{SdkData, ServerKey};
+use bh_sdk::v4::SdkEncryptedMessageType::{SdkData as SdkDataMsg, ServerKey};
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-struct SdkMessage {
-    r#type: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    ts: Option<u64>,
-}
 
 struct ClientConnection {
     aes_key: Option<[u8; 32]>,
@@ -190,20 +180,14 @@ impl ServerState {
                                                 }
                                             }
 
-                                            // Send welcome message
-                                            let welcome_msg = SdkMessage {
-                                                r#type: "SdkServerHello".to_string(),
-                                                message: Some("hi".to_string()),
-                                                ts: None,
-                                            };
-                                            
-                                            let welcome_json = serde_json::to_string(&welcome_msg)?;
+                                            // Send a simple test welcome (this would be removed in production)
+                                            let welcome_json = r#"{"Type":"TestWelcome","Message":"hi"}"#;
                                             
                                             let clients = self.clients.lock().await;
                                             if let Some(client) = clients.get(&conn_id) {
-                                                if let Ok(encrypted_data) = client.encrypt_aes_gcm(&welcome_json) {
+                                                if let Ok(encrypted_data) = client.encrypt_aes_gcm(welcome_json) {
                                                     let encrypted_msg = SdkEncryptedMessage::new(
-                                                        SdkData,
+                                                        SdkDataMsg,
                                                         None,
                                                         Some(encrypted_data),
                                                     );
@@ -219,7 +203,7 @@ impl ServerState {
                                     }
                                 }
                             }
-                            SdkData => {
+                            bh_sdk::v4::SdkEncryptedMessageType::SdkData => {
                                 if let Some(encrypted_data) = sdk_msg.data() {
                                     let clients = self.clients.lock().await;
                                     if let Some(client) = clients.get(&conn_id) {
@@ -227,31 +211,38 @@ impl ServerState {
                                             Ok(plaintext) => {
                                                 info!("[{}] SdkData ← {}", conn_id, plaintext);
                                                 
-                                                // Handle ping-pong
-                                                if let Ok(parsed_msg) = serde_json::from_str::<SdkMessage>(&plaintext) {
-                                                    if parsed_msg.r#type == "SdkPingAll" {
-                                                        let pong_msg = SdkMessage {
-                                                            r#type: "SdkPongAll".to_string(),
-                                                            message: None,
-                                                            ts: Some(std::time::SystemTime::now()
-                                                                .duration_since(std::time::UNIX_EPOCH)
-                                                                .unwrap()
-                                                                .as_millis() as u64),
-                                                        };
-                                                        
-                                                        let pong_json = serde_json::to_string(&pong_msg)?;
-                                                        
-                                                        if let Ok(encrypted_pong) = client.encrypt_aes_gcm(&pong_json) {
-                                                            let encrypted_msg = SdkEncryptedMessage::new(
-                                                                SdkData,
-                                                                None,
-                                                                Some(encrypted_pong),
+                                                // Handle SdkData messages
+                                                if let Ok(parsed_data) = serde_json::from_str::<SdkData>(&plaintext) {
+                                                    match parsed_data.r#type() {
+                                                        SdkDataType::SdkPingAll => {
+                                                            info!("[{}] Got ping from client", conn_id);
+                                                            
+                                                            // Send a test pong response (not using real SdkData structure for testing)
+                                                            let pong_json = format!(
+                                                                r#"{{"Type":"TestPong","ts":{}}}"#,
+                                                                std::time::SystemTime::now()
+                                                                    .duration_since(std::time::UNIX_EPOCH)
+                                                                    .unwrap()
+                                                                    .as_millis()
                                                             );
                                                             
-                                                            let encrypted_json = serde_json::to_string(&encrypted_msg)?;
-                                                            write.send(Message::Text(encrypted_json.into())).await?;
+                                                            if let Ok(encrypted_pong) = client.encrypt_aes_gcm(&pong_json) {
+                                                                let encrypted_msg = SdkEncryptedMessage::new(
+                                                                    SdkDataMsg,
+                                                                    None,
+                                                                    Some(encrypted_pong),
+                                                                );
+                                                                
+                                                                let encrypted_json = serde_json::to_string(&encrypted_msg)?;
+                                                                write.send(Message::Text(encrypted_json.into())).await?;
+                                                            }
+                                                        }
+                                                        _ => {
+                                                            info!("[{}] Got other SdkData: {:?}", conn_id, parsed_data.r#type());
                                                         }
                                                     }
+                                                } else {
+                                                    info!("[{}] Got non-SdkData plaintext: {}", conn_id, plaintext);
                                                 }
                                             }
                                             Err(e) => {
