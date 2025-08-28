@@ -38,6 +38,7 @@ ss-bh = { path = "crates/ss-bh" }
 btleplug = { path = "../btleplug" }
 # rshapes = { git = "https://github.com/senseshift/rshapes.git" }
 rshapes = { path = "../rshapes" }
+reqwest = "^0.12.23"
 
 tokio-serial = "^5.4.4"
 

@@ -6,6 +6,12 @@ edition.workspace = true
 [dependencies]
 bh-sdk = { workspace = true, features = ["default", "serde"] }
 tokio-tungstenite = "0.27.0"
+reqwest = { workspace = true, optional = true }
+base64 = "0.22.1"
+asn1 = { version = "0.22.0", optional = true }
+spki = { version = "0.7.3", optional = true }
+pem = { version = "3.0.5", optional = true }
+ring = { version = "0.17.14", optional = true}
 
 xrc-commons = { workspace = true }
 
@@ -14,6 +20,7 @@ derivative = { workspace = true }
 getset = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+serde_qs = "0.15"
 thiserror = { workspace = true }
 tracing = { workspace = true }
 
@@ -37,8 +44,8 @@ server = []
 
 v1 = ["bh-sdk/v1"]
 v2 = ["bh-sdk/v2"]
-v3 = ["bh-sdk/v3"]
-v4 = ["bh-sdk/v4"]
+v3 = ["bh-sdk/v3", "dep:reqwest"]
+v4 = ["bh-sdk/v4", "dep:reqwest", "dep:asn1", "dep:spki", "dep:pem", "dep:ring"]
 
 client = []
 

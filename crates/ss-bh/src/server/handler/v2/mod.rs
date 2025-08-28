@@ -1,7 +1,7 @@
 use bh_sdk::v2::{ClientMessage, ServerMessage};
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::UnboundedSender;
-use tokio_tungstenite::tungstenite::{Message as TungsteniteMessage, Message};
+use tokio_tungstenite::tungstenite::{Message as TungsteniteMessage};
 use tracing::{info, trace};
 
 pub struct V2Handler {

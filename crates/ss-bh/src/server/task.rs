@@ -15,6 +15,7 @@ use tokio_tungstenite::tungstenite::{Error as TungsteniteError, Message as Tungs
 use tokio_tungstenite::{accept_hdr_async, WebSocketStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, *};
+use crate::server::handler::v4::{V4Handler, V4HandlerBuilder};
 
 pub(crate) struct BhServerTask {
   listen: Vec<SocketAddr>,
@@ -216,7 +217,6 @@ impl BhServerConnectionTask {
       Some(2) => {
         info!("Handling V2 API request");
         Handler::V2(V2Handler::new(sender))
-        // TODO: Route to V2 handler
       }
       #[cfg(feature = "v3")]
       Some(3) => {
@@ -227,8 +227,7 @@ impl BhServerConnectionTask {
       #[cfg(feature = "v4")]
       Some(4) => {
         info!("Handling V4 API request");
-        Handler::Undefined
-        // TODO: Route to V4 handler
+        Handler::V4(V4HandlerBuilder::new().build(request.clone(), sender)?)
       }
       Some(version) => {
         warn!("Unsupported API version: v{} for path: {}", version, path);
