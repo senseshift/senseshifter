@@ -2,11 +2,15 @@ use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use bh_sdk::v4::{SdkEncryptedMessage, SdkEncryptedMessageType, SdkData, SdkDataType};
 use futures_util::{SinkExt, StreamExt};
-use rand::RngCore;
 use rsa::{
     pkcs8::EncodePublicKey, Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey
 };
 use std::{collections::HashMap, net::SocketAddr, sync::Arc};
+use rand::prelude::*;
+use rand::rngs::OsRng;
+use rand::rngs::ReseedingRng;
+use rand_chacha::rand_core::UnwrapErr;
+use rand_chacha::{ChaCha12Rng, ChaCha20Core, ChaCha20Rng, ChaCha8Rng};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
 use tokio_tungstenite::{
@@ -98,7 +102,8 @@ struct ServerState {
 
 impl ServerState {
     fn new() -> Result<Self> {
-        let mut rng = rand::thread_rng();
+        let mut rng = ChaCha20Rng::from_rng(&mut rand::rng());
+
         let private_key = RsaPrivateKey::new(&mut rng, 2048)?;
         let public_key = RsaPublicKey::from(&private_key);
         

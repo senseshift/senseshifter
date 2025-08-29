@@ -5,6 +5,9 @@ edition.workspace = true
 
 [dependencies]
 tungstenite = "0.27.0"
+rand = { workspace = true, optional = true}
+rand_chacha = { workspace = true, optional = true}
+rsa = { workspace = true, optional = true}
 
 anyhow = { workspace = true }
 derivative = { workspace = true }
@@ -24,13 +27,8 @@ tracing-subscriber = { workspace = true }
 futures = { workspace = true }
 # Crypto dependencies for encrypted examples
 aes-gcm = "0.10"
-rsa = "0.9"
 base64 = "0.22"
-rand = "0.8"
 hex = "0.4"
-url = "2.5"
-http = "0.2"
-httparse = "1.8"
 
 [features]
 default = ["serde", "v1", "v2", "v3", "v4"]
@@ -40,7 +38,7 @@ serde = ["dep:serde", "dep:serde_json"]
 v1 = []
 v2 = []
 v3 = []
-v4 = []
+v4 = ["dep:rand", "dep:rand_chacha", "dep:rsa"]
 
 [[example]]
 name = "ws-logging-server"
@@ -49,11 +47,14 @@ path = "examples/ws-logging-server/main.rs"
 [[example]]
 name = "v4-client"
 path = "examples/v4-client.rs"
+required-features = ["v4"]
 
 [[example]]
 name = "v4-server"
 path = "examples/v4-server.rs"
+required-features = ["v4"]
 
 [[example]]
 name = "mitm-server"
 path = "examples/mitm-server.rs"
+required-features = ["v4"]

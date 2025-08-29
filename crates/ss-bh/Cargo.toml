@@ -7,11 +7,12 @@ edition.workspace = true
 bh-sdk = { workspace = true, features = ["default", "serde"] }
 tokio-tungstenite = "0.27.0"
 reqwest = { workspace = true, optional = true }
-base64 = "0.22.1"
-asn1 = { version = "0.22.0", optional = true }
-spki = { version = "0.7.3", optional = true }
-pem = { version = "3.0.5", optional = true }
-ring = { version = "0.17.14", optional = true}
+
+base64 = { workspace = true }
+aes-gcm = { workspace = true, optional = true }
+rsa = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
 
 xrc-commons = { workspace = true }
 
@@ -45,7 +46,7 @@ server = []
 v1 = ["bh-sdk/v1"]
 v2 = ["bh-sdk/v2"]
 v3 = ["bh-sdk/v3", "dep:reqwest"]
-v4 = ["bh-sdk/v4", "dep:reqwest", "dep:asn1", "dep:spki", "dep:pem", "dep:ring"]
+v4 = ["bh-sdk/v4", "dep:reqwest", "dep:aes-gcm", "dep:rsa", "dep:rand", "dep:rand_chacha"]
 
 client = []
 

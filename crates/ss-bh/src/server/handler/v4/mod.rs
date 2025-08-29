@@ -1,12 +1,25 @@
+mod crypto;
+
+use crypto::*;
+use crate::server::handler::common::fetch_haptic_definitions;
+use bh_sdk::v4::SdkEncryptedMessage;
+
 use derivative::Derivative;
 use getset::Getters;
 use serde::{Deserialize, Serialize};
+
+use std::sync::{Arc, Mutex};
+
+use rand::SeedableRng;
+use rand_chacha::ChaCha20Rng;
+use rsa::{RsaPrivateKey};
+
 use tokio::sync::mpsc::UnboundedSender;
-use tokio_tungstenite::tungstenite::{Message as TungsteniteMessage};
 use tokio_tungstenite::tungstenite::handshake::server::Request as TungsteniteRequest;
-use tracing::{*, Instrument};
-use bh_sdk::v4::SdkEncryptedMessage;
-use crate::server::handler::common::fetch_haptic_definitions;
+use tokio_tungstenite::tungstenite::Message as TungsteniteMessage;
+
+use tracing::{Instrument, *};
+use anyhow::anyhow;
 
 #[derive(Derivative, Getters, Serialize, Deserialize)]
 #[get = "pub"]
@@ -23,16 +36,20 @@ fn default_app_version() -> String {
 }
 
 pub struct V4HandlerBuilder {
-}
-
-fn get_server_key() -> String {
-  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsTEzseYMqrG9JXbTnfWVUqV95k0yzkqiixokLTNrfCnpn7FEhZqPd6VBVXbZlAyijrjBio4ptKneFn8KDP0mYRvR3LTiEuIRoKmG9dlPBNQ4w0OafncYY+fM99WuWRSz1P7Ai/D4cAeoUkVZzKLNuePqayQueRV3i3xS76KBpHso5yJHl7Oheco4EZa+mWhjTiDbKhVTe/Mt+Xy/Amm6EmlVIyJLdOKdclBvEdc4Ja+fZ/yGqt61s2PHQGvFUZzW5GNmmYbQ5NM3zcNeudmICgHSQ/C2s5P5tALdpdE9F5z3GIv6oYG/RvkdtaMDn3GAEgrhcBDgJaABEe9mIx7RDQIDAQAB".to_string()
+  private_key: Option<RsaPrivateKey>
 }
 
 impl V4HandlerBuilder {
   pub fn new() -> Self {
     Self {
+      private_key: None,
     }
+  }
+
+  #[allow(dead_code)]
+  pub fn private_key(mut self, private_key: RsaPrivateKey) -> Self {
+    self.private_key = Some(private_key);
+    self
   }
 
   pub fn build(
@@ -44,17 +61,19 @@ impl V4HandlerBuilder {
     let query = uri.query().unwrap_or_default();
     let app_definitions: AppDefinitions = serde_qs::from_str(query)?;
 
-    // let decoded_server_key = base64::decode(get_server_key())?;
-    // let data = &decoded_server_key[..];
+    let mut rng = ChaCha20Rng::from_rng(&mut rand::rng());
 
-    let encrypted_message = SdkEncryptedMessage::new(
-      "ServerKey".to_string(),
-      Some(get_server_key()),
-      // fill 588/2 = 294 bytes with 'zero' and then base64 encode
-      // Some(base64::encode(vec![0u8; 294])),
-      None,
-    );
-    sender.send(TungsteniteMessage::Text(serde_json::to_string(&encrypted_message)?.into()))?;
+    let private_key = match self.private_key {
+      Some(key) => key,
+      None => {
+        info!("Generating new RSA key");
+
+        RsaPrivateKey::new(&mut rng, 2048)?
+      },
+    };
+
+    let crypto_context = CryptoContext::new(rng, private_key)?;
+    let crypto_context = Arc::new(Mutex::new(crypto_context));
 
     let handler = V4Handler {
       app_definitions: app_definitions.clone(),
@@ -70,9 +89,9 @@ impl V4HandlerBuilder {
           app_definitions.api_key.clone(),
           // app_definitions.version.clone(),
         ).await.unwrap_or_else(|e| {
-          eprintln!("Failed to fetch haptic definitions: {}", e);
+          error!("Failed to fetch haptic definitions: {}", e);
         });
-      }.instrument(info_span!("fetch_haptic_definitions"))
+      }.instrument(info_span!("fetch_haptic_definitions_task"))
     );
 
     Ok(handler)

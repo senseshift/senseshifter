@@ -30,6 +30,9 @@ pub enum SdkEncryptedMessageType {
 
   SdkClientKey,
   SdkData,
+
+  /// Not the actual type, left here to debug in the future
+  Unknown(String),
 }
 
 /// Unencrypted message inside SdkEncryptedMessage
@@ -44,6 +47,9 @@ pub struct SdkMessage {
 pub enum SdkMessageData {
   Object(SdkData),
   Array(Vec<SdkData>),
+
+  /// Not the actual type, left here to debug in the future
+  Unknown(String),
 }
 
 #[derive(Derivative, Getters)]
@@ -79,12 +85,35 @@ impl SdkData {
 pub enum SdkDataType {
   ServerReady,
   ServerDevices,
-  ServerEventNameList,
   ServerEventList,
+  ServerEventNameList,
+  ServerActiveEventNameList,
+  ServerActiveRequestIdList,
 
+  SdkRequestReInit,
+  SdkSwapPosition,
+
+  SdkPing,
   SdkPingAll,
-  SdkPlayDotMode,
+
+  SdkPlay,
   SdkPlayWithStartTime,
+  SdkPlayDotMode,
   SdkPlayPathMode,
+  SdkPlayLoop,
+
+  /// Most likely used for gloves, since they have LRAs and not ERMs, and support waveform patterns
+  SdkPlayWaveformMode8,
+
+  SdkStopAll,
   SdkStopByEventId,
+  SdkStopByRequestId,
+
+  SdkPause,
+  SdkResume,
+
+  SdkDeviceSetVSM,
+
+  /// Not the actual type, left here to debug in the future
+  Unknown(String),
 }

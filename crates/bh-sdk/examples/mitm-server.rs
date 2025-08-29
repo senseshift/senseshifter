@@ -2,11 +2,15 @@ use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use bh_sdk::v4::{SdkEncryptedMessage, SdkEncryptedMessageType};
 use futures_util::{SinkExt, StreamExt};
-use rand::RngCore;
+
+use rand::prelude::*;
+use rand_chacha::{ChaCha20Rng};
+
 use rsa::{
     pkcs8::EncodePublicKey, Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey,
     pkcs1::DecodeRsaPublicKey, pkcs8::DecodePublicKey
 };
+
 use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
@@ -114,7 +118,8 @@ impl MitmConnection {
 
 impl MitmServer {
     fn new(server_url: String) -> Result<Self> {
-        let mut rng = rand::thread_rng();
+        let mut rng = ChaCha20Rng::from_rng(&mut rand::rng());
+
         let private_key = RsaPrivateKey::new(&mut rng, 2048)?;
         let public_key = RsaPublicKey::from(&private_key);
         
