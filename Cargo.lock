@@ -5055,6 +5055,7 @@ dependencies = [
  "tokio-util",
  "tracing",
  "tracing-subscriber",
+ "walkdir",
  "xrc-commons",
 ]
 

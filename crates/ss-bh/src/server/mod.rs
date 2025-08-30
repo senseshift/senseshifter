@@ -5,6 +5,7 @@ use tokio_util::sync::CancellationToken;
 pub mod config;
 pub(crate) mod handler;
 mod task;
+pub mod haptic_definitions;
 
 pub struct BhServerBuilder {
   config: config::BhServerConfig,

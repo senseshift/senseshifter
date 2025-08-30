@@ -38,6 +38,8 @@ dyn-clone = { workspace = true }
 [dev-dependencies]
 tracing-subscriber = { workspace = true }
 
+walkdir = "2.5.0"
+
 [features]
 default = ["server", "client", "v1", "v2", "v3", "v4"]
 
