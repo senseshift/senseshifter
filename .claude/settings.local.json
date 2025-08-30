@@ -9,7 +9,8 @@
       "WebSearch",
       "WebFetch(domain:v2.tauri.app)",
       "WebFetch(domain:melvinoostendorp.nl)",
-      "Bash(pnpm shadcn add:*)"
+      "Bash(pnpm shadcn add:*)",
+      "WebFetch(domain:docs.vrchat.com)"
     ],
     "deny": [],
     "ask": []

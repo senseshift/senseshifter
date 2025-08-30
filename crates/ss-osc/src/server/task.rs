@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use crate::Result;
 
 use tokio_util::sync::CancellationToken;
@@ -57,9 +58,17 @@ impl OscServerTask {
         }
     }
 
+    #[tracing::instrument(
+        skip(self),
+        fields(
+            udp_addrs = ?self.udp_addrs,
+            tcp_addrs = ?self.tcp_addrs,
+        )
+    )]
     pub async fn run(
         &mut self,
     ) -> Result<()> {
+
         if self.udp_addrs.is_empty() && self.tcp_addrs.is_empty() {
             return Err(anyhow::anyhow!("At least one UDP or TCP address must be provided for the OSC server."));
         }
@@ -71,7 +80,7 @@ impl OscServerTask {
             anyhow::anyhow!("Failed to connect to targets: {}", e)
         })?;
         
-        // Start command listener for manual reconnect/disconnect
+        // Start a command listener for manual reconnect/disconnect
         self.connection_manager.start_command_listener().await.map_err(|e| {
             error!("Failed to start command listener: {}", e);
             anyhow::anyhow!("Failed to start command listener: {}", e)
