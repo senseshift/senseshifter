@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "senseshifter-reshifted"
+name = "bh-sdk"
 version = "0.1.0"

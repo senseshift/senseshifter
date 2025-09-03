@@ -1,6 +1,23 @@
-[package]
-name = "senseshifter-reshifted"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+resolver = "3"
+members = [
+    "crates/*",
+]
 
-[dependencies]
+[workspace.dependencies]
+anyhow = "^1.0.99"
+thiserror = "^2.0.16"
+tracing = "^0.1.41"
+tracing-subscriber = "^0.3.20"
+
+derivative = "^2.2.0"
+derive_more = "^2.0.1"
+getset = "^0.1.6"
+strum = "^0.27.2"
+
+serde = "^1.0.219"
+serde_json = "^1.0.143"
+
+tokio = "^1.47.1"
+tokio-stream = "^0.1.17"
+tokio-util = "^0.7.16"
