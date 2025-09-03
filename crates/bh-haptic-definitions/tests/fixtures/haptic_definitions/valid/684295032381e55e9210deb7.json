@@ -1,0 +1,2059 @@
+{
+  "status": true,
+  "message": {
+    "id": "684295032381e55e9210deb7",
+    "createTime": 1749193987648,
+    "name": "bHaptics HapticCraft",
+    "creator": "t70Fqe9vh1WizRjSK2N2EqvuQgF3",
+    "workspaceId": "683eaad73b2d462635a3f2c8",
+    "version": 10,
+    "disableValidation": false,
+    "hapticMappings": [
+      {
+        "id": "684295032381e55e9210deb8",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "get_damage",
+        "category": "Attacked",
+        "description": "",
+        "updateTime": 1748938011966,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "66a9c24fd07ee87d3d47bd52",
+            "snapshotId": "683ead273b2d462635a3f521",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "ExplosiveBulletHit",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAQQAAZFUAAAAAAAAAAAA=",
+                  "AAAAAAAKKAAAZEsAABkAAAAAAAA=",
+                  "AAAAAAANJwAAZEQAAB8AAAAAAAA=",
+                  "AAAAAAASKwAAXEUAACYAAAAAAAA=",
+                  "AAAAAAAWKAAARjwAACUMAAAAAAA=",
+                  "AAAAAAAbHQAIOSQACCcQAAAAAAA=",
+                  "AAAAAAAdHQAGLR8ACCYUAAAAAAA=",
+                  "AAAAAAAeHgAGHxYACh4YAAAAAAA=",
+                  "AAAAAAgcHQAGEw8ADRwWAAAAAAA=",
+                  "AAUAAAkXGgMADA0FDBQXAAAAAAA=",
+                  "AAYUAwtiOxYvTWQOKlBNAgAAAAA=",
+                  "AAgVBA1cSBwdR0YDNT5TBAAaAAA=",
+                  "ACAUCA1QMicdNjoANy1RCQYdBQA=",
+                  "ACoACBxBOycRLyoANx5LCggWCAA=",
+                  "BCoFCCAxMiUTJCIAOAlCCQgWGgA=",
+                  "BS4ECSQhMSAAGRcANhw0CQgRIgA=",
+                  "CCsEGCMVLR0ADwAAMhcnFAgAIwI=",
+                  "CCIEGB4PIhsACgAAKxQbFgYAJQI=",
+                  "FB4CGBkAHRQAAAAAIxAQFxIAIQM=",
+                  "GBQBGhIAFA8AAAAAGg0KFBQAGgM=",
+                  "FgwBFQoADwkAAAAAFAgADhIAFAs=",
+                  "EgYAEAYACAYAAAAACgUACRAADQs=",
+                  "DAIDDAIABAAAAAAABgAABgoACAg=",
+                  "CAAABgAAAQAAAAAAAgAAAgUAAwU=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 520
+      },
+      {
+        "id": "684295032381e55e9210deb9",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "hit_projectile",
+        "category": "Attacked",
+        "description": "",
+        "updateTime": 1748937528275,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87a32",
+            "snapshotId": "677cfebcb4e7895236a2ac3c",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Bullet Hit",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 180
+      },
+      {
+        "id": "684295032381e55e9210deba",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "hit_explosion",
+        "category": "Attacked",
+        "description": "",
+        "updateTime": 1748937551546,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87a16",
+            "snapshotId": "677fe0eea924e41c89f8c71d",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Explosion Hit",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAABkZAAAAAAAAGRkAAAAAP8=",
+                  "AAAAAABkZAAAAAAAAGRkAAAAAP8=",
+                  "AAAAAABkZAAAAAAAAGRkAAAAAP8=",
+                  "AAAAAABkZAAAAAAAAGRkAAAAAP8=",
+                  "AAAAAABkZAAAAAAAAGRkAAAAAP8=",
+                  "AAAAAABkZABkAABkAGRkAAAAAP8=",
+                  "AAAAAABkZABkAABkAGRkAAAAAP8=",
+                  "AAAAAABkZABkAABkAGRkAAAAAP8=",
+                  "AAAAAABkZABkAABkAGRkAAAAAP8=",
+                  "AAAAAABkZABkAABkAGRkAAAAAP8=",
+                  "AAAAAABAQABAHx9AAEBAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZGQAAAAAAAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "CwAAC1JSUlJSAABSUlJSUgAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "CgAACltbW1tbAABbW1tbWwAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "HAAAHEdHR0dHAABHR0dHRwAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "AAAAAGRkZGRkAABkZGRkZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8=",
+                  "ZAAAZGQAAGQAAAAAZAAAZAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "Head": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "HEBAHAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ClJSCgAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "UlJSUgAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "QBwcQAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZAAAZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ZGRkZAAAAAAAAAAAAAAAAAAAAAA="
+                ],
+                "ForearmL": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "H0MfAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "DVUNAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "VVVVAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "Qx9DAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmR": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "H0MfAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "DVUNAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "VVVVAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGQAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "Qx9DAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZABkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRkAAAAAAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 1020
+      },
+      {
+        "id": "684295032381e55e9210debb",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "hit_melee",
+        "category": "Attacked",
+        "description": "",
+        "updateTime": 1748937665516,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "683eab6e3b2d462635a3f2d8",
+            "snapshotId": "683ead273b2d462635a3f522",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "tb_sword_slice_hit_11oclock Copied",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "P00AAEtBAAAAAAAAAAAAAAAAAP8=",
+                  "ACIAACJhLwAAIgAAAAAAAAAAAP8=",
+                  "AAAAAAA2TwAASzMAAAAAAAAAAP8=",
+                  "AAAAAAAAGxUAAGQAABgPAAAAAP8=",
+                  "AAAAAAAAAAAAADJRAABFPwAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAUwAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAQAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 120
+      },
+      {
+        "id": "684295032381e55e9210debc",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "burn",
+        "category": "Attacked",
+        "description": "",
+        "updateTime": 1748937941356,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "683eacb03b2d462635a3f4fb",
+            "snapshotId": "683ead273b2d462635a3f523",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Scan (Bottm → Top)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAIDA0LDw8PDwAAAP8=",
+                  "AAAAAAAAAAAYGx0dFhYUFQAAAP8=",
+                  "AAAAAAAAAAAjJiopEAsJCAAAAP8=",
+                  "AAAAAAAUFhMlJSUmAAAAAAAAAP8=",
+                  "AAAAABceIB4gHh0eAAAAAAAAAP8=",
+                  "AAAAACEkJycWEhAQAAAAAAAAAP8=",
+                  "AA8RDSUnJygAAAAAAAAAAAAAAP8=",
+                  "DxYYFh0dGhoAAAAAAAAAAAAAAP8=",
+                  "DA8QDwoKCggAAAAAAAAAAAAAAP8=",
+                  "JCcqKwAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAMDAwIDxAPDwAAAP8=",
+                  "AAAAAAAAAAAdHBsYEhYWFgAAAP8=",
+                  "AAAAAAAAAAApKCYkCAsLDAAAAP8=",
+                  "AAAAABMUFgAmJyUkAAAAAAAAAP8=",
+                  "AAAAAB4fHBceHiAgAAAAAAAAAP8=",
+                  "AAAAACcmIyEQExUWAAAAAAAAAP8=",
+                  "DA4PACgpJyUAAAAAAAAAAAAAAP8=",
+                  "FhYWDxobHR0AAAAAAAAAAAAAAP8=",
+                  "EBAPDAgLCgoAAAAAAAAAAAAAAP8=",
+                  "KycnJAAMAAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 200
+      },
+      {
+        "id": "684295032381e55e9210debd",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "mining_left",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748938413906,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "683eae533b2d462635a3f8dd",
+            "snapshotId": "683eafcc3b2d462635a3fab8",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "mining_left",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "BgAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "CAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "CgAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "CAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "BQAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "BgAAAAYAAAAAAAAAAAAAAAAAAP8=",
+                  "CAAAAAgAAAAAAAAAAAAAAAAAAP8=",
+                  "CgAAAAoAAAAAAAAAAAAAAAAAAP8=",
+                  "CAAAAAgAAAAAAAAAAAAAAAAAAP8=",
+                  "BQAAAAUAAAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 100
+      },
+      {
+        "id": "684295032381e55e9210debe",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "mining_right",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748938422657,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "683ead7d3b2d462635a3f53a",
+            "snapshotId": "683eafcc3b2d462635a3fab9",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "mining_right",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAABgAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAACAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAACgAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAACAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAABQAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAABgAAAAYAAAAAAAAAAAAAAP8=",
+                  "AAAACAAAAAgAAAAAAAAAAAAAAP8=",
+                  "AAAACgAAAAoAAAAAAAAAAAAAAP8=",
+                  "AAAACAAAAAgAAAAAAAAAAAAAAP8=",
+                  "AAAABQAAAAUAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 100
+      },
+      {
+        "id": "684295032381e55e9210debf",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "eat_food",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748938634208,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f879b2",
+            "snapshotId": "67d0e52fa179ce7bf54b3293",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Drink",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAUUAAAIAAAAAAAAAAAAAAAAAP8=",
+                  "AAAlAAASEAAAAAAAAAAAAAAAAP8=",
+                  "AAAoAAAYHQAAAAAAAAAAAAAAAP8=",
+                  "AAAiAAAZIwAAAAAAAAAAAAAAAP8=",
+                  "AAAbAAAYKAAAAAAAAAAAAAAAAP8=",
+                  "AAARAAAVLAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAPLgAADQAAAAAAAAAAAP8=",
+                  "AAAAAAAALQAAEw0AAAAAAAAAAP8=",
+                  "AAAAAAAAKgAAFxgAAAAAAAAAAP8=",
+                  "AAAAAAAAJgAAGR8AAAAAAAAAAP8=",
+                  "AAAAAAAAIAAAGSUAAAAAAAAAAP8=",
+                  "AAABAAAAGQAAFykAAAAAAAAAAP8=",
+                  "AAAQAAAEDwAAFC0AAAAAAAAAAP8=",
+                  "AAAbAAANEwAADy4AAA8AAAAAAP8=",
+                  "AAAiAAAUJgAAACoAABIPAAAAAP8=",
+                  "AAAYAAATNgAAAB0AABASAAAAAP8=",
+                  "AAAAAAAIOgAAChMAAA0QAAAAAP8=",
+                  "AAAAAAAANgAAEhUAAAgMAAAAAP8=",
+                  "AAAAAAAALgAAGCUAAAIEAAAAAP8=",
+                  "AAAAAAAAJQAAGC4AAAAAAAAAAP8=",
+                  "AAABAAAAFAAAEjgAAAAAAAAAAP8=",
+                  "AAASAAAEAwAAADkAAAwIAAAAAP8=",
+                  "AAAhAAANEQAAADEAABIVAAAAAP8=",
+                  "AAArAAAWIgAAAB0AABIWAAAAAP8=",
+                  "AAAyAAAeOQAAAA0AAAoPAAAAAP8=",
+                  "AAAwAAAjTwAAAAEAAAEDAAAAAP8=",
+                  "AAASAAAkXAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAVXQAAIgAAAAAAAAAAAP8=",
+                  "AAAAAAAAVwAALCgAAAAAAAAAAP8=",
+                  "AAAAAAAATwAAMTkAAAAAAAAAAP8=",
+                  "AAAAAAAARQAAMkYAAAAAAAAAAP8=",
+                  "AAAAAAAAOAAAME8AAAAAAAAAAP8=",
+                  "AAAAAAAALQAATT8AAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAZAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAA+TwAAIQAAAAAAAP8=",
+                  "AAAAAAAAAAAAZAAAAAAAAAAAAP8=",
+                  "AAAAAAAAJgAAS0IAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAGQAAAAAAAAAAP8=",
+                  "AAAAAAAAACMAAFQ2AAAAAAAAAP8=",
+                  "AAAAAAAAACUAACVaAAAAAAAAAP8=",
+                  "AAAAAAAAABsAACFcAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAEtDAAAiAAAAAP8=",
+                  "AAAAAAAAAAAAAF0RAAAYAAAAAP8=",
+                  "AAAAAAAAAAAAKlAAACsAAAAAAP8=",
+                  "AAAAAAAAAAAAPzYAADoAAAAAAP8=",
+                  "AAAAAAAAAAAASAAAIzEAAAAAAP8=",
+                  "AAAAAAAAAAAAQAAAOSEAAAAAAP8=",
+                  "AAAAAAAAAAAAPSQAADYAAAAAAP8=",
+                  "AAAAAAAAAAAAHjwAADIAAAAAAP8=",
+                  "AAAAAAAAAAAAAEAAAB0mAAAAAP8=",
+                  "AAAAAAAAAAAAAC40AAApAAAAAP8=",
+                  "AAAAAAAAAAAAAAA+AAASHgAAAP8=",
+                  "AAAAAAAAAAAAAAAyAAAAIgAAAP8=",
+                  "AAAAAAAAAAAAAAAzAAAAIgAAAP8=",
+                  "AAAAAAAAAAAAAAAzAAAfFQAAAP8=",
+                  "AAAAAAAAAAAAACIlAAAmAAAAAP8=",
+                  "AAAAAAAAAAAAACcAABYmAAAAAP8=",
+                  "AAAAAAAAAAASACIAACUaAAAAAP8=",
+                  "AAAAAAAAAAAAFBcAACoAAAAAAP8=",
+                  "AAAAAAAAAAAAGQAAGCQAAAAAAP8=",
+                  "AAAAAAAAAAAAEwAACSUAAAAAAP8=",
+                  "AAAAAAAAAAAAABYAAB8WAAAAAP8=",
+                  "AAAAAAAAAAAAABIAAA0fAAAAAP8=",
+                  "AAAAAAAAAAAAAAASAAAbEQAAAP8=",
+                  "AAAAAAAAAAAAAAARAAAJGQAAAP8=",
+                  "AAAAAAAAAAAAAAAIAAAAFwAAAP8=",
+                  "AAAAAAAAAAAAAAAJAAAAFgAAAP8=",
+                  "AAAAAAAAAAAAAAAMAAAPDwAAAP8=",
+                  "AAAAAAAAAAAAAAQGAAARAAAAAP8=",
+                  "AAAAAAAAAAAAAAYAAAkMAAAAAP8=",
+                  "AAAAAAAAAAAAAAQAAAoFAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAgEAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAIFAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAACAQAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAADAgAAAAIAAAAAAAAAAP8=",
+                  "AAAAAAAGAAAAAwIAAAAAAAAAAP8=",
+                  "AAAAAAgFAAAABgAAAAAAAAAAAP8=",
+                  "AAAAAAoAAAAIBgAAAAAAAAAAAP8=",
+                  "AAAAAAoIAAAACwAAAAAAAAAAAP8=",
+                  "AAAAAAAPAAAACgkAAAAAAAAAAP8=",
+                  "AAAAAAAPCQAAABAAAAAAAAAAAP8=",
+                  "AAAAAAAAEgAAABAKAAAAAAAAAP8=",
+                  "AAAAAAAAEwkAAAAUAAAAAAAAAP8=",
+                  "AAAAAAAAEwAAABgJAAAAAAAAAP8=",
+                  "AAAAAAASAAAADxspAAAAAAAAAP8=",
+                  "AAAAAAATAAAAHRQfAAAAAAAAAP8=",
+                  "AAAAAAsAAAAGJQAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAeGgAAAA0AAAAAAP8=",
+                  "AAAAAAAAAAAmAAAACAYAAAAAAP8=",
+                  "AAAAAAAAAAAhAAAAEgAAAAAAAP8=",
+                  "AAAAAAAAAAAjDQAAABAAAAAAAP8=",
+                  "AAAAAAAAAAAUIAAAABMAAAAAAP8=",
+                  "AAAAAAAAAAAAIw0AAAAQAAAAAP8=",
+                  "AAAAAAAAAAAAFx8AAAAUAAAAAP8=",
+                  "AAAAAAAAAAAAACQAAAALEAAAAP8=",
+                  "AAAAAAAAAAAAAB4SAAAAEwAAAP8=",
+                  "AAAAAAAAAAAADx0AAAAUAAAAAP8=",
+                  "AAAAAAAAAAAAFw8PAAAVAAAAAP8=",
+                  "AAAAAAAAAAAAFQAIABIKAAAAAP8=",
+                  "AAAAAAAAAAAPCwAAABMAAAAAAP8=",
+                  "AAAAAAAAAAAPAAAADA0AAAAAAP8=",
+                  "AAAAAAAAAAAICQAAAA8AAAAAAP8=",
+                  "AAAAAAAAAAAACQAAAAgJAAAAAP8=",
+                  "AAAAAAAAAAAABQUAAAAJAAAAAP8=",
+                  "AAAAAAAAAAAABAAAAAIFAAAAAP8=",
+                  "AAAAAAAAAAAAAgAAAAMCAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 1500
+      },
+      {
+        "id": "684295032381e55e9210dec0",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "equip_head",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748944429903,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "683eafa43b2d462635a3fa6e",
+            "snapshotId": "683eb0123b2d462635a3fac6",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "mc_equip_helmet",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "Head": [
+                  "AExBAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AFBIAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AFVOAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AF9TAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "GFRYAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "JU1cCgAAAAAAAAAAAAAAAAAAAAA=",
+                  "L0ZTHQAAAAAAAAAAAAAAAAAAAAA=",
+                  "OT5MKQAAAAAAAAAAAAAAAAAAAAA=",
+                  "TChFMwAAAAAAAAAAAAAAAAAAAAA=",
+                  "VBg8PAAAAAAAAAAAAAAAAAAAAAA=",
+                  "WwolTgAAAAAAAAAAAAAAAAAAAAA=",
+                  "XwAVWAAAAAAAAAAAAAAAAAAAAAA="
+                ],
+                "VestFront": [
+                  "AAA5AAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AA8xAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ABQuAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ABkrAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ABkdAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "ABAPAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAQCAAAAAAAAAAAAAAAAAAAAAAA="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 240
+      },
+      {
+        "id": "684295032381e55e9210dec1",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "equip_chest",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748944426886,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "683eafaa3b2d462635a3fa93",
+            "snapshotId": "683eb0123b2d462635a3fac7",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "mc_equip_armour",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "EiIRIx0AGwAAAAAAAAAAAAAAAAA=",
+                  "ABoAGiMUIRYAAAAAAAAAAAAAAAA=",
+                  "AA0AACEfHSMAAA8AAAAAAAAAAAA=",
+                  "AAAAABIiESMdABsAAAAAAAAAAAA=",
+                  "AAAAAAAaABojFCEWAAAAAAAAAAA=",
+                  "AAAAAAANAAAhHx0jAAAPAAAAAAA=",
+                  "AAAAAAAAAAAWIxEjGAAbAAAAAAA=",
+                  "AAAAAAAAAAAAGAAVGwsbEgAAAAA=",
+                  "AAAAAAAAAAAACAAAExIQFAAACQA=",
+                  "AAAAAAAAAAAAAAAACA0GDQkACgA=",
+                  "AAAAAAAAAAAAAAAAAAQABAUCBQM="
+                ],
+                "VestBack": [
+                  "ESYnAAAXFgAAAAAAAAAAAAAAAAA=",
+                  "ERkaAAAkJAAAAAAAAAAAAAAAAAA=",
+                  "BgUAAAgvMAAAAAAAAAAAAAAAAAA=",
+                  "AAAAABYjJwAAGBYAAAAAAAAAAAA=",
+                  "AAAAABMRFAAAKSkAAAAAAAAAAAA=",
+                  "AAAAAAkFAAAPLDAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAWIycAABgWAAAAAAA=",
+                  "AAAAAAAAAAAPDhAAACEhAAAAAAA=",
+                  "AAAAAAAAAAAFAwAACRodAAAAAAA=",
+                  "AAAAAAAAAAAAAAAACAwNAAAKCQA=",
+                  "AAAAAAAAAAAAAAAAAwUDAAAGBgA="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 220
+      },
+      {
+        "id": "684295032381e55e9210dec2",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "equip_legs",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748944421888,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "683eaf9e3b2d462635a3fa6d",
+            "snapshotId": "683eb0123b2d462635a3fac8",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "mc_equip_pants",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAgAACMFACY=",
+                  "AAAAAAAAAAAAAAAAAAsAACAMACc=",
+                  "AAAAAAAAAAAAAAAAAAwAAB4RCCM=",
+                  "AAAAAAAAAAAAAAAAAAwAAB4RDyA=",
+                  "AAAAAAAAAAAAAAAAAA0AABoWEh0=",
+                  "AAAAAAAAAAAAAAAAAA0AABYZFxk=",
+                  "AAAAAAAAAAAAAAAAAA0AABMdGhY=",
+                  "AAAAAAAAAAAAAAAAAAwAAA8fHRI=",
+                  "AAAAAAAAAAAAAAAAAAIAAAIJCQQ="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAACAAMACMFER4=",
+                  "AAAAAAAAAAAAAAAAEAARAB0PERs=",
+                  "AAAAAAAAAAAAAAAAFQAVABgSExg=",
+                  "AAAAAAAAAAAAAAAAGAAYABEVEhQ=",
+                  "AAAAAAAAAAAAAAAAGgAbAAoWEw8=",
+                  "AAAAAAAAAAAAAAAAGBEeAAAWEQs=",
+                  "AAAAAAAAAAAAAAAAFRYfAAATDwg=",
+                  "AAAAAAAAAAAAAAAAFRohAAAPCwA=",
+                  "AAAAAAAAAAAAAAAABQ0MAAADAwA="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 180
+      },
+      {
+        "id": "684295032381e55e9210dec3",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "equip_feet",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748944416242,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "683eaf963b2d462635a3fa6c",
+            "snapshotId": "683eb0123b2d462635a3fac9",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "mc_equip_shoes",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAABYoCi4=",
+                  "AAAAAAAAAAAAAAAAAAAAABskADM=",
+                  "AAAAAAAAAAAAAAAAAAAAACAgADE=",
+                  "AAAAAAAAAAAAAAAAAAAAACUaAC8=",
+                  "AAAAAAAAAAAAAAAAAAAAACkUACw=",
+                  "AAAAAAAAAAAAAAAAAAAAAC0MACo=",
+                  "AAAAAAAAAAAAAAAAAAAAAC0MACc="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAM=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAg=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAA8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAABI=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAABY="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 140
+      },
+      {
+        "id": "684295032381e55e9210dec4",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "heal",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748942741376,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87a0e",
+            "snapshotId": "6778dc86a274ef4f230ad439",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Heartbeat",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "Hh4AAAAeAAAAAAAAAAAAAAAAAP8=",
+                  "Hh4AAAAeAAAAAAAAAAAAAAAAAP8=",
+                  "Hh4AAAAeAAAAAAAAAAAAAAAAAP8=",
+                  "Hh4AAAAeAAAAAAAAAAAAAAAAAP8=",
+                  "Hh4AAAAeAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ABkAAAAZAAAAAAAAAAAAAAAAAP8=",
+                  "ABkAAAAZAAAAAAAAAAAAAAAAAP8=",
+                  "ABkAAAAZAAAAAAAAAAAAAAAAAP8=",
+                  "ABkAAAAZAAAAAAAAAAAAAAAAAP8=",
+                  "ABkAAAAZAAAAAAAAAAAAAAAAAP8=",
+                  "ABkAAAAZAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 360
+      },
+      {
+        "id": "684295032381e55e9210dec5",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "mining_finish_left",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748955575034,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87a30",
+            "snapshotId": "678f4e430b1fb914c2dbedd5",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Pistol Recoil (Left)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "ForearmL": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZFtbAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZFtbAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmR": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZCAAAC8AAAAAAAAAAAAAAAAAAP8=",
+                  "TE0AAFAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "XgAAAEAAAAAAAAAAAAAAAAAAAP8=",
+                  "S10YAEtVPwAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 80
+      },
+      {
+        "id": "684295032381e55e9210dec6",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "mining_finish_right",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748955568720,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87a2d",
+            "snapshotId": "678f27080b1fb914c2db7915",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Pistol Recoil (Right)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "ForearmL": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmR": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRbAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZGRbAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAA3XwAALToAAAAAAAAAAAAAAP8=",
+                  "AABXSAAAS0kAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAXAAAADMAAAAAAAAAAAAAAP8=",
+                  "ACVeWQAZXkIAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 80
+      },
+      {
+        "id": "684295032381e55e9210dec7",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "dive_the_water",
+        "category": "Environment",
+        "description": "",
+        "updateTime": 1748955159491,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "66a9c40fd07ee87d3d47c410",
+            "snapshotId": "683ef1ca3b2d462635a4906e",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Dash_Vest",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAYGAAAFBAAAAAAAAAAAAAAAAAA=",
+                  "AAQFAAEODAAACAQAAAAAAAAAAAA=",
+                  "AAMEAAELCgABEAwAAQYEAAAAAAA=",
+                  "AAMDAAENDAABDwsAAQ8LAAIIBAA=",
+                  "AAAAAAELCwECCwwBAgsMAAQLDAA=",
+                  "AAAAAAQKCQYKChEGCgoRBg4JEwU=",
+                  "AAAAAAYJBAkQCQ4JEAkOCRUIFQk=",
+                  "AAAAAAYGAAkVBgoTFQYKEx8EEhc=",
+                  "AAAAAAAAAAAUAAAUFAAAFCgABCY=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAgAAwURCAMUFwgDFBsOASA=",
+                  "AAAAAAgABQUQCQUREQgFERQRBBs=",
+                  "AAAAAAgABgUNCAYPDQgGDw4QBRU=",
+                  "AAAAAAgDBgQICwYMCAsGDAYQBhA=",
+                  "AAAAAAUEBQMFCQUIBQkFCAQLBQo=",
+                  "AAAAAAMEBQIDBwUFAwcFBQIJBAY=",
+                  "AAAAAAEEBAEBBQQCAQUEAgEFAwM=",
+                  "AAAAAAACAgAAAgIAAAICAAACAgA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 380
+      },
+      {
+        "id": "684295032381e55e9210dec8",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "swim",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748957005396,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "683ef68a3b2d462635a498a8",
+            "snapshotId": "683ef74e3b2d462635a49937",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Swim",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "CA0MDAgICAAAAAAAAAAAAAAAAP8=",
+                  "BQsLDAoJCAgAAAAAAAAAAAAAAP8=",
+                  "AAgICAwLCwwAAAAAAAAAAAAAAP8=",
+                  "AAMEAgwMDA8AAAAAAAAAAAAAAP8=",
+                  "AAAAAAoLCwwICAMFAAAAAAAAAP8=",
+                  "AAAAAAkICgoLCgUKAAAAAAAAAP8=",
+                  "AAAAAAUECAULCQgLAAAAAAAAAP8=",
+                  "AAAAAAAABAALCAgKAAAAAAAAAP8=",
+                  "AAAAAAAAAAAIBAYGAwQABAAAAP8=",
+                  "AAAAAAAAAAADAAMDAwMBAwAAAP8=",
+                  "AAAAAAAAAAABAAEAAgIBAgAAAP8=",
+                  "AAAAAAAAAAAAAAAADQoLDAAAAP8="
+                ],
+                "VestBack": [
+                  "BQgGAAANDQAAAAAAAAAAAAAAAP8=",
+                  "BAQDAAUNDwAAAAAAAAAAAAAAAP8=",
+                  "AwAAAAYNDwAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAkMDwAABQIBAAAAAAAAAP8=",
+                  "AAAAAAkKDQAACAMDAAAAAAAAAP8=",
+                  "AAAAAAoIDQUACQYFAAAAAAAAAP8=",
+                  "AAAAAAkFCgQACQYFAAAAAAAAAP8=",
+                  "AAAAAAgECAIACAYHAAAAAAAAAP8=",
+                  "AAAAAAUABQADBQUHAgAAAAAAAP8=",
+                  "AAAAAAIAAgADAwMFAgAAAAAAAP8=",
+                  "AAAAAAEAAQACAQIEAQAAAAAAAP8=",
+                  "AAAAAAUABQAMCQwIBgAACQAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 240
+      },
+      {
+        "id": "684295032381e55e9210dec9",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "use_left",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748955367821,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b5d",
+            "snapshotId": "6792aeef2b73f037b9fc6275",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Cast Magic Recoil (Left)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "GgAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "NAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "JgAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "CQAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "GgAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "NAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "JgAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "CQAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmL": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZFsAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZFsAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZFsAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ZFsAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmR": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 100
+      },
+      {
+        "id": "684295032381e55e9210deca",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "use_right",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748955364545,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b5e",
+            "snapshotId": "6792aeef2b73f037b9fc6276",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Cast Magic Recoil (Right)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAGgAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAMwAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAKQAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAADQAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAGgAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAMwAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAKQAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAADQAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmL": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmR": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AGRkAAAAAAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 100
+      },
+      {
+        "id": "684295032381e55e9210decb",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "attack_left",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748955336491,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b91",
+            "snapshotId": "67a08f4609f25a07467ce551",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Slash Recoil (Left Hand)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "ForearmL": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "LzkAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "RR8AAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "SxUAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "WVcAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmR": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "IwAAAAsAAAAAAAAAAAAAAAAAAP8=",
+                  "JAAAAB0AAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "FQAAABUAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAABoAAAAAAAAAAAAAAAAAAP8=",
+                  "Fx0AAAANAAAAAAAAAAAAAAAAAP8=",
+                  "Fx0AAAAVEAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 100
+      },
+      {
+        "id": "684295032381e55e9210decc",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "attack_right",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748955326663,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b8f",
+            "snapshotId": "67b572df49a91a4b93090b5b",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Slash Recoil (Right Hand)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "ForearmL": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmR": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AEUfAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AC85AAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ACdAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AFdXAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAIgAAABgAAAAAAAAAAAAAAP8=",
+                  "AAAQIAAAEB8AAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAGQAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAFAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAbGgAAAA4AAAAAAAAAAAAAAP8=",
+                  "AAAbGAAAEhQAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 100
+      },
+      {
+        "id": "684295032381e55e9210decd",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "drop_item",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748955310792,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b65",
+            "snapshotId": "67d0e52da179ce7bf54b327b",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Store (Center Waist)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAACUlAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAABQUAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAMDAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 80
+      },
+      {
+        "id": "684295032381e55e9210dece",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "swap_right",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748955277172,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b64",
+            "snapshotId": "6798fbcfec167c0c487c9f8f",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Store (Right Waist)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAJQAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAFAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAwAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAJQAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAFAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAwAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 80
+      },
+      {
+        "id": "684295032381e55e9210decf",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "swap_left",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1748955264442,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b66",
+            "snapshotId": "6798fbcfec167c0c487c9f8e",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Store (Left Waist)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAJQAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAEwAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAANQAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAJQAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAEwAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAANQAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 80
+      },
+      {
+        "id": "684295032381e55e9210ded0",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "landing",
+        "category": "Environment",
+        "description": "",
+        "updateTime": 1748956313525,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b57",
+            "snapshotId": "67989ca7ec167c0c487bc4cc",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Land",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAKCgoKAAAAP8=",
+                  "AAAAAAAAAAAAAAAAKCgoKAAAAP8=",
+                  "AAAAAAAAAAAAAAAAJiUlJgAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAKCgoKAAAAP8=",
+                  "AAAAAAAAAAAAAAAAKCgoKAAAAP8=",
+                  "AAAAAAAAAAAAAAAAJiUlJgAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 80
+      },
+      {
+        "id": "684295032381e55e9210ded1",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "death",
+        "category": "Attacked",
+        "description": "",
+        "updateTime": 1748954819103,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "66a9c401d07ee87d3d47c3d8",
+            "snapshotId": "683eeef13b2d462635a48447",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Death",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAATwAAZGQAAB4AAAAAAAA=",
+                  "AAAAAAAAPwAAZGQAADoAAAAAAAA=",
+                  "AAAAAAAAQwAAZGQAAD4AAAAAAAA=",
+                  "AAAAAAAATAAAZGQAAEQAAAAAAAA=",
+                  "AAAAAAAUTgAAZGQAAEoAAAAAAAA=",
+                  "AAAAAAAaTQAAZGQAAE8AAAAAAAA=",
+                  "AAAAAAAlTwAAZGQAAE8TAAAAAAA=",
+                  "AAAAAAAoTQAAZGQAAE8YAAAAAAA=",
+                  "AAAAAAAtSwAAZGQAAE4jAAAAAAA=",
+                  "AAAAAAArTQAAZGQAAFMhAAAAAAA=",
+                  "AAAAAAA2MwAPZGQAAEwqAAAAAAA=",
+                  "AAAAAAA0OAAPYkYAD0woAAAAAAA=",
+                  "AAAAAAA4NQAMWTwAD0kuAAAAAAA=",
+                  "AAAAAAA2NQARQzUADEUwAAAAAAA=",
+                  "AAAAAAA5OQAMNSkAE0AuAAAAAAA=",
+                  "AAAAAAw0NgARIx8LETAzAAAAAAA=",
+                  "AAAAAA8yNQYNFxwKEC0wAAAAAAA=",
+                  "AAAAAA8xNAYMEREGFSw0AAAAAAA=",
+                  "AAwCAxgoMwAAEAAKFCowBQAAAAA=",
+                  "AAwABhcmLggADAAGFyYuCAAAAAA=",
+                  "ABAACRsfLAQACwAJFiQoEAAAAAA=",
+                  "AA8ADBodJgwAAAAAESQkEgwADAA=",
+                  "ABQADxoYJAgAAAAAFR8iEQwACwA=",
+                  "ABIADxsTIQYAAAAAER4bFQ8ADwA=",
+                  "ABMAERoPHQgAAAAAEB0ZFA8ADwA=",
+                  "ABIAEBgPGggAAAAADxgUExEAEQA=",
+                  "CREKERcAFwAAAAAADxYQFRAAEAA=",
+                  "CBAGERYAFQAAAAAADxENExEAEQA=",
+                  "Cg8IERIAEgAAAAAADxAMERAADwA=",
+                  "CwwAEBAADwUAAAAACQ8AEBAADwU=",
+                  "DQsIEA0ADAAAAAAACgsADw8ADwU=",
+                  "DQgADwsACQQAAAAACAkADA8ADAY=",
+                  "DQYEDwgACAAAAAAACAYACw0ACgg=",
+                  "CwYEDAgACAAAAAAABQUACAwACQg=",
+                  "CwIDCwMABAAAAAAABQMACAoACAg=",
+                  "CAICCAIAAwAAAAAAAwIABAgABAg=",
+                  "CAEBCAEAAQAAAAAAAgEAAwYAAwU=",
+                  "BQAABQAAAQAAAAAAAQAAAQUAAQU=",
+                  "AwAAAgAAAAAAAAAAAAAAAAIAAAI=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAw=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAw=",
+                  "AAAAAAAAAAgAAAAAAAAAAAAAABE=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                  "WRgAYwAAAAAAAAAAHQAAFFMfAFs=",
+                  "VRcAXwAAAAAAAAAAGwAAE08eAFc=",
+                  "Tx4AWgAWAAsAAAAAKAAAIkciAE4=",
+                  "TB0PUgAVABAAAAAAKQATHT8qAE0=",
+                  "TBYSTQAbABkAAAAAMAAWJDkqAEc=",
+                  "RB8fRAAeAB4AAAAALwAeGzAxAEU=",
+                  "QRUiOwAkACkAAAAANQAhJiUvAD0=",
+                  "PxUhOQAjACcAAAAAMwAgJSQtADs=",
+                  "ORcoLQApAC0AAAAANAAnJBUtADQ=",
+                  "NRYmLAAnACwAAAAAMgAmIhQsADI=",
+                  "LRYlIgAwADEAAAAANBYlKgAmACo=",
+                  "KxYoGgAuAC4AAAAALR8pIwAoACk=",
+                  "Jw8lFAAvADAAAAAALCMoJwAjACM=",
+                  "IhUmAAAvECwAAAAAJCYsHwAhACE=",
+                  "HQAhAA8xGC0AAAAAIisqJAAYABg=",
+                  "HQAfAA0uFysAAAAAICkoIgAXABc=",
+                  "FAofAAAyHSQAAAAAFjArHQAPABE=",
+                  "EwoaAAAvHyIKAA8AEDAmHwAAAAA=",
+                  "CgAZAAUxHiEKAA8AEC4lHgAAAAA=",
+                  "CgARAAUuJRkKABEABS4lGQAAAAA=",
+                  "BgAQAAgtIxgJABAABC0jGAAAAAA=",
+                  "AgEIAAAtJw8IDxUAACcdFwAAAAA=",
+                  "AAAIAAUpJQ0IFxMAACUgEQAAAAA=",
+                  "AAAAAAAnJAkJFBkIACAbEQAAAAA=",
+                  "AAAAAAAjJQMAGhkFAB0nDAAAAAA=",
+                  "AAAAAAAgIAAAHSEIABchCwAAAAA=",
+                  "AAAAAAAdHgAAHSUGABYeCwAAAAA=",
+                  "AAAAAAAaGQAAHSoFAA8eBgAAAAA=",
+                  "AAAAAAAWFgAAHScFAA8bBgAAAAA=",
+                  "AAAAAAAcEgAAHCsAAAgXBQAAAAA=",
+                  "AAAAAAAYEQAAJCgAAAgWAAAAAAA=",
+                  "AAAAAAAVDAAAHycAAAQRAAAAAAA=",
+                  "AAAAAAAVCQAAHCgAAAAQAAAAAAA=",
+                  "AAAAAAAQCAAAGiQAAAAKAAAAAAA=",
+                  "AAAAAAANBgAAFCIAAAAIAAAAAAA=",
+                  "AAAAAAAJAgAAER0AAAAGAAAAAAA=",
+                  "AAAAAAAHAgAADBoAAAAEAAAAAAA=",
+                  "AAAAAAAGAAAACRAAAAAAAAAAAAA=",
+                  "AAAAAAAEAAAABgkAAAAAAAAAAAA=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 1820
+      },
+      {
+        "id": "684295032381e55e9210ded2",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "rain",
+        "category": "Environment",
+        "description": "",
+        "updateTime": 1749193485480,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "68428f122381e55e9210cb93",
+            "snapshotId": "6842930d2381e55e9210d7c9",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Rain",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "VestFront": [
+                  "DwkAABIAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAsBAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAUAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAADAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAsJAAAUAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAJBQAACAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAADAAAABMAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAoAAAAFAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAACAAAAAsAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAUAAAAEAAAAAAAAAP8=",
+                  "ABEAAAAMDwAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAKBgAAAAQAAAAAAAAAAP8=",
+                  "AAUAAAALCAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAFAAAAAwQAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "BgAAAAoIAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAUAAAACBAAAAAAAAAAAAP8=",
+                  "AAAACwAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAUAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 300
+      },
+      {
+        "id": "684295032381e55e9210ded3",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "block_left",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1749193969597,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b91",
+            "snapshotId": "67a08f4609f25a07467ce551",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Slash Recoil (Left Hand)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "ForearmL": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "LzkAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "RR8AAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "SxUAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "WVcAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmR": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "IwAAAAsAAAAAAAAAAAAAAAAAAP8=",
+                  "JAAAAB0AAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "FQAAABUAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAABoAAAAAAAAAAAAAAAAAAP8=",
+                  "Fx0AAAANAAAAAAAAAAAAAAAAAP8=",
+                  "Fx0AAAAVEAAAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 100
+      },
+      {
+        "id": "684295032381e55e9210ded4",
+        "deployId": "684295032381e55e9210deb7",
+        "enable": true,
+        "intensity": 100,
+        "key": "block_right",
+        "category": "Action",
+        "description": "",
+        "updateTime": 1749193981696,
+        "tactFilePatterns": [],
+        "audioFilePatterns": [
+          {
+            "patternId": "67738c77bf059b6310f87b8f",
+            "snapshotId": "67b572df49a91a4b93090b5b",
+            "position": "Vest",
+            "clip": {
+              "id": "",
+              "name": "Slash Recoil (Right Hand)",
+              "version": 2,
+              "duration": 4,
+              "patterns": {
+                "ForearmL": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "ForearmR": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AEUfAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AC85AAAAAAAAAAAAAAAAAAAAAP8=",
+                  "ACdAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AFdXAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestFront": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAIgAAABgAAAAAAAAAAAAAAP8=",
+                  "AAAQIAAAEB8AAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8="
+                ],
+                "VestBack": [
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAGQAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAAFAAAAAAAAAAAAAAAAAAAAP8=",
+                  "AAAbGgAAAA4AAAAAAAAAAAAAAP8=",
+                  "AAAbGAAAEhQAAAAAAAAAAAAAAP8="
+                ]
+              }
+            }
+          }
+        ],
+        "eventTime": 100
+      }
+    ],
+    "categoryOptions": [
+      "Environment",
+      "Action",
+      "Attacked"
+    ],
+    "description": ""
+  },
+  "errorMessage": null,
+  "timestamp": 1756774324065,
+  "code": 200
+}
