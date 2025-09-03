@@ -21,3 +21,7 @@ serde_json = "^1.0.143"
 tokio = "^1.47.1"
 tokio-stream = "^0.1.17"
 tokio-util = "^0.7.16"
+
+base64 = "^0.22.1"
+reqwest = "^0.12.23"
+walkdir = "^2.5.0"
