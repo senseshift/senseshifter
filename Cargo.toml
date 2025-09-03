@@ -5,6 +5,11 @@ members = [
 ]
 
 [workspace.dependencies]
+bh-haptic-definitions = { path = "crates/bh-haptic-definitions" }
+bh-sdk = { path = "crates/bh-sdk" }
+
+serde_handy = { path = "crates/serde_handy" }
+
 anyhow = "^1.0.99"
 thiserror = "^2.0.16"
 tracing = "^0.1.41"
