@@ -70,7 +70,9 @@ pub struct HapticDefinitionsMessage {
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct HapticDefinitionMapping {
   enable: Option<bool>,
-  intensity: Option<u32>,
+  
+  #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_opt_f64"))]
+  intensity: Option<f64>,
   key: String,
   category: Option<String>,
   description: Option<String>,

@@ -1,1 +1,289 @@
-{"project":{"category":"Default","tags":["strong","attacked","block"],"uploader":"z9bOgSGZNvMXxvhdbg4Fwi6UeCM2","mediaFileDuration":1,"name":"Slash8_Right_Arms","id":"gZwzv7jxCRcw0Kz9NFU7","media":{"name":"","mediaType":"None","description":"","link":"","updateTime":0,"duration":0},"description":"A relatively non-dynamic haptic with strong duration\nMostly used for attacked block","tracks":[{"enable":true,"effects":[{"name":"Effect 1","offsetTime":350,"startTime":0,"modes":{"ForearmL":{"dotMode":{"dotConnected":false,"feedback":[{"startTime":0,"endTime":350,"playbackType":"NONE","pointList":[]}]},"pathMode":{"feedback":[]},"mode":"PATH_MODE"},"ForearmR":{"dotMode":{"dotConnected":false,"feedback":[{"startTime":0,"endTime":350,"playbackType":"NONE","pointList":[]}]},"pathMode":{"feedback":[{"movingPattern":"CONST_SPEED","playbackType":"NONE","visible":true,"pointList":[{"intensity":1,"time":0,"x":1,"y":0},{"intensity":1,"time":350,"x":0,"y":1}]},{"movingPattern":"CONST_SPEED","playbackType":"NONE","visible":true,"pointList":[{"intensity":0.5,"time":0,"x":1,"y":0},{"intensity":0.5,"time":350,"x":0,"y":1}]},{"movingPattern":"CONST_SPEED","playbackType":"NONE","visible":true,"pointList":[{"intensity":0.7,"time":0,"x":0.77,"y":0},{"intensity":0.7,"time":350,"x":0,"y":0.75}]},{"movingPattern":"CONST_SPEED","playbackType":"NONE","visible":true,"pointList":[{"intensity":0.7,"time":0,"x":1,"y":0.24},{"intensity":0.7,"time":350,"x":0.26,"y":1}]}]},"mode":"PATH_MODE"}}}]},{"enable":true,"effects":[{"name":"Effect 2","offsetTime":250,"startTime":140,"modes":{"ForearmL":{"dotMode":{"dotConnected":false,"feedback":[{"startTime":0,"endTime":250,"playbackType":"NONE","pointList":[]}]},"pathMode":{"feedback":[]},"mode":"PATH_MODE"},"ForearmR":{"dotMode":{"dotConnected":false,"feedback":[{"startTime":0,"endTime":250,"playbackType":"NONE","pointList":[]}]},"pathMode":{"feedback":[{"movingPattern":"CONST_SPEED","playbackType":"NONE","visible":true,"pointList":[{"intensity":1,"time":0,"x":1,"y":0},{"intensity":1,"time":250,"x":0,"y":1}]}]},"mode":"PATH_MODE"}}}]}],"layout":{"name":"Tactosy2","type":"Tactosy2","layouts":{"ForearmL":[{"index":0,"y":0,"x":0},{"index":1,"y":0,"x":0.5},{"index":2,"y":0,"x":1},{"index":3,"y":1,"x":0},{"index":4,"y":1,"x":0.5},{"index":5,"y":1,"x":1}],"ForearmR":[{"index":0,"y":0,"x":0},{"index":1,"y":0,"x":0.5},{"index":2,"y":0,"x":1},{"index":3,"y":1,"x":0},{"index":4,"y":1,"x":0.5},{"index":5,"y":1,"x":1}]}},"createdAt":1662365029187,"updatedAt":1662365029187},"durationMillis":0,"intervalMillis":20,"size":20}
+{
+  "project": {
+    "category": "Default",
+    "tags": [
+      "strong",
+      "attacked",
+      "block"
+    ],
+    "uploader": "z9bOgSGZNvMXxvhdbg4Fwi6UeCM2",
+    "mediaFileDuration": 1,
+    "name": "Slash8_Right_Arms",
+    "id": "gZwzv7jxCRcw0Kz9NFU7",
+    "media": {
+      "name": "",
+      "mediaType": "None",
+      "description": "",
+      "link": "",
+      "updateTime": 0,
+      "duration": 0
+    },
+    "description": "A relatively non-dynamic haptic with strong duration\nMostly used for attacked block",
+    "tracks": [
+      {
+        "enable": true,
+        "effects": [
+          {
+            "name": "Effect 1",
+            "offsetTime": 350,
+            "startTime": 0,
+            "modes": {
+              "ForearmL": {
+                "dotMode": {
+                  "dotConnected": false,
+                  "feedback": [
+                    {
+                      "startTime": 0,
+                      "endTime": 350,
+                      "playbackType": "NONE",
+                      "pointList": []
+                    }
+                  ]
+                },
+                "pathMode": {
+                  "feedback": []
+                },
+                "mode": "PATH_MODE"
+              },
+              "ForearmR": {
+                "dotMode": {
+                  "dotConnected": false,
+                  "feedback": [
+                    {
+                      "startTime": 0,
+                      "endTime": 350,
+                      "playbackType": "NONE",
+                      "pointList": []
+                    }
+                  ]
+                },
+                "pathMode": {
+                  "feedback": [
+                    {
+                      "movingPattern": "CONST_SPEED",
+                      "playbackType": "NONE",
+                      "visible": true,
+                      "pointList": [
+                        {
+                          "intensity": 1,
+                          "time": 0,
+                          "x": 1,
+                          "y": 0
+                        },
+                        {
+                          "intensity": 1,
+                          "time": 350,
+                          "x": 0,
+                          "y": 1
+                        }
+                      ]
+                    },
+                    {
+                      "movingPattern": "CONST_SPEED",
+                      "playbackType": "NONE",
+                      "visible": true,
+                      "pointList": [
+                        {
+                          "intensity": 0.5,
+                          "time": 0,
+                          "x": 1,
+                          "y": 0
+                        },
+                        {
+                          "intensity": 0.5,
+                          "time": 350,
+                          "x": 0,
+                          "y": 1
+                        }
+                      ]
+                    },
+                    {
+                      "movingPattern": "CONST_SPEED",
+                      "playbackType": "NONE",
+                      "visible": true,
+                      "pointList": [
+                        {
+                          "intensity": 0.7,
+                          "time": 0,
+                          "x": 0.77,
+                          "y": 0
+                        },
+                        {
+                          "intensity": 0.7,
+                          "time": 350,
+                          "x": 0,
+                          "y": 0.75
+                        }
+                      ]
+                    },
+                    {
+                      "movingPattern": "CONST_SPEED",
+                      "playbackType": "NONE",
+                      "visible": true,
+                      "pointList": [
+                        {
+                          "intensity": 0.7,
+                          "time": 0,
+                          "x": 1,
+                          "y": 0.24
+                        },
+                        {
+                          "intensity": 0.7,
+                          "time": 350,
+                          "x": 0.26,
+                          "y": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "mode": "PATH_MODE"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "enable": true,
+        "effects": [
+          {
+            "name": "Effect 2",
+            "offsetTime": 250,
+            "startTime": 140,
+            "modes": {
+              "ForearmL": {
+                "dotMode": {
+                  "dotConnected": false,
+                  "feedback": [
+                    {
+                      "startTime": 0,
+                      "endTime": 250,
+                      "playbackType": "NONE",
+                      "pointList": []
+                    }
+                  ]
+                },
+                "pathMode": {
+                  "feedback": []
+                },
+                "mode": "PATH_MODE"
+              },
+              "ForearmR": {
+                "dotMode": {
+                  "dotConnected": false,
+                  "feedback": [
+                    {
+                      "startTime": 0,
+                      "endTime": 250,
+                      "playbackType": "NONE",
+                      "pointList": []
+                    }
+                  ]
+                },
+                "pathMode": {
+                  "feedback": [
+                    {
+                      "movingPattern": "CONST_SPEED",
+                      "playbackType": "NONE",
+                      "visible": true,
+                      "pointList": [
+                        {
+                          "intensity": 1,
+                          "time": 0,
+                          "x": 1,
+                          "y": 0
+                        },
+                        {
+                          "intensity": 1,
+                          "time": 250,
+                          "x": 0,
+                          "y": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "mode": "PATH_MODE"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "layout": {
+      "name": "Tactosy2",
+      "type": "Tactosy2",
+      "layouts": {
+        "ForearmL": [
+          {
+            "index": 0,
+            "y": 0,
+            "x": 0
+          },
+          {
+            "index": 1,
+            "y": 0,
+            "x": 0.5
+          },
+          {
+            "index": 2,
+            "y": 0,
+            "x": 1
+          },
+          {
+            "index": 3,
+            "y": 1,
+            "x": 0
+          },
+          {
+            "index": 4,
+            "y": 1,
+            "x": 0.5
+          },
+          {
+            "index": 5,
+            "y": 1,
+            "x": 1
+          }
+        ],
+        "ForearmR": [
+          {
+            "index": 0,
+            "y": 0,
+            "x": 0
+          },
+          {
+            "index": 1,
+            "y": 0,
+            "x": 0.5
+          },
+          {
+            "index": 2,
+            "y": 0,
+            "x": 1
+          },
+          {
+            "index": 3,
+            "y": 1,
+            "x": 0
+          },
+          {
+            "index": 4,
+            "y": 1,
+            "x": 0.5
+          },
+          {
+            "index": 5,
+            "y": 1,
+            "x": 1
+          }
+        ]
+      }
+    },
+    "createdAt": 1662365029187,
+    "updatedAt": 1662365029187
+  },
+  "durationMillis": 0,
+  "intervalMillis": 20,
+  "size": 20
+}

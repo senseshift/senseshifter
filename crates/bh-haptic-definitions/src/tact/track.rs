@@ -1,7 +1,7 @@
 use derivative::Derivative;
 use getset::Getters;
 
-use crate::Effect;
+use crate::HapticEffect;
 
 #[derive(Derivative, Getters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
@@ -12,6 +12,6 @@ pub struct Track {
   enable: Option<bool>,
 
   #[cfg_attr(feature = "serde", serde(default))]
-  effects: Vec<Effect>,
+  effects: Vec<HapticEffect>,
 }
 

@@ -29,9 +29,15 @@ pub struct EffectPathModeFeedback {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct EffectPathModePoint {
+  #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_f64"))]
   intensity: f64,
+  
   time: u32,
+
+  #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_f64"))]
   x: f64,
+
+  #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_f64"))]
   y: f64,
 }
 

@@ -1,1 +1,239 @@
-{"project":{"category":"","tags":[],"uploader":"wqLey93XhRR9cxzLkuq4CyxBs2C2","mediaFileDuration":1,"name":"snow_0","id":"fhKjAjf3ZiLHjOm3Cj1V","media":{"name":"","mediaType":"None","description":"","link":"","updateTime":0,"duration":0},"description":"","tracks":[{"enable":true,"effects":[{"name":"Effect 1","offsetTime":151,"startTime":0,"modes":{"Head":{"dotMode":{"dotConnected":false,"feedback":[{"startTime":0,"endTime":151,"playbackType":"FADE_IN_OUT","pointList":[{"intensity":0.1,"index":0}]}]},"pathMode":{"feedback":[{"movingPattern":"CONST_SPEED","playbackType":"NONE","visible":true,"pointList":[{"intensity":0.5,"time":0,"x":0,"y":0.5031472906541117}]}]},"mode":"DOT_MODE"}}}]},{"enable":true,"effects":[{"name":"Effect 2","offsetTime":152,"startTime":252,"modes":{"Head":{"dotMode":{"dotConnected":false,"feedback":[{"startTime":0,"endTime":152,"playbackType":"FADE_IN_OUT","pointList":[{"intensity":0.1,"index":2}]}]},"pathMode":{"feedback":[{"movingPattern":"CONST_SPEED","playbackType":"NONE","visible":true,"pointList":[{"intensity":0.5,"time":0,"x":1,"y":0.5031472906541117}]}]},"mode":"DOT_MODE"}}}]},{"enable":true,"effects":[{"name":"Effect 3","offsetTime":159,"startTime":501,"modes":{"Head":{"dotMode":{"dotConnected":false,"feedback":[{"startTime":0,"endTime":159,"playbackType":"FADE_IN_OUT","pointList":[{"intensity":0.1,"index":1}]}]},"pathMode":{"feedback":[{"movingPattern":"CONST_SPEED","playbackType":"NONE","visible":true,"pointList":[{"intensity":0.5,"time":0,"x":0.3109448189821046,"y":0.5031472906541117}]}]},"mode":"DOT_MODE"}}}]},{"enable":true,"effects":[{"name":"Effect 4","offsetTime":157,"startTime":751,"modes":{"Head":{"dotMode":{"dotConnected":false,"feedback":[{"startTime":0,"endTime":157,"playbackType":"FADE_IN_OUT","pointList":[{"intensity":0.1,"index":3}]}]},"pathMode":{"feedback":[{"movingPattern":"CONST_SPEED","playbackType":"NONE","visible":true,"pointList":[]}]},"mode":"DOT_MODE"}}}]}],"layout":{"name":"TactVisor","type":"TactVisor","layouts":{"Head":[{"index":0,"y":0.5,"x":0},{"index":1,"y":0.5,"x":0.3},{"index":2,"y":0.5,"x":0.7},{"index":3,"y":0.5,"x":1}]}},"createdAt":1703906107171,"updatedAt":1703911875283},"durationMillis":0,"intervalMillis":20,"size":20}
+{
+  "project": {
+    "category": "",
+    "tags": [],
+    "uploader": "wqLey93XhRR9cxzLkuq4CyxBs2C2",
+    "mediaFileDuration": 1,
+    "name": "snow_0",
+    "id": "fhKjAjf3ZiLHjOm3Cj1V",
+    "media": {
+      "name": "",
+      "mediaType": "None",
+      "description": "",
+      "link": "",
+      "updateTime": 0,
+      "duration": 0
+    },
+    "description": "",
+    "tracks": [
+      {
+        "enable": true,
+        "effects": [
+          {
+            "name": "Effect 1",
+            "offsetTime": 151,
+            "startTime": 0,
+            "modes": {
+              "Head": {
+                "dotMode": {
+                  "dotConnected": false,
+                  "feedback": [
+                    {
+                      "startTime": 0,
+                      "endTime": 151,
+                      "playbackType": "FADE_IN_OUT",
+                      "pointList": [
+                        {
+                          "intensity": 0.1,
+                          "index": 0
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "pathMode": {
+                  "feedback": [
+                    {
+                      "movingPattern": "CONST_SPEED",
+                      "playbackType": "NONE",
+                      "visible": true,
+                      "pointList": [
+                        {
+                          "intensity": 0.5,
+                          "time": 0,
+                          "x": 0,
+                          "y": 0.5031472906541117
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "mode": "DOT_MODE"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "enable": true,
+        "effects": [
+          {
+            "name": "Effect 2",
+            "offsetTime": 152,
+            "startTime": 252,
+            "modes": {
+              "Head": {
+                "dotMode": {
+                  "dotConnected": false,
+                  "feedback": [
+                    {
+                      "startTime": 0,
+                      "endTime": 152,
+                      "playbackType": "FADE_IN_OUT",
+                      "pointList": [
+                        {
+                          "intensity": 0.1,
+                          "index": 2
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "pathMode": {
+                  "feedback": [
+                    {
+                      "movingPattern": "CONST_SPEED",
+                      "playbackType": "NONE",
+                      "visible": true,
+                      "pointList": [
+                        {
+                          "intensity": 0.5,
+                          "time": 0,
+                          "x": 1,
+                          "y": 0.5031472906541117
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "mode": "DOT_MODE"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "enable": true,
+        "effects": [
+          {
+            "name": "Effect 3",
+            "offsetTime": 159,
+            "startTime": 501,
+            "modes": {
+              "Head": {
+                "dotMode": {
+                  "dotConnected": false,
+                  "feedback": [
+                    {
+                      "startTime": 0,
+                      "endTime": 159,
+                      "playbackType": "FADE_IN_OUT",
+                      "pointList": [
+                        {
+                          "intensity": 0.1,
+                          "index": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "pathMode": {
+                  "feedback": [
+                    {
+                      "movingPattern": "CONST_SPEED",
+                      "playbackType": "NONE",
+                      "visible": true,
+                      "pointList": [
+                        {
+                          "intensity": 0.5,
+                          "time": 0,
+                          "x": 0.3109448189821046,
+                          "y": 0.5031472906541117
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "mode": "DOT_MODE"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "enable": true,
+        "effects": [
+          {
+            "name": "Effect 4",
+            "offsetTime": 157,
+            "startTime": 751,
+            "modes": {
+              "Head": {
+                "dotMode": {
+                  "dotConnected": false,
+                  "feedback": [
+                    {
+                      "startTime": 0,
+                      "endTime": 157,
+                      "playbackType": "FADE_IN_OUT",
+                      "pointList": [
+                        {
+                          "intensity": 0.1,
+                          "index": 3
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "pathMode": {
+                  "feedback": [
+                    {
+                      "movingPattern": "CONST_SPEED",
+                      "playbackType": "NONE",
+                      "visible": true,
+                      "pointList": []
+                    }
+                  ]
+                },
+                "mode": "DOT_MODE"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "layout": {
+      "name": "TactVisor",
+      "type": "TactVisor",
+      "layouts": {
+        "Head": [
+          {
+            "index": 0,
+            "y": 0.5,
+            "x": 0
+          },
+          {
+            "index": 1,
+            "y": 0.5,
+            "x": 0.3
+          },
+          {
+            "index": 2,
+            "y": 0.5,
+            "x": 0.7
+          },
+          {
+            "index": 3,
+            "y": 0.5,
+            "x": 1
+          }
+        ]
+      }
+    },
+    "createdAt": 1703906107171,
+    "updatedAt": 1703911875283
+  },
+  "durationMillis": 0,
+  "intervalMillis": 20,
+  "size": 20
+}

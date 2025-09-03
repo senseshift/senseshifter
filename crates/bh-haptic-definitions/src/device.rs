@@ -39,6 +39,7 @@ impl DevicePosition {
 #[derivative(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum DeviceType {
+  Tactosy,
   Tactosy2,
   TactosyH,
   TactosyF,
@@ -47,7 +48,6 @@ pub enum DeviceType {
   TactFacial,
 
   Tactal,
-  Tactosy,
 
   Tactot,
   Tactot2,

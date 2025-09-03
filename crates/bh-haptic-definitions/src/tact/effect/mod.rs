@@ -13,7 +13,7 @@ use getset::Getters;
 #[get = "pub"]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-pub struct Effect {
+pub struct HapticEffect {
   name: Option<String>,
 
   offset_time: Option<u32>,

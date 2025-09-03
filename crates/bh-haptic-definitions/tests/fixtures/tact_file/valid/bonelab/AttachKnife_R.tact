@@ -1,6 +1,6 @@
 {
   "project": {
-    "createdAt": 1621447748175,
+    "createdAt": 1649829394851,
     "description": "",
     "layout": {
       "layouts": {
@@ -212,8 +212,8 @@
       "name": "Tactot",
       "type": "Tactot"
     },
-    "mediaFileDuration": 3,
-    "name": "hunger",
+    "mediaFileDuration": 1,
+    "name": "AttachKnife_R",
     "tracks": [
       {
         "effects": [
@@ -222,14 +222,17 @@
               "VestBack": {
                 "dotMode": {
                   "dotConnected": false,
-                  "feedback": [
-                    {
-                      "endTime": 906,
-                      "playbackType": "NONE",
-                      "startTime": 0,
-                      "pointList": []
-                    }
-                  ]
+                  "feedback": []
+                },
+                "mode": "DOT_MODE",
+                "pathMode": {
+                  "feedback": []
+                }
+              },
+              "VestFront": {
+                "dotMode": {
+                  "dotConnected": false,
+                  "feedback": []
                 },
                 "mode": "PATH_MODE",
                 "pathMode": {
@@ -237,78 +240,18 @@
                     {
                       "movingPattern": "CONST_SPEED",
                       "playbackType": "NONE",
-                      "visible": true,
-                      "pointList": []
-                    }
-                  ]
-                }
-              },
-              "VestFront": {
-                "dotMode": {
-                  "dotConnected": false,
-                  "feedback": [
-                    {
-                      "endTime": 906,
-                      "playbackType": "NONE",
-                      "startTime": 0,
-                      "pointList": []
-                    }
-                  ]
-                },
-                "mode": "PATH_MODE",
-                "pathMode": {
-                  "feedback": [
-                    {
-                      "movingPattern": "CONST_TDM",
-                      "playbackType": "NONE",
                       "pointList": [
                         {
-                          "intensity": 0.7,
+                          "intensity": 0.3,
                           "time": 0,
-                          "x": 0.64,
-                          "y": 0.97
+                          "x": 0.83,
+                          "y": 0
                         },
                         {
-                          "intensity": 0.7,
-                          "time": 129,
-                          "x": 0.34,
-                          "y": 0.95
-                        },
-                        {
-                          "intensity": 0.7,
-                          "time": 258,
-                          "x": 0.32,
-                          "y": 0.71
-                        },
-                        {
-                          "intensity": 0.7,
-                          "time": 388,
-                          "x": 0.63,
-                          "y": 0.64
-                        },
-                        {
-                          "intensity": 0.7,
-                          "time": 517,
-                          "x": 0.68,
-                          "y": 0.99
-                        },
-                        {
-                          "intensity": 0.7,
-                          "time": 647,
-                          "x": 0.39,
-                          "y": 1
-                        },
-                        {
-                          "intensity": 0.7,
-                          "time": 776,
-                          "x": 0.33,
-                          "y": 0.72
-                        },
-                        {
-                          "intensity": 0.7,
-                          "time": 906,
-                          "x": 0.63,
-                          "y": 0.63
+                          "intensity": 0.3,
+                          "time": 180,
+                          "x": 0.83,
+                          "y": 0.29
                         }
                       ],
                       "visible": true
@@ -317,8 +260,8 @@
                 }
               }
             },
-            "name": "path",
-            "offsetTime": 906,
+            "name": "Effect 1",
+            "offsetTime": 180,
             "startTime": 0
           }
         ],
@@ -329,7 +272,7 @@
         "effects": []
       }
     ],
-    "updatedAt": 1621448062511
+    "updatedAt": 1649829444543
   },
   "durationMillis": 0,
   "intervalMillis": 20,

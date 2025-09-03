@@ -37,5 +37,7 @@ pub struct EffectDotModeFeedback {
 pub struct EffectDotModePoint {
   /// reference to the `index` field of the [crate::LayoutPoint] in the [crate::Layout]
   index: u32,
+  
+  #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_f64"))]
   intensity: f64,
 }
