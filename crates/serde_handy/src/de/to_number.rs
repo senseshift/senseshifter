@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use serde::de::{self, Deserializer, Unexpected, Visitor};
-use std::{fmt, marker::PhantomData, str::FromStr};
+use std::{fmt, marker::PhantomData};
 
 /// Trait to abstract over f32/f64 without duplication.
 trait FloatParse: Sized + 'static {

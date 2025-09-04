@@ -71,6 +71,18 @@ dependencies = [
 [[package]]
 name = "bh-sdk"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bh-haptic-definitions",
+ "derivative",
+ "derive_more",
+ "getset",
+ "serde",
+ "serde_handy",
+ "serde_json",
+ "strum",
+ "tracing",
+]
 
 [[package]]
 name = "bitflags"

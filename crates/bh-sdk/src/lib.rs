@@ -1,14 +1,11 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#[cfg(feature = "v1")]
+mod v1;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[cfg(feature = "v1")]
+mod v2;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+#[cfg(feature = "v1")]
+mod v3;
+
+#[cfg(feature = "v1")]
+mod v4;

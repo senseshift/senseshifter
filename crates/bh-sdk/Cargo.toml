@@ -4,10 +4,24 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bh-haptic-definitions = { workspace = true }
 
+anyhow = { workspace = true }
+tracing = { workspace = true }
+
+derivative = { workspace = true }
+derive_more = { workspace = true, features = ["display"] }
+getset = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
+
+serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true, optional = true }
+serde_handy = { workspace = true, optional = true }
 
 [features]
 v1 = []
 v2 = []
-v3 = []
-v4 = []
+v3 = ["serde", "bh-haptic-definitions/client"]
+v4 = ["serde", "bh-haptic-definitions/client"]
+
+serde = ["dep:serde", "dep:serde_json", "dep:serde_handy", "bh-haptic-definitions/serde"]

@@ -1,8 +1,10 @@
 mod track;
 mod effect;
+mod frame;
 
 pub use track::*;
 pub use effect::*;
+pub use frame::*;
 
 use std::collections::HashMap;
 use derivative::Derivative;
