@@ -40,10 +40,13 @@ pub struct TactFile {
 pub struct TactFileProject {
   #[cfg_attr(feature = "serde", serde(default, deserialize_with = "serde_handy::de::from_str_num_to_opt_string"))]
   id: Option<String>,
-  name: String,
+  name: Option<String>,
   description: Option<String>,
 
+  #[cfg_attr(feature = "serde", serde(default, alias = "Tracks"))]
   tracks: Vec<Track>,
+
+  #[cfg_attr(feature = "serde", serde(alias = "Layout"))]
   layout: Layout,
 
   media_file_duration: Option<f64>,

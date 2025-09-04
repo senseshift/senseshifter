@@ -1,7 +1,6 @@
-use bh_haptic_definitions::TactFileProject;
+use bh_haptic_definitions::{HapticFrame, TactFileProject};
 use derivative::Derivative;
 use getset::Getters;
-use std::collections::BTreeMap;
 
 #[derive(Derivative, Getters)]
 #[get = "pub"]
@@ -103,8 +102,7 @@ pub enum ClientSubmitMessage {
         )]
         key: String,
 
-        /// todo: implement Frame type
-        frame: serde_json::Value,
+        frame: HapticFrame,
     },
 }
 
@@ -112,6 +110,7 @@ pub enum ClientSubmitMessage {
 mod tests {
     use super::*;
 
+    #[cfg(feature = "serde")]
     #[test]
     fn test_deserialize_message() {
         assert_eq!(
@@ -132,15 +131,5 @@ mod tests {
                 .unwrap(),
             ClientMessage::new_submit(vec![ClientSubmitMessage::TurnOffAll])
         );
-        assert_eq!(
-      serde_json::from_str::<ClientMessage>(
-        r#"{"Submit": [{"Type": "frame", "Key": "example_key", "Frame": {"some": "data"}}]}"#
-      )
-        .unwrap(),
-      ClientMessage::new_submit(vec![ClientSubmitMessage::Frame {
-        key: "example_key".to_string(),
-        frame: serde_json::json!({"some": "data"})
-      }])
-    );
     }
 }
