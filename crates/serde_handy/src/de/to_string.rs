@@ -1,6 +1,6 @@
+use serde::Deserialize;
 use serde::de::{self, Deserializer, Unexpected, Visitor};
 use std::fmt;
-use serde::Deserialize;
 
 #[derive(Debug)]
 struct StrNum(String);

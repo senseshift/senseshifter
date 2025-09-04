@@ -17,81 +17,81 @@ use bh_sdk::v3::{SdkMessage as SdkMessageV3, ServerMessage as ServerMessageV3};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
 enum SdkV2Message {
-    Client(ClientMessageV2),
-    Server(ServerMessageV2),
+  Client(ClientMessageV2),
+  Server(ServerMessageV2),
 }
 
 #[cfg(all(feature = "serde", feature = "v2"))]
 #[test]
 fn test_deserialize_v2_stream() -> anyhow::Result<()> {
-    let dir = fixture_path("v2").join("valid");
+  let dir = fixture_path("v2").join("valid");
 
-    for entry in walkdir::WalkDir::new(&dir) {
-        let entry = entry?;
-        if !entry.file_type().is_file() {
-            continue;
-        }
-        let path = entry.path();
-
-        let name = path.file_name().unwrap().to_str().unwrap();
-
-        for (_i, line) in read_to_string(path)?.lines().enumerate() {
-            if line.trim().is_empty() || line.starts_with("//") || line.starts_with('#') {
-                continue;
-            }
-
-            let parsed = serde_json::from_str::<SdkV2Message>(line);
-
-            assert!(
-                parsed.is_ok(),
-                "Failed to parse {}: {:?}",
-                name,
-                parsed.unwrap_err()
-            );
-        }
+  for entry in walkdir::WalkDir::new(&dir) {
+    let entry = entry?;
+    if !entry.file_type().is_file() {
+      continue;
     }
+    let path = entry.path();
 
-    Ok(())
+    let name = path.file_name().unwrap().to_str().unwrap();
+
+    for line in read_to_string(path)?.lines() {
+      if line.trim().is_empty() || line.starts_with("//") || line.starts_with('#') {
+        continue;
+      }
+
+      let parsed = serde_json::from_str::<SdkV2Message>(line);
+
+      assert!(
+        parsed.is_ok(),
+        "Failed to parse {}: {:?}",
+        name,
+        parsed.unwrap_err()
+      );
+    }
+  }
+
+  Ok(())
 }
 
 #[cfg(feature = "v3")]
 struct SdkV3Message {
-    sdk_message: serde_json::Result<SdkMessageV3>,
-    server_message: serde_json::Result<ServerMessageV3>,
+  sdk_message: serde_json::Result<SdkMessageV3>,
+  server_message: serde_json::Result<ServerMessageV3>,
 }
 
 #[cfg(all(feature = "serde", feature = "v2"))]
 #[test]
 fn test_deserialize_v3_stream() -> anyhow::Result<()> {
-    let dir = fixture_path("v3").join("valid");
+  let dir = fixture_path("v3").join("valid");
 
-    for entry in walkdir::WalkDir::new(&dir) {
-        let entry = entry?;
-        if !entry.file_type().is_file() {
-            continue;
-        }
-        let path = entry.path();
-
-        let name = path.file_name().unwrap().to_str().unwrap();
-
-        for (_i, line) in read_to_string(path)?.lines().enumerate() {
-            if line.trim().is_empty() || line.starts_with("//") || line.starts_with('#') {
-                continue;
-            }
-
-            let parsed = SdkV3Message {
-                sdk_message: serde_json::from_str::<SdkMessageV3>(line),
-                server_message: serde_json::from_str::<ServerMessageV3>(line),
-            };
-
-            assert!(
-                parsed.sdk_message.is_ok() || parsed.server_message.is_ok(),
-                "Failed to parse {}: {:?}",
-                name,
-                (parsed.sdk_message.err(), parsed.server_message.err()),
-            );
-        }
+  for entry in walkdir::WalkDir::new(&dir) {
+    let entry = entry?;
+    if !entry.file_type().is_file() {
+      continue;
     }
+    let path = entry.path();
 
-    Ok(())
+    let name = path.file_name().unwrap().to_str().unwrap();
+
+    for line in read_to_string(path)?.lines() {
+      if line.trim().is_empty() || line.starts_with("//") || line.starts_with('#') {
+        continue;
+      }
+
+      let parsed = SdkV3Message {
+        sdk_message: serde_json::from_str::<SdkMessageV3>(line),
+        server_message: serde_json::from_str::<ServerMessageV3>(line),
+      };
+
+      assert!(
+        parsed.sdk_message.is_ok() || parsed.server_message.is_ok(),
+        "Failed to parse {}: {:?}",
+        name,
+        (parsed.sdk_message.err(), parsed.server_message.err()),
+      );
+    }
+  }
+
+  Ok(())
 }

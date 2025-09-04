@@ -14,4 +14,3 @@ pub struct Track {
   #[cfg_attr(feature = "serde", serde(default))]
   effects: Vec<HapticEffect>,
 }
-

@@ -12,80 +12,78 @@ use strum::{EnumDiscriminants, EnumString, VariantNames};
 #[cfg_attr(feature = "serde", serde(tag = "type", content = "message"))]
 #[cfg_attr(feature = "serde", serde_with::serde_as)]
 pub enum SdkMessage {
-    SdkRequestAuthInit(
-        #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]
-        SdkRequestAuthInitMessage,
-    ),
-    SdkRequestAuth(
-        #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]
-        SdkRequestAuthMessage,
-    ),
-    SdkPlayWithStartTime(
-        #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]
-        SdkPlayWithStartTimeMessage,
-    ),
-    SdkStopAll,
+  SdkRequestAuthInit(
+    #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]
+    SdkRequestAuthInitMessage,
+  ),
+  SdkRequestAuth(
+    #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]
+    SdkRequestAuthMessage,
+  ),
+  SdkPlayWithStartTime(
+    #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]
+    SdkPlayWithStartTimeMessage,
+  ),
+  SdkStopAll,
 }
 
 #[cfg(feature = "serde")]
 impl<'de> serde::de::Deserialize<'de> for SdkMessage {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: serde::de::Deserializer<'de>,
+  {
+    use serde::de::{Error, Unexpected};
+    use std::str::FromStr;
+
+    let val = serde_json::Value::deserialize(deserializer)?;
+    let obj = val
+      .as_object()
+      .ok_or_else(|| Error::custom("SdkMessage must be a JSON object"))?;
+
+    // accept both "type" and "Type"
+    let tag = obj
+      .get("type")
+      .or_else(|| obj.get("Type"))
+      .ok_or_else(|| Error::custom(r#"missing "type"/"Type" tag"#))?;
+
+    let tag = tag
+      .as_str()
+      .ok_or_else(|| Error::invalid_type(Unexpected::Other("non-string tag"), &"a string"))?;
+
+    let tag = SdkMessageType::from_str(tag)
+      .map_err(|_| Error::unknown_variant(tag, SdkMessageType::VARIANTS))?;
+
+    // let tag = SdkMessageType::rep
+
+    // message may be a stringified JSON or a plain object
+    let msg_v = obj
+      .get("message")
+      .or_else(|| obj.get("Message"))
+      .cloned()
+      .unwrap_or(serde_json::Value::Null);
+
+    // helper: parse message value
+    fn parse_msg<T, E>(v: serde_json::Value) -> Result<T, E>
     where
-        D: serde::de::Deserializer<'de>,
+      T: serde::de::DeserializeOwned,
+      E: Error,
     {
-        use serde::de::{Error, Unexpected};
-        use std::str::FromStr;
-
-        let val = serde_json::Value::deserialize(deserializer)?;
-        let obj = val
-            .as_object()
-            .ok_or_else(|| Error::custom("SdkMessage must be a JSON object"))?;
-
-        // accept both "type" and "Type"
-        let tag = obj
-            .get("type")
-            .or_else(|| obj.get("Type"))
-            .ok_or_else(|| Error::custom(r#"missing "type"/"Type" tag"#))?;
-
-        let tag = tag
-            .as_str()
-            .ok_or_else(|| Error::invalid_type(Unexpected::Other("non-string tag"), &"a string"))?;
-
-        let tag = SdkMessageType::from_str(tag)
-            .map_err(|_| Error::unknown_variant(tag, SdkMessageType::VARIANTS))?;
-
-        // let tag = SdkMessageType::rep
-
-        // message may be a stringified JSON or a plain object
-        let msg_v = obj
-            .get("message")
-            .or_else(|| obj.get("Message"))
-            .cloned()
-            .unwrap_or(serde_json::Value::Null);
-
-        // helper: parse message value
-        fn parse_msg<T, E>(v: serde_json::Value) -> Result<T, E>
-        where
-            T: serde::de::DeserializeOwned,
-            E: Error,
-        {
-            match v {
-                serde_json::Value::String(s) => serde_json::from_str::<T>(&s).map_err(E::custom),
-                other => serde_json::from_value::<T>(other).map_err(E::custom),
-            }
-        }
-
-        match tag {
-            SdkMessageType::SdkRequestAuth => parse_msg(msg_v).map(SdkMessage::SdkRequestAuth),
-            SdkMessageType::SdkRequestAuthInit => {
-                parse_msg(msg_v).map(SdkMessage::SdkRequestAuthInit)
-            }
-            SdkMessageType::SdkPlayWithStartTime => {
-                parse_msg(msg_v).map(SdkMessage::SdkPlayWithStartTime)
-            }
-            SdkMessageType::SdkStopAll => Ok(SdkMessage::SdkStopAll),
-        }
+      match v {
+        serde_json::Value::String(s) => serde_json::from_str::<T>(&s).map_err(E::custom),
+        other => serde_json::from_value::<T>(other).map_err(E::custom),
+      }
     }
+
+    match tag {
+      SdkMessageType::SdkRequestAuth => parse_msg(msg_v).map(SdkMessage::SdkRequestAuth),
+      SdkMessageType::SdkRequestAuthInit => parse_msg(msg_v).map(SdkMessage::SdkRequestAuthInit),
+      SdkMessageType::SdkPlayWithStartTime => {
+        parse_msg(msg_v).map(SdkMessage::SdkPlayWithStartTime)
+      }
+      SdkMessageType::SdkStopAll => Ok(SdkMessage::SdkStopAll),
+    }
+  }
 }
 
 #[derive(Derivative, Getters)]
@@ -94,8 +92,8 @@ impl<'de> serde::de::Deserialize<'de> for SdkMessage {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct SdkRequestAuthInitMessage {
-    authentication: SdkRequestAuthMessage,
-    haptic: SdkApiResponseV3<HapticDefinitionsMessage>,
+  authentication: SdkRequestAuthMessage,
+  haptic: SdkApiResponseV3<HapticDefinitionsMessage>,
 }
 
 #[derive(Derivative, Getters)]
@@ -104,11 +102,11 @@ pub struct SdkRequestAuthInitMessage {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct SdkRequestAuthMessage {
-    cipher: String,
-    application_id: String,
-    nonce_hash_value: String,
-    application_id_hash_value: String,
-    sdk_api_key: String,
+  cipher: String,
+  application_id: String,
+  nonce_hash_value: String,
+  application_id_hash_value: String,
+  sdk_api_key: String,
 }
 
 #[derive(Derivative, Getters)]
@@ -117,71 +115,71 @@ pub struct SdkRequestAuthMessage {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct SdkPlayWithStartTimeMessage {
-    event_name: String,
-    request_id: u32,
-    start_millis: u64,
-    intensity: f64,
-    duration: f64,
-    offset_angle_x: f64,
-    offset_y: f64,
+  event_name: String,
+  request_id: u32,
+  start_millis: u64,
+  intensity: f64,
+  duration: f64,
+  offset_angle_x: f64,
+  offset_y: f64,
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+  use super::*;
 
-    #[cfg(feature = "serde")]
-    #[test]
-    fn test_encodes_sdk_request_auth_message_as_string() {
-        let msg = SdkMessage::SdkRequestAuth(SdkRequestAuthMessage {
-            cipher: "cipher".to_string(),
-            application_id: "app_id".to_string(),
-            nonce_hash_value: "nonce".to_string(),
-            application_id_hash_value: "app_hash".to_string(),
-            sdk_api_key: "api_key".to_string(),
-        });
+  #[cfg(feature = "serde")]
+  #[test]
+  fn test_encodes_sdk_request_auth_message_as_string() {
+    let msg = SdkMessage::SdkRequestAuth(SdkRequestAuthMessage {
+      cipher: "cipher".to_string(),
+      application_id: "app_id".to_string(),
+      nonce_hash_value: "nonce".to_string(),
+      application_id_hash_value: "app_hash".to_string(),
+      sdk_api_key: "api_key".to_string(),
+    });
 
-        let json = serde_json::to_string(&msg).unwrap();
+    let json = serde_json::to_string(&msg).unwrap();
 
-        let expected = r#"{"type":"SdkRequestAuth","message":"{\"cipher\":\"cipher\",\"applicationId\":\"app_id\",\"nonceHashValue\":\"nonce\",\"applicationIdHashValue\":\"app_hash\",\"sdkApiKey\":\"api_key\"}"}"#;
-        assert_eq!(json, expected);
-    }
+    let expected = r#"{"type":"SdkRequestAuth","message":"{\"cipher\":\"cipher\",\"applicationId\":\"app_id\",\"nonceHashValue\":\"nonce\",\"applicationIdHashValue\":\"app_hash\",\"sdkApiKey\":\"api_key\"}"}"#;
+    assert_eq!(json, expected);
+  }
 
-    #[cfg(feature = "serde")]
-    #[test]
-    fn test_encodes_sdk_request_auth_init_message_as_string() {
-        let msg = SdkMessage::SdkRequestAuthInit(SdkRequestAuthInitMessage {
-            authentication: SdkRequestAuthMessage {
-                cipher: "cipher".to_string(),
-                application_id: "app_id".to_string(),
-                nonce_hash_value: "nonce".to_string(),
-                application_id_hash_value: "app_hash".to_string(),
-                sdk_api_key: "api_key".to_string(),
-            },
-            haptic: SdkApiResponseV3::new(true, 200, None, 1234567890, None),
-        });
+  #[cfg(feature = "serde")]
+  #[test]
+  fn test_encodes_sdk_request_auth_init_message_as_string() {
+    let msg = SdkMessage::SdkRequestAuthInit(SdkRequestAuthInitMessage {
+      authentication: SdkRequestAuthMessage {
+        cipher: "cipher".to_string(),
+        application_id: "app_id".to_string(),
+        nonce_hash_value: "nonce".to_string(),
+        application_id_hash_value: "app_hash".to_string(),
+        sdk_api_key: "api_key".to_string(),
+      },
+      haptic: SdkApiResponseV3::new(true, 200, None, 1234567890, None),
+    });
 
-        let json = serde_json::to_string(&msg).unwrap();
+    let json = serde_json::to_string(&msg).unwrap();
 
-        let expected = r#"{"type":"SdkRequestAuthInit","message":"{\"authentication\":{\"cipher\":\"cipher\",\"applicationId\":\"app_id\",\"nonceHashValue\":\"nonce\",\"applicationIdHashValue\":\"app_hash\",\"sdkApiKey\":\"api_key\"},\"haptic\":{\"status\":true,\"code\":200,\"errorMessage\":null,\"timestamp\":1234567890,\"message\":null}}"}"#;
-        assert_eq!(json, expected);
-    }
+    let expected = r#"{"type":"SdkRequestAuthInit","message":"{\"authentication\":{\"cipher\":\"cipher\",\"applicationId\":\"app_id\",\"nonceHashValue\":\"nonce\",\"applicationIdHashValue\":\"app_hash\",\"sdkApiKey\":\"api_key\"},\"haptic\":{\"status\":true,\"code\":200,\"errorMessage\":null,\"timestamp\":1234567890,\"message\":null}}"}"#;
+    assert_eq!(json, expected);
+  }
 
-    #[cfg(feature = "serde")]
-    #[test]
-    fn test_decodes_sdk_request_auth_message_from_string() {
-        let json = r#"{"type":"SdkRequestAuth","message":"{\"cipher\":\"cipher\",\"applicationId\":\"app_id\",\"nonceHashValue\":\"nonce\",\"applicationIdHashValue\":\"app_hash\",\"sdkApiKey\":\"api_key\"}"}"#;
+  #[cfg(feature = "serde")]
+  #[test]
+  fn test_decodes_sdk_request_auth_message_from_string() {
+    let json = r#"{"type":"SdkRequestAuth","message":"{\"cipher\":\"cipher\",\"applicationId\":\"app_id\",\"nonceHashValue\":\"nonce\",\"applicationIdHashValue\":\"app_hash\",\"sdkApiKey\":\"api_key\"}"}"#;
 
-        let msg: SdkMessage = serde_json::from_str(json).unwrap();
+    let msg: SdkMessage = serde_json::from_str(json).unwrap();
 
-        let expected = SdkMessage::SdkRequestAuth(SdkRequestAuthMessage {
-            cipher: "cipher".to_string(),
-            application_id: "app_id".to_string(),
-            nonce_hash_value: "nonce".to_string(),
-            application_id_hash_value: "app_hash".to_string(),
-            sdk_api_key: "api_key".to_string(),
-        });
+    let expected = SdkMessage::SdkRequestAuth(SdkRequestAuthMessage {
+      cipher: "cipher".to_string(),
+      application_id: "app_id".to_string(),
+      nonce_hash_value: "nonce".to_string(),
+      application_id_hash_value: "app_hash".to_string(),
+      sdk_api_key: "api_key".to_string(),
+    });
 
-        assert_eq!(msg, expected);
-    }
+    assert_eq!(msg, expected);
+  }
 }

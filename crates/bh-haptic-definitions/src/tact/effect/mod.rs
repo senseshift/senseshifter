@@ -4,9 +4,9 @@ mod path;
 use dot::*;
 use path::*;
 
-use std::collections::HashMap;
 use derivative::Derivative;
 use getset::Getters;
+use std::collections::HashMap;
 
 #[derive(Derivative, Getters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
@@ -30,14 +30,16 @@ pub struct HapticEffect {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "mode", rename_all = "camelCase"))]
 pub enum EffectMode {
-  #[cfg_attr(feature = "serde", serde(rename = "DOT_MODE", rename_all = "camelCase"))]
-  DotMode {
-    dot_mode: EffectDotMode,
-  },
-  #[cfg_attr(feature = "serde", serde(rename = "PATH_MODE", rename_all = "camelCase"))]
-  PathMode {
-    path_mode: EffectPathMode,
-  },
+  #[cfg_attr(
+    feature = "serde",
+    serde(rename = "DOT_MODE", rename_all = "camelCase")
+  )]
+  DotMode { dot_mode: EffectDotMode },
+  #[cfg_attr(
+    feature = "serde",
+    serde(rename = "PATH_MODE", rename_all = "camelCase")
+  )]
+  PathMode { path_mode: EffectPathMode },
 }
 
 #[derive(Derivative)]
