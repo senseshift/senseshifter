@@ -16,7 +16,8 @@ strum = { workspace = true, features = ["derive"] }
 
 serde = { workspace = true, optional = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
-serde_handy = { workspace = true, optional = true }
+serde_handy = { workspace = true, optional = true, features = ["json"] }
+serde_with = { workspace = true, optional = true, features = ["json"] }
 
 [dev-dependencies]
 walkdir = { workspace = true }
@@ -27,4 +28,4 @@ v2 = []
 v3 = ["serde", "bh-haptic-definitions/client"]
 v4 = ["serde", "bh-haptic-definitions/client"]
 
-serde = ["dep:serde", "dep:serde_json", "dep:serde_handy", "bh-haptic-definitions/serde"]
+serde = ["dep:serde", "dep:serde_json", "dep:serde_handy", "dep:serde_with", "bh-haptic-definitions/serde"]

@@ -5,3 +5,7 @@ edition = "2024"
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true, optional = true }
+
+[features]
+json = ["dep:serde_json"]
