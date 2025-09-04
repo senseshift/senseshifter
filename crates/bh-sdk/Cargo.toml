@@ -18,6 +18,9 @@ serde = { workspace = true, optional = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
 serde_handy = { workspace = true, optional = true }
 
+[dev-dependencies]
+walkdir = { workspace = true }
+
 [features]
 v1 = []
 v2 = []

@@ -82,6 +82,7 @@ dependencies = [
  "serde_json",
  "strum",
  "tracing",
+ "walkdir",
 ]
 
 [[package]]

@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/bh-haptic-definitions/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/bh-sdk/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/bh-sdk/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/serde_handy/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
