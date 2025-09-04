@@ -1,6 +1,6 @@
+use crate::EffectFeedbackPlaybackType;
 use derivative::Derivative;
 use getset::Getters;
-use crate::EffectFeedbackPlaybackType;
 
 #[derive(Derivative, Getters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
@@ -31,7 +31,7 @@ pub struct EffectPathModeFeedback {
 pub struct EffectPathModePoint {
   #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_f64"))]
   intensity: f64,
-  
+
   time: u32,
 
   #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_f64"))]

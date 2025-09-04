@@ -1,15 +1,17 @@
-use std::fs::read_to_string;
 use bh_haptic_definitions::{HapticDefinitionsMessage, SdkApiResponseV3, TactFile};
+use std::fs::read_to_string;
 
 mod common;
 
 #[test]
-fn haptic_definitions_parse_valid() -> anyhow::Result<()>  {
+fn haptic_definitions_parse_valid() -> anyhow::Result<()> {
   let dir = common::fixture_path("haptic_definitions").join("valid");
 
   for entry in walkdir::WalkDir::new(&dir) {
     let entry = entry?;
-    if !entry.file_type().is_file() { continue; }
+    if !entry.file_type().is_file() {
+      continue;
+    }
     let path = entry.path();
     let name = path.file_name().unwrap().to_str().unwrap();
     let data = read_to_string(path)?;
@@ -30,12 +32,14 @@ fn haptic_definitions_parse_valid() -> anyhow::Result<()>  {
 }
 
 #[test]
-fn tact_files_parse_valid() -> anyhow::Result<()>  {
+fn tact_files_parse_valid() -> anyhow::Result<()> {
   let dir = common::fixture_path("tact_file").join("valid");
 
   for entry in walkdir::WalkDir::new(&dir) {
     let entry = entry?;
-    if !entry.file_type().is_file() { continue; }
+    if !entry.file_type().is_file() {
+      continue;
+    }
     let path = entry.path();
     let name = path.file_name().unwrap().to_str().unwrap();
     let data = read_to_string(path)?;

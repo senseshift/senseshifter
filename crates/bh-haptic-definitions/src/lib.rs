@@ -1,8 +1,8 @@
-mod tact;
 mod device;
+mod tact;
 
-pub use tact::*;
 pub use device::*;
+pub use tact::*;
 
 use anyhow::*;
 use derivative::Derivative;
@@ -22,7 +22,7 @@ pub struct SdkApiResponseV3<T> {
   message: Option<T>,
 }
 
-impl <T> SdkApiResponseV3<T> {
+impl<T> SdkApiResponseV3<T> {
   pub fn new(
     status: bool,
     code: i64,
@@ -46,7 +46,10 @@ pub async fn fetch_haptic_definitions(
   api_key: String,
   // version: String,
 ) -> Result<HapticDefinitionsMessage, Error> {
-  let url = format!("https://sdk-apis.bhaptics.com/api/v1/haptic-definitions/workspace-v3/latest?latest-version={}&api-key={}&app-id={}", -1, api_key, app_id);
+  let url = format!(
+    "https://sdk-apis.bhaptics.com/api/v1/haptic-definitions/workspace-v3/latest?latest-version={}&api-key={}&app-id={}",
+    -1, api_key, app_id
+  );
 
   info!("Fetching haptic definitions from URL: {}", url);
 
@@ -88,8 +91,11 @@ pub struct HapticDefinitionsMessage {
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct HapticDefinitionMapping {
   enable: Option<bool>,
-  
-  #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_opt_f64"))]
+
+  #[cfg_attr(
+    feature = "serde",
+    serde(deserialize_with = "serde_handy::de::to_opt_f64")
+  )]
   intensity: Option<f64>,
   key: String,
   category: Option<String>,
@@ -100,7 +106,6 @@ pub struct HapticDefinitionMapping {
 
   #[cfg_attr(feature = "serde", serde(default))]
   tact_file_patterns: Vec<HapticDefinitionTactFilePattern>,
-
   // #[serde(default)]
   // audio_file_patterns: Option<Vec<HapticDefinitionAudioFilePattern>>,
 }

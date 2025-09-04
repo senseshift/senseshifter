@@ -27,11 +27,23 @@ pub enum DevicePosition {
 
 impl DevicePosition {
   pub fn is_right(&self) -> bool {
-    matches!(self, DevicePosition::GloveR | DevicePosition::HandR | DevicePosition::ForearmR | DevicePosition::FootR)
+    matches!(
+      self,
+      DevicePosition::GloveR
+        | DevicePosition::HandR
+        | DevicePosition::ForearmR
+        | DevicePosition::FootR
+    )
   }
 
   pub fn is_left(&self) -> bool {
-    matches!(self, DevicePosition::GloveL | DevicePosition::HandL | DevicePosition::ForearmL | DevicePosition::FootL)
+    matches!(
+      self,
+      DevicePosition::GloveL
+        | DevicePosition::HandL
+        | DevicePosition::ForearmL
+        | DevicePosition::FootL
+    )
   }
 }
 

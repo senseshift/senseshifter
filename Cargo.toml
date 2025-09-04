@@ -31,3 +31,9 @@ tokio-util = "^0.7.16"
 base64 = "^0.22.1"
 reqwest = "^0.12.23"
 walkdir = "^2.5.0"
+
+# common dev-dependencies
+cargo-husky = { version = "^1.5.0", default-features = false, features = ["precommit-hook", "run-cargo-check", "run-cargo-fmt", "run-cargo-clippy"] }
+
+[workspace.dev-dependencies]
+cargo-husky = { workspace = true, default-features = false, features = ["precommit-hook", "run-cargo-check", "run-cargo-fmt", "run-cargo-clippy"] }
