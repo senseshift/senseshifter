@@ -6,10 +6,10 @@ use std::fs::read_to_string;
 use derivative::Derivative;
 
 #[cfg(feature = "v2")]
-use bh_sdk::v2::{ClientMessage, ServerMessage};
+use bh_sdk::v2::{ClientMessage as ClientMessageV2, ServerMessage as ServerMessageV2};
 
 #[cfg(feature = "v3")]
-use bh_sdk::v3::SdkMessage;
+use bh_sdk::v3::{SdkMessage as SdkMessageV3, ServerMessage as ServerMessageV3};
 
 #[cfg(feature = "v2")]
 #[derive(Derivative)]
@@ -17,8 +17,8 @@ use bh_sdk::v3::SdkMessage;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
 enum SdkV2Message {
-    Client(ClientMessage),
-    Server(ServerMessage),
+    Client(ClientMessageV2),
+    Server(ServerMessageV2),
 }
 
 #[cfg(all(feature = "serde", feature = "v2"))]
@@ -55,12 +55,9 @@ fn test_deserialize_v2_stream() -> anyhow::Result<()> {
 }
 
 #[cfg(feature = "v3")]
-#[derive(Derivative)]
-#[derivative(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]
-enum SdkV3Message {
-    SdkMessage(SdkMessage),
+struct SdkV3Message {
+    sdk_message: serde_json::Result<SdkMessageV3>,
+    server_message: serde_json::Result<ServerMessageV3>,
 }
 
 #[cfg(all(feature = "serde", feature = "v2"))]
@@ -82,13 +79,16 @@ fn test_deserialize_v3_stream() -> anyhow::Result<()> {
                 continue;
             }
 
-            let parsed = serde_json::from_str::<SdkMessage>(line);
+            let parsed = SdkV3Message {
+                sdk_message: serde_json::from_str::<SdkMessageV3>(line),
+                server_message: serde_json::from_str::<ServerMessageV3>(line),
+            };
 
             assert!(
-                parsed.is_ok(),
+                parsed.sdk_message.is_ok() || parsed.server_message.is_ok(),
                 "Failed to parse {}: {:?}",
                 name,
-                parsed.unwrap_err()
+                (parsed.sdk_message.err(), parsed.server_message.err()),
             );
         }
     }

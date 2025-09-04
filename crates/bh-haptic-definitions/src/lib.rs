@@ -22,6 +22,24 @@ pub struct SdkApiResponseV3<T> {
   message: Option<T>,
 }
 
+impl <T> SdkApiResponseV3<T> {
+  pub fn new(
+    status: bool,
+    code: i64,
+    error_message: Option<String>,
+    timestamp: u64,
+    message: Option<T>,
+  ) -> Self {
+    Self {
+      status,
+      code,
+      error_message,
+      timestamp,
+      message,
+    }
+  }
+}
+
 #[cfg(feature = "client")]
 pub async fn fetch_haptic_definitions(
   app_id: String,
