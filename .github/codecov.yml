@@ -1,0 +1,3 @@
+ignore:
+  - "crates/**/tests/**/*"
+  - "apps/**/tests/**/*"
