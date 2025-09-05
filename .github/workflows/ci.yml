@@ -28,6 +28,9 @@ jobs:
   test-default:
     name: Test Default Features
     runs-on: ubuntu-latest
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     steps:
     - uses: actions/checkout@v4
     - name: Install Rust
@@ -36,6 +39,8 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         key: test-default
+    - name: Run sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.9
     - name: Install cargo-tarpaulin
       uses: baptiste0928/cargo-install@v3
       with:
@@ -54,6 +59,9 @@ jobs:
   test-all-features:
     name: Test All Features
     runs-on: ubuntu-latest
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     steps:
     - uses: actions/checkout@v4
     - name: Install Rust
@@ -62,6 +70,8 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         key: test-all-features
+    - name: Run sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.9
     - name: Install cargo-tarpaulin
       uses: baptiste0928/cargo-install@v3
       with:
