@@ -24,12 +24,16 @@ serde = "^1.0.219"
 serde_json = "^1.0.143"
 serde_with = "^3.14.0"
 
+futures = "^0.3.31"
+futures-util = "^0.3.31"
 tokio = "^1.47.1"
 tokio-stream = "^0.1.17"
 tokio-util = "^0.7.16"
 
 axum = "^0.8.4"
 axum-server = "^0.7.2"
+tower = "^0.5.2"
+tower-http = "^0.6.6"
 
 base64 = "^0.22.1"
 reqwest = "^0.12.23"

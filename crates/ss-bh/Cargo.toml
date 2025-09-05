@@ -20,16 +20,20 @@ serde_json = { workspace = true, optional = true }
 axum = { workspace = true, optional = true, features = ["json", "ws", "tokio"] }
 axum-server = { workspace = true, optional = true }
 rustls = { workspace = true, optional = true }
+tower = { workspace = true, optional = true }
+tower-http = { workspace = true, optional = true, features = ["trace", "normalize-path"] }
 
+futures-util = { workspace = true }
 tokio = { workspace = true, features = ["net"] }
 tokio-util = { workspace = true }
+log = "0.4.28"
 
 [features]
 serde = ["dep:serde", "dep:serde_json", "bh-haptic-definitions/serde", "bh-sdk/serde"]
 
 tls = ["dep:rustls", "axum-server/tls-rustls"]
 
-ws = ["serde", "dep:axum", "axum/ws", "dep:axum-server"]
+ws = ["serde", "dep:axum", "axum/ws", "dep:axum-server", "dep:tower", "dep:tower-http"]
 
 v1 = ["bh-sdk/v1"]
 v2 = ["bh-sdk/v2"]

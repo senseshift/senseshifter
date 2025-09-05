@@ -1,21 +1,95 @@
-use axum::{Router, routing::get};
-use tokio::net::TcpListener;
-use tokio_util::sync::CancellationToken;
-
-use getset::WithSetters;
+use axum::body::Bytes;
+use axum::extract::OriginalUri;
+use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
+use axum::http::Uri;
+use axum::{Router, routing::any};
+use tower_http::trace::TraceLayer;
 
 #[cfg(feature = "tls")]
 use axum_server::tls_rustls::RustlsConfig;
 #[cfg(feature = "tls")]
 use rustls::ServerConfig as TlsServerConfig;
 
-use std::sync::Arc;
+use futures_util::stream::StreamExt;
+use tokio::net::TcpListener;
+use tokio_util::sync::CancellationToken;
 
+use futures_util::SinkExt;
+use getset::WithSetters;
+use std::sync::Arc;
+use tokio_util::future::FutureExt;
 use tracing::*;
 
 mod config;
+mod handlers;
 
 pub use config::*;
+
+async fn kickstart_ws(socket: &mut WebSocket) -> Result<(), axum::Error> {
+  socket
+    .send(Message::Ping(Bytes::from_static(&[1, 2, 3])))
+    .await
+}
+
+async fn upgrade_websocket(
+  ws: WebSocketUpgrade,
+  // Query(_app_ctx): Query<handlers::v3::AppContext>,
+) -> axum::response::Response {
+  info!("Received V3 SDK request");
+
+  ws.on_upgrade(async move |mut socket| {
+    match kickstart_ws(&mut socket).await {
+      Ok(_) => {}
+      Err(e) => {
+        error!("Failed to kickstart websocket: {}", e);
+        return;
+      }
+    }
+
+    let (mut sender, mut receiver) = socket.split();
+
+    tokio::spawn(async move {
+      loop {
+        tokio::select! {
+          Some(msg) = receiver.next() => {
+            match msg {
+              Ok(message) => {
+                debug!("Received message: {:?}", message);
+
+                match message {
+                  Message::Text(_) | Message::Binary(_) => {
+                    let raw_msg = message.into_text();
+
+                    info!("Received Text/Binary message: {:?}", raw_msg);
+                  },
+                  Message::Ping(bytes) => {
+                    debug!("Received Ping: {:?}", bytes);
+                    if let Err(e) = sender.send(Message::Pong(bytes)).await {
+                      error!("Failed to send Pong: {}", e);
+                    }
+                  },
+                  Message::Pong(_) => {
+                    debug!("Received Pong");
+                  },
+                  Message::Close(_) => {
+                    info!("Received Close, closing connection");
+                    break;
+                  },
+                }
+              }
+              Err(e) => {
+                error!("WebSocket error: {:?}", e);
+                break; // Connection error, exit the loop
+              }
+            }
+          }
+        }
+      }
+
+      info!("WebSocket connection closed");
+    });
+  })
+}
 
 #[derive(Debug, Clone, WithSetters)]
 pub struct BhWebsocketServerBuilder {
@@ -72,7 +146,7 @@ impl BhWebsocketServerBuilder {
           {
             Ok(config) => Some(config),
             Err(err) => {
-              error!("Failed to load TLS config, TLS is disabled: {}", err);
+              error!("Failed to load TLS config, TLS is disabled: {err}");
               None
             }
           }
@@ -85,43 +159,33 @@ impl BhWebsocketServerBuilder {
     let app = Router::<()>::new();
 
     #[cfg(feature = "v1")]
-    let app = app.route(
-      "/feedbacks",
-      get(|| async {
-        info!("v1 feedback endpoint hit");
-      }),
-    );
+    let app = app
+      .route("/feedbacks", any(upgrade_websocket))
+      .route("/feedbacks/", any(upgrade_websocket));
 
     #[cfg(feature = "v2")]
-    let app = app.route(
-      "/v2/feedbacks",
-      get(|| async {
-        info!("v2 feedback endpoint hit");
-      }),
-    );
+    let app = app
+      .route("/v2/feedbacks", any(upgrade_websocket))
+      .route("/v2/feedbacks/", any(upgrade_websocket));
 
     #[cfg(feature = "v3")]
-    let app = app.route(
-      "/v3/feedback",
-      get(|| async {
-        info!("v3 feedback endpoint hit");
-      }),
-    );
+    let app = app
+      .route("/v3/feedback", any(upgrade_websocket))
+      .route("/v3/feedback/", any(upgrade_websocket));
 
     #[cfg(feature = "v4")]
-    let app = app.route(
-      "/v4/feedback",
-      get(|| async {
-        info!("v4 feedback endpoint hit");
-      }),
-    );
+    let app = app
+      .route("/v4/feedback", any(upgrade_websocket))
+      .route("/v4/feedback/", any(upgrade_websocket));
 
-    // let app = app.layer((
-    //   TraceLayer::new_for_http(),
-    //   // Graceful shutdown will wait for outstanding requests to complete. Add a timeout so
-    //   // requests don't hang forever.
-    //   TimeoutLayer::new(Duration::from_secs(10)),
-    // ));
+    // log URLs to wrong paths
+    let app = app.fallback(any(
+      async move |uri: Uri, OriginalUri(original_uri): OriginalUri| {
+        warn!("Received request to unknown path: {uri}, original path: {original_uri}",);
+      },
+    ));
+    let app = app.layer(TraceLayer::new_for_http());
+    let app = app.into_make_service();
 
     if let Some(listen) = self.config.listen() {
       let app = app.clone();
@@ -129,7 +193,7 @@ impl BhWebsocketServerBuilder {
 
       match TcpListener::bind(listen).await {
         Ok(listener) => {
-          info!("Started listener on {}", listen);
+          info!("Started listener on {listen}");
 
           tokio::spawn(
             async move {
@@ -149,7 +213,7 @@ impl BhWebsocketServerBuilder {
           );
         }
         Err(err) => {
-          error!("Failed to bind to {}: {}", listen, err);
+          error!("Failed to bind to {listen}: {err}");
         }
       };
     }
@@ -158,18 +222,22 @@ impl BhWebsocketServerBuilder {
     if let Some(tls_config) = tls_config
       && let Some(listen_tls) = self.config.listen_tls()
     {
+      let app = app.clone();
+      let cancellation_token = cancellation_token.child_token();
+
       info!("Starting TLS listener on {}", listen_tls);
 
       let mut tls_server = axum_server::bind_rustls(*listen_tls, tls_config);
-
       tls_server.http_builder().http2().enable_connect_protocol();
-
-      let app = app.clone();
 
       tokio::spawn(
         async move {
-          if let Err(err) = tls_server.serve(app.into_make_service()).await {
-            error!("TLS server error: {}", err);
+          if let Some(Err(err)) = tls_server
+            .serve(app)
+            .with_cancellation_token(&cancellation_token)
+            .await
+          {
+            error!("TLS server error: {err}");
           }
 
           info!("TLS server existed gracefully");
