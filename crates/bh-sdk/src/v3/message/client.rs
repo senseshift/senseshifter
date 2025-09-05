@@ -11,6 +11,7 @@ use strum::{EnumDiscriminants, EnumString, VariantNames};
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type", content = "message"))]
 #[cfg_attr(feature = "serde", serde_with::serde_as)]
+#[allow(clippy::large_enum_variant)] // todo: Analyze impact (#7)
 pub enum SdkMessage {
   SdkRequestAuthInit(
     #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]

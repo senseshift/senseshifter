@@ -16,6 +16,7 @@ use bh_sdk::v3::{SdkMessage as SdkMessageV3, ServerMessage as ServerMessageV3};
 #[derivative(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
+#[allow(clippy::large_enum_variant)] // this is a test enum, not a real enum
 enum SdkV2Message {
   Client(ClientMessageV2),
   Server(ServerMessageV2),
