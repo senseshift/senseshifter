@@ -21,7 +21,8 @@ axum = { workspace = true, optional = true, features = ["json", "ws", "tokio"] }
 axum-server = { workspace = true, optional = true }
 rustls = { workspace = true, optional = true }
 
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["net"] }
+tokio-util = { workspace = true }
 
 [features]
 serde = ["dep:serde", "dep:serde_json", "bh-haptic-definitions/serde", "bh-sdk/serde"]

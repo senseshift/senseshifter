@@ -8,7 +8,7 @@ async fn main() -> anyhow::Result<()> {
 
   let sever_builder = BhWebsocketServerBuilder::new(ws_config);
 
-  let _ = sever_builder.build().await?;
+  sever_builder.build().await?;
 
   loop {
     tokio::select! {
