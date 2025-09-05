@@ -196,32 +196,15 @@ async fn upgrade_websocket_generic<H: MessageHandler>(
   })
 }
 
-// Version-specific WebSocket upgrade handlers
-#[cfg(feature = "v2")]
-async fn upgrade_websocket_v2(
+// Generic version-agnostic WebSocket upgrade handler
+async fn upgrade_websocket<H: MessageHandler>(
   ws: WebSocketUpgrade,
-  Query(context): Query<handlers::v2::AppContext>,
+  Query(context): Query<H::Context>,
   State(app_state): State<AppState>,
 ) -> axum::response::Response {
   let event_rx = app_state.event_sender.subscribe();
-  upgrade_websocket_generic::<handlers::v2::FeedbackHandler>(
-    ws,
-    Query(context),
-    event_rx,
-    app_state.command_sender,
-    app_state.cancellation_token,
-  )
-  .await
-}
 
-#[cfg(feature = "v3")]
-async fn upgrade_websocket_v3(
-  ws: WebSocketUpgrade,
-  Query(context): Query<handlers::v3::AppContext>,
-  State(app_state): State<AppState>,
-) -> axum::response::Response {
-  let event_rx = app_state.event_sender.subscribe();
-  upgrade_websocket_generic::<handlers::v3::FeedbackHandler>(
+  upgrade_websocket_generic::<H>(
     ws,
     Query(context),
     event_rx,
@@ -315,34 +298,56 @@ impl BhWebsocketServerBuilder {
 
     // yeah, trailing URLs with slashes are routed separately...
 
-    // TODO: Add v1 handler when needed
     #[cfg(feature = "v1")]
     {
-      // app = app
-      //   .route("/feedbacks", any(/* TODO: upgrade_v1 */))
-      //   .route("/feedbacks/", any(/* TODO: upgrade_v1 */));
+      app = app
+        .route(
+          "/feedbacks",
+          any(upgrade_websocket::<handlers::v1::FeedbackHandler>),
+        )
+        .route(
+          "/feedbacks/",
+          any(upgrade_websocket::<handlers::v1::FeedbackHandler>),
+        );
     }
 
     #[cfg(feature = "v2")]
     {
       app = app
-        .route("/v2/feedbacks", any(upgrade_websocket_v2))
-        .route("/v2/feedbacks/", any(upgrade_websocket_v2));
+        .route(
+          "/v2/feedbacks",
+          any(upgrade_websocket::<handlers::v2::FeedbackHandler>),
+        )
+        .route(
+          "/v2/feedbacks/",
+          any(upgrade_websocket::<handlers::v2::FeedbackHandler>),
+        );
     }
 
     #[cfg(feature = "v3")]
     {
       app = app
-        .route("/v3/feedback", any(upgrade_websocket_v3))
-        .route("/v3/feedback/", any(upgrade_websocket_v3));
+        .route(
+          "/v3/feedback",
+          any(upgrade_websocket::<handlers::v3::FeedbackHandler>),
+        )
+        .route(
+          "/v3/feedback/",
+          any(upgrade_websocket::<handlers::v3::FeedbackHandler>),
+        );
     }
 
-    // TODO: Add v4 handler when needed
     #[cfg(feature = "v4")]
     {
-      // app = app
-      //   .route("/v4/feedback", any(/* TODO: upgrade_v4 */))
-      //   .route("/v4/feedback/", any(/* TODO: upgrade_v4 */));
+      app = app
+        .route(
+          "/v4/feedback",
+          any(upgrade_websocket::<handlers::v4::FeedbackHandler>),
+        )
+        .route(
+          "/v4/feedback/",
+          any(upgrade_websocket::<handlers::v4::FeedbackHandler>),
+        );
     }
 
     // log URLs to wrong paths

@@ -10,7 +10,9 @@ pub trait MessageHandler: Send + Sync + 'static {
   type Context: DeserializeOwned + Send + Sync;
   type Builder: HandlerBuilder<Handler = Self, Context = Self::Context>;
 
-  fn handle_connection_opened(&mut self) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
+  fn handle_connection_opened(
+    &mut self,
+  ) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
   fn handle_text_message(
     &mut self,
     msg: &str,
@@ -41,8 +43,14 @@ pub trait HandlerBuilder: Send + Sync {
   fn build(self) -> impl std::future::Future<Output = anyhow::Result<Self::Handler>> + Send;
 }
 
+#[cfg(feature = "v1")]
+pub mod v1;
+
 #[cfg(feature = "v2")]
 pub mod v2;
 
 #[cfg(feature = "v3")]
 pub mod v3;
+
+#[cfg(feature = "v4")]
+pub mod v4;

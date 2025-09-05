@@ -11,8 +11,10 @@ use crate::server::{HapticManagerCommand, HapticManagerEvent};
 #[derive(Clone, Debug, Getters, Serialize, Deserialize)]
 #[get = "pub"]
 pub struct AppContext {
-  app_id: String,
-  app_name: String,
+  workspace_id: String,
+  api_key: String,
+  version: Option<String>,
+  device_id: Option<String>,
 }
 
 pub struct FeedbackHandlerBuilder {
@@ -68,44 +70,44 @@ impl MessageHandler for FeedbackHandler {
   #[instrument(skip(self))]
   async fn handle_connection_opened(&mut self) -> anyhow::Result<()> {
     info!(
-      "V2 WebSocket connection opened for app: {}",
-      self.app_ctx.app_name()
+      "V4 WebSocket connection opened for workspace: {}",
+      self.app_ctx.workspace_id()
     );
     // TODO: Send welcome message or perform initial setup
     // Example:
-    // let welcome_msg = ServerMessage::Welcome { ... };
+    // let welcome_msg = ServerMessage::Welcome { workspace_id: self.app_ctx.workspace_id().clone() };
     // self.send_message(&welcome_msg).await?;
     Ok(())
   }
 
   #[instrument(skip(self, msg))]
   async fn handle_text_message(&mut self, msg: &str) -> anyhow::Result<()> {
-    info!("V2 received text message: {}", msg);
-    // TODO: Parse v2 ClientMessage and handle accordingly
+    info!("V4 received text message: {}", msg);
+    // TODO: Parse v4 SDK message and handle accordingly
     unimplemented!()
   }
 
   #[instrument(skip(self, data))]
   async fn handle_binary_message(&mut self, data: &[u8]) -> anyhow::Result<()> {
-    info!("V2 received binary message of {} bytes", data.len());
-    // TODO: Handle binary data if needed for v2
+    info!("V4 received binary message of {} bytes", data.len());
+    // TODO: Handle binary data if needed for v4
     Ok(())
   }
 
   #[instrument(skip(self))]
   async fn handle_close(&mut self) -> anyhow::Result<()> {
-    info!("V2 WebSocket connection closing");
+    info!("V4 WebSocket connection closing");
     Ok(())
   }
 
   #[instrument(skip(self, event))]
   async fn handle_haptic_event(&mut self, event: &HapticManagerEvent) -> anyhow::Result<()> {
-    info!("V2 received haptic event: {:?}", event);
-    // TODO: Convert HapticManagerEvent to v2 ServerMessage and send via ws_sender
+    info!("V4 received haptic event: {:?}", event);
+    // TODO: Convert HapticManagerEvent to v4 ServerMessage and send via ws_sender
     // Example:
-    // let server_msg = self.convert_event_to_v2_message(event);
+    // let server_msg = self.convert_event_to_v4_message(event);
     // let json = serde_json::to_string(&server_msg)?;
-    // self.ws_sender.send(Message::Text(json))?;
+    // self.ws_sender.send(Message::Text(json.into()))?;
     Ok(())
   }
 }

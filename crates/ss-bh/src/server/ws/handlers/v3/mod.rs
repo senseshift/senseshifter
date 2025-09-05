@@ -69,7 +69,10 @@ impl MessageHandler for FeedbackHandler {
 
   #[instrument(skip(self))]
   async fn handle_connection_opened(&mut self) -> anyhow::Result<()> {
-    info!("V3 WebSocket connection opened for workspace: {}", self.app_ctx.workspace_id());
+    info!(
+      "V3 WebSocket connection opened for workspace: {}",
+      self.app_ctx.workspace_id()
+    );
     // TODO: Send welcome message or perform initial setup
     // Example:
     // let welcome_msg = ServerMessage::Welcome { workspace_id: self.app_ctx.workspace_id().clone() };

@@ -68,7 +68,7 @@ impl MessageHandler for FeedbackHandler {
   #[instrument(skip(self))]
   async fn handle_connection_opened(&mut self) -> anyhow::Result<()> {
     info!(
-      "V2 WebSocket connection opened for app: {}",
+      "V1 WebSocket connection opened for app: {}",
       self.app_ctx.app_name()
     );
     // TODO: Send welcome message or perform initial setup
@@ -80,32 +80,32 @@ impl MessageHandler for FeedbackHandler {
 
   #[instrument(skip(self, msg))]
   async fn handle_text_message(&mut self, msg: &str) -> anyhow::Result<()> {
-    info!("V2 received text message: {}", msg);
-    // TODO: Parse v2 ClientMessage and handle accordingly
+    info!("V1 received text message: {}", msg);
+    // TODO: Parse v1 ClientMessage and handle accordingly
     unimplemented!()
   }
 
   #[instrument(skip(self, data))]
   async fn handle_binary_message(&mut self, data: &[u8]) -> anyhow::Result<()> {
-    info!("V2 received binary message of {} bytes", data.len());
-    // TODO: Handle binary data if needed for v2
+    info!("V1 received binary message of {} bytes", data.len());
+    // TODO: Handle binary data if needed for v1
     Ok(())
   }
 
   #[instrument(skip(self))]
   async fn handle_close(&mut self) -> anyhow::Result<()> {
-    info!("V2 WebSocket connection closing");
+    info!("V1 WebSocket connection closing");
     Ok(())
   }
 
   #[instrument(skip(self, event))]
   async fn handle_haptic_event(&mut self, event: &HapticManagerEvent) -> anyhow::Result<()> {
-    info!("V2 received haptic event: {:?}", event);
-    // TODO: Convert HapticManagerEvent to v2 ServerMessage and send via ws_sender
+    info!("V1 received haptic event: {:?}", event);
+    // TODO: Convert HapticManagerEvent to v1 ServerMessage and send via ws_sender
     // Example:
-    // let server_msg = self.convert_event_to_v2_message(event);
+    // let server_msg = self.convert_event_to_v1_message(event);
     // let json = serde_json::to_string(&server_msg)?;
-    // self.ws_sender.send(Message::Text(json))?;
+    // self.ws_sender.send(Message::Text(json.into()))?;
     Ok(())
   }
 }
