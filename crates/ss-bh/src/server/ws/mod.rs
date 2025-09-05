@@ -10,19 +10,21 @@ use axum_server::tls_rustls::RustlsConfig;
 #[cfg(feature = "tls")]
 use rustls::ServerConfig as TlsServerConfig;
 
+use futures_util::SinkExt;
 use futures_util::stream::StreamExt;
 use tokio::net::TcpListener;
+use tokio_util::future::FutureExt;
 use tokio_util::sync::CancellationToken;
 
-use futures_util::SinkExt;
 use getset::WithSetters;
 use std::sync::Arc;
-use tokio_util::future::FutureExt;
+use tokio::sync::mpsc;
 use tracing::*;
 
 mod config;
 mod handlers;
 
+use crate::server::HapticManagerCommand;
 pub use config::*;
 
 async fn kickstart_ws(socket: &mut WebSocket) -> Result<(), axum::Error> {
@@ -115,7 +117,7 @@ impl BhWebsocketServerBuilder {
     }
   }
 
-  pub async fn build(self) -> anyhow::Result<()> {
+  pub async fn build(self, sender: mpsc::Sender<HapticManagerCommand>) -> anyhow::Result<()> {
     #[cfg(feature = "tls")]
     if self.config.listen().is_none() && self.config.listen_tls().is_none() {
       return Err(anyhow::anyhow!(
@@ -157,6 +159,8 @@ impl BhWebsocketServerBuilder {
     let cancellation_token = self.cancellation_token.unwrap_or_default();
 
     let app = Router::<()>::new();
+
+    // yeah, trailing URLs with slashes are routed separately...
 
     #[cfg(feature = "v1")]
     let app = app
@@ -209,7 +213,7 @@ impl BhWebsocketServerBuilder {
 
               info!("TLS server existed gracefully");
             }
-            .instrument(info_span!("bh_ws_server")),
+            .instrument(info_span!("bh_ws_serve")),
           );
         }
         Err(err) => {
@@ -242,7 +246,7 @@ impl BhWebsocketServerBuilder {
 
           info!("TLS server existed gracefully");
         }
-        .instrument(info_span!("bh_ws_server_tls")),
+        .instrument(info_span!("bh_ws_serve_tls")),
       );
     }
 

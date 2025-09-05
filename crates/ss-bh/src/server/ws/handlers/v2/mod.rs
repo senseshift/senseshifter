@@ -1,4 +1,3 @@
-use bh_sdk::v3::SdkMessage;
 use getset::Getters;
 use serde::{Deserialize, Serialize};
 use tokio_util::sync::CancellationToken;
@@ -7,9 +6,8 @@ use tracing::*;
 #[derive(Clone, Debug, Getters, Serialize, Deserialize)]
 #[get = "pub"]
 pub struct AppContext {
-  workspace_id: String,
-  api_key: String,
-  version: Option<String>,
+  app_id: String,
+  app_name: String,
 }
 
 pub struct FeedbackHandlerBuilder {
@@ -26,7 +24,7 @@ impl FeedbackHandlerBuilder {
   }
 
   pub async fn build(self) -> anyhow::Result<FeedbackHandler> {
-    let cancellation_token = self.cancellation_token.unwrap_or_default();
+    let _cancellation_token = self.cancellation_token.unwrap_or_default();
 
     Ok(FeedbackHandler {
       app_ctx: self.app_ctx,
@@ -39,14 +37,9 @@ pub struct FeedbackHandler {
 }
 
 impl FeedbackHandler {
-  #[instrument(skip(self, msg))]
-  pub async fn handle_message(&self, msg: &str) -> anyhow::Result<()> {
-    let sdk_msg: SdkMessage = serde_json::from_str(msg)
-      .map_err(|e| anyhow::anyhow!("Failed to parse SDK message: {}", e))?;
-
-    info!("Received SDK message: {:?}", sdk_msg);
-
-    Ok(())
+  #[instrument(skip(self, _msg))]
+  pub async fn handle_message(&self, _msg: &str) -> anyhow::Result<()> {
+    unimplemented!()
   }
 
   #[instrument(skip(self))]

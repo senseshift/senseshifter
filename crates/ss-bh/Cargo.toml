@@ -24,7 +24,7 @@ tower = { workspace = true, optional = true }
 tower-http = { workspace = true, optional = true, features = ["trace", "normalize-path"] }
 
 futures-util = { workspace = true }
-tokio = { workspace = true, features = ["net"] }
+tokio = { workspace = true, features = ["net", "sync"] }
 tokio-util = { workspace = true }
 log = "0.4.28"
 

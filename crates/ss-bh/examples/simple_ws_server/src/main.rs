@@ -1,7 +1,10 @@
 use ss_bh::server::ws::{BhWebsocketServerBuilder, BhWebsocketServerConfig};
 
+use ss_bh::server::HapticManagerCommand;
 use std::path::PathBuf;
 use tokio_util::sync::CancellationToken;
+
+use tracing::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,13 +24,18 @@ async fn main() -> anyhow::Result<()> {
 
   let cancellation_token = CancellationToken::new();
 
+  let (sender, mut receiver) = tokio::sync::mpsc::channel::<HapticManagerCommand>(10);
+
   BhWebsocketServerBuilder::new(ws_config)
     .with_cancellation_token(Some(cancellation_token))
-    .build()
+    .build(sender)
     .await?;
 
   loop {
     tokio::select! {
+      Some(command) = receiver.recv() => {
+        info!("Received command: {:?}", command);
+      },
       _ = tokio::signal::ctrl_c() => {
         println!("Received Ctrl+C, shutting down.");
         break;
