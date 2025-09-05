@@ -13,6 +13,8 @@ use tracing::*;
 
 mod config;
 
+pub use config::*;
+
 #[derive(Debug, Clone, WithSetters)]
 pub struct BhWebsocketServerBuilder {
   config: config::BhWebsocketServerConfig,
@@ -50,7 +52,7 @@ impl BhWebsocketServerBuilder {
             Ok(config) => Some(config),
             Err(err) => {
               error!("Failed to load TLS config, TLS is disabled: {}", err);
-              return Err(err.into());
+              None
             }
           }
         }
