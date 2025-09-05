@@ -28,8 +28,12 @@ tokio = "^1.47.1"
 tokio-stream = "^0.1.17"
 tokio-util = "^0.7.16"
 
+axum = "^0.8.4"
+axum-server = "^0.7.2"
+
 base64 = "^0.22.1"
 reqwest = "^0.12.23"
+rustls = "^0.23.31"
 walkdir = "^2.5.0"
 
 # common dev-dependencies

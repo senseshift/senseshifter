@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/bh-sdk/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/serde_handy/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/ss-bh/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
