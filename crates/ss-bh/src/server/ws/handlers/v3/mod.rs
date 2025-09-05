@@ -196,3 +196,238 @@ impl FeedbackHandler {
       .map_err(|e| anyhow::anyhow!("Failed to send RegisterHapticDefinitions command: {}", e))
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::server::HapticEvent;
+  use bh_sdk::v3::SdkPlayWithStartTimeMessage;
+  use tokio::sync::mpsc;
+
+  fn create_test_app_context() -> AppContext {
+    AppContext {
+      workspace_id: "test-workspace".to_string(),
+      api_key: "test-api-key".to_string(),
+      version: Some("1.0.0".to_string()),
+    }
+  }
+
+  fn create_test_handler() -> (
+    FeedbackHandler,
+    mpsc::Receiver<HapticManagerCommand>,
+    mpsc::UnboundedReceiver<Message>,
+  ) {
+    let app_ctx = create_test_app_context();
+    let (command_tx, command_rx) = mpsc::channel(10);
+    let (ws_tx, ws_rx) = mpsc::unbounded_channel();
+
+    let handler = FeedbackHandler {
+      app_ctx,
+      command_sender: command_tx,
+      ws_sender: ws_tx,
+    };
+
+    (handler, command_rx, ws_rx)
+  }
+
+  #[tokio::test]
+  async fn test_send_message_serializes_and_sends() {
+    let (handler, _command_rx, mut ws_rx) = create_test_handler();
+
+    let result = handler.send_message(&ServerMessage::ServerReady).await;
+    assert!(result.is_ok());
+
+    let received = ws_rx.recv().await.unwrap();
+    match received {
+      Message::Text(text) => {
+        let parsed: ServerMessage = serde_json::from_str(&text).unwrap();
+        assert!(matches!(parsed, ServerMessage::ServerReady));
+      }
+      _ => panic!("Expected text message"),
+    }
+  }
+
+  #[tokio::test]
+  async fn test_handle_haptic_event_filters_by_namespace() {
+    let (mut handler, _command_rx, mut ws_rx) = create_test_handler();
+
+    let wrong_namespace_event = HapticManagerEvent::HapticEventsUpdated {
+      namespace: "wrong-workspace".to_string(),
+      events: vec![HapticEvent {
+        name: "test-event".to_string(),
+        event_time: 100,
+      }],
+    };
+
+    let result = handler.handle_haptic_event(&wrong_namespace_event).await;
+    assert!(result.is_ok());
+
+    assert!(
+      ws_rx.try_recv().is_err(),
+      "Should not send messages for wrong namespace"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_handle_haptic_event_sends_messages_for_correct_namespace() {
+    let (mut handler, _command_rx, mut ws_rx) = create_test_handler();
+
+    let events = vec![
+      HapticEvent {
+        name: "event1".to_string(),
+        event_time: 100,
+      },
+      HapticEvent {
+        name: "event2".to_string(),
+        event_time: 200,
+      },
+    ];
+
+    let correct_namespace_event = HapticManagerEvent::HapticEventsUpdated {
+      namespace: "test-workspace".to_string(),
+      events: events.clone(),
+    };
+
+    let result = handler.handle_haptic_event(&correct_namespace_event).await;
+    assert!(result.is_ok());
+
+    let msg1 = ws_rx.recv().await.unwrap();
+    let msg2 = ws_rx.recv().await.unwrap();
+
+    match msg1 {
+      Message::Text(text) => {
+        let parsed: ServerMessage = serde_json::from_str(&text).unwrap();
+        match parsed {
+          ServerMessage::ServerEventNameList(names) => {
+            assert_eq!(names, vec!["event1", "event2"]);
+          }
+          _ => panic!("Expected ServerEventNameList"),
+        }
+      }
+      _ => panic!("Expected text message"),
+    }
+
+    match msg2 {
+      Message::Text(text) => {
+        let parsed: ServerMessage = serde_json::from_str(&text).unwrap();
+        match parsed {
+          ServerMessage::ServerEventList(items) => {
+            assert_eq!(items.len(), 2);
+            assert_eq!(*items[0].event_name(), "event1");
+            assert_eq!(*items[0].event_time(), 100);
+            assert_eq!(*items[1].event_name(), "event2");
+            assert_eq!(*items[1].event_time(), 200);
+          }
+          _ => panic!("Expected ServerEventList"),
+        }
+      }
+      _ => panic!("Expected text message"),
+    }
+  }
+
+  #[tokio::test]
+  async fn test_handle_sdk_stop_all_sends_command() {
+    let (mut handler, mut command_rx, _ws_rx) = create_test_handler();
+
+    let result = handler.handle_sdk_message(&SdkMessage::SdkStopAll).await;
+    assert!(result.is_ok());
+
+    let command = command_rx.recv().await.unwrap();
+    match command {
+      HapticManagerCommand::StopAll { namespace } => {
+        assert_eq!(namespace, "test-workspace");
+      }
+      _ => panic!("Expected StopAll command"),
+    }
+  }
+
+  #[tokio::test]
+  async fn test_register_haptic_definitions_sends_command() {
+    let (handler, mut command_rx, _ws_rx) = create_test_handler();
+
+    let definitions = HapticDefinitionsMessage::new(vec![])
+      .with_id(Some("test-id".to_string()))
+      .with_name(Some("test-name".to_string()));
+
+    let result = handler
+      .register_haptic_definitions(definitions.clone())
+      .await;
+    assert!(result.is_ok());
+
+    let command = command_rx.recv().await.unwrap();
+    match command {
+      HapticManagerCommand::RegisterHapticDefinitions {
+        namespace,
+        definitions: received_defs,
+      } => {
+        assert_eq!(namespace, "test-workspace");
+        assert_eq!(*received_defs, definitions);
+      }
+      _ => panic!("Expected RegisterHapticDefinitions command"),
+    }
+  }
+
+  #[tokio::test]
+  async fn test_handle_sdk_play_with_start_time_sends_command() {
+    let (mut handler, mut command_rx, _ws_rx) = create_test_handler();
+
+    let play_msg =
+      SdkPlayWithStartTimeMessage::new("test-event".to_string(), 12345, 1000, 0.8, 0.5, -10.0, 5.0);
+
+    let result = handler
+      .handle_sdk_message(&SdkMessage::SdkPlayWithStartTime(play_msg))
+      .await;
+    assert!(result.is_ok());
+
+    let command = command_rx.recv().await.unwrap();
+    match command {
+      HapticManagerCommand::PlayEvent {
+        namespace,
+        event_name,
+        request_id,
+        start_millis,
+        intensity,
+        duration,
+        offset_x,
+        offset_y,
+      } => {
+        assert_eq!(namespace, "test-workspace");
+        assert_eq!(event_name, "test-event");
+        assert_eq!(request_id, 12345);
+        assert_eq!(start_millis, 1000);
+        assert_eq!(intensity, 0.8);
+        assert_eq!(duration, 0.5);
+        assert_eq!(offset_x, -10.0);
+        assert_eq!(offset_y, 5.0);
+      }
+      _ => panic!("Expected PlayEvent command"),
+    }
+  }
+
+  #[tokio::test]
+  async fn test_handle_text_message_with_valid_json() {
+    let (mut handler, mut command_rx, _ws_rx) = create_test_handler();
+
+    let json_msg = r#"{"type":"SdkStopAll"}"#;
+    let result = handler.handle_text_message(json_msg).await;
+    assert!(result.is_ok());
+
+    let command = command_rx.recv().await.unwrap();
+    assert!(matches!(command, HapticManagerCommand::StopAll { .. }));
+  }
+
+  #[tokio::test]
+  async fn test_handle_text_message_with_invalid_json() {
+    let (mut handler, _command_rx, _ws_rx) = create_test_handler();
+
+    let invalid_json = r#"{"invalid": "message"}"#;
+    let result = handler.handle_text_message(invalid_json).await;
+    assert!(result.is_err());
+    assert!(
+      result
+        .unwrap_err()
+        .to_string()
+        .contains("Failed to parse SDK message")
+    );
+  }
+}

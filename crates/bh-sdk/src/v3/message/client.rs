@@ -154,6 +154,26 @@ pub struct SdkPlayWithStartTimeMessage {
 }
 
 impl SdkPlayWithStartTimeMessage {
+  pub fn new(
+    event_name: String,
+    request_id: u32,
+    start_millis: u64,
+    intensity: f64,
+    duration: f64,
+    offset_angle_x: f64,
+    offset_y: f64,
+  ) -> Self {
+    Self {
+      event_name,
+      request_id,
+      start_millis,
+      intensity,
+      duration,
+      offset_angle_x,
+      offset_y,
+    }
+  }
+
   pub const fn default_start_millis() -> u64 {
     0
   }

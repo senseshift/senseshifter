@@ -6,7 +6,7 @@ pub use tact::*;
 
 use anyhow::*;
 use derivative::Derivative;
-use getset::Getters;
+use getset::{Getters, WithSetters};
 use tracing::*;
 
 #[derive(Derivative, Getters)]
@@ -64,9 +64,9 @@ pub async fn fetch_haptic_definitions(
     .context("No message in haptic definitions response")
 }
 
-#[derive(Derivative, Getters)]
+#[derive(Derivative, Getters, WithSetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", set_with = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct HapticDefinitionsMessage {
@@ -82,6 +82,23 @@ pub struct HapticDefinitionsMessage {
 
   #[cfg_attr(feature = "serde", serde(default))]
   haptic_mappings: Vec<HapticDefinitionMapping>,
+}
+
+impl HapticDefinitionsMessage {
+  pub fn new(haptic_mappings: Vec<HapticDefinitionMapping>) -> Self {
+    Self {
+      id: None,
+      create_time: None,
+      name: None,
+      description: None,
+      creator: None,
+      workspace_id: None,
+      version: None,
+      disable_validation: None,
+      category_options: None,
+      haptic_mappings,
+    }
+  }
 }
 
 #[derive(Derivative, Getters)]
