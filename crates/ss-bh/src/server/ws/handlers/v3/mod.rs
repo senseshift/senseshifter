@@ -1,15 +1,17 @@
+use super::{HandlerBuilder, MessageHandler};
+use crate::server::{HapticManagerCommand, HapticManagerEvent};
 use axum::extract::ws::Message;
+use bh_haptic_definitions::{HapticDefinitionsMessage, fetch_haptic_definitions};
 use bh_sdk::v3::SdkMessage;
+use derive_more::Display;
 use getset::Getters;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tracing::*;
 
-use super::{HandlerBuilder, MessageHandler};
-use crate::server::{HapticManagerCommand, HapticManagerEvent};
-
-#[derive(Clone, Debug, Getters, Serialize, Deserialize)]
+#[derive(Clone, Debug, Display, Getters, Serialize, Deserialize)]
+#[display("AppContext {{ workspace_id={workspace_id}, api_key=*****, version={version:?} }}")]
 #[get = "pub"]
 pub struct AppContext {
   workspace_id: String,
@@ -67,68 +69,92 @@ impl MessageHandler for FeedbackHandler {
   type Context = AppContext;
   type Builder = FeedbackHandlerBuilder;
 
-  #[instrument(skip(self))]
+  #[instrument(skip(self), fields(app = %self.app_ctx))]
   async fn handle_connection_opened(&mut self) -> anyhow::Result<()> {
-    info!(
-      "V3 WebSocket connection opened for workspace: {}",
-      self.app_ctx.workspace_id()
-    );
-    // TODO: Send welcome message or perform initial setup
-    // Example:
-    // let welcome_msg = ServerMessage::Welcome { workspace_id: self.app_ctx.workspace_id().clone() };
-    // self.send_message(&welcome_msg).await?;
     Ok(())
   }
 
-  #[instrument(skip(self, msg))]
+  #[instrument(skip(self, msg), fields(app = %self.app_ctx))]
   async fn handle_text_message(&mut self, msg: &str) -> anyhow::Result<()> {
     let sdk_msg: SdkMessage = serde_json::from_str(msg)
       .map_err(|e| anyhow::anyhow!("Failed to parse SDK message: {}", e))?;
 
-    info!("V3 received SDK message: {:?}", sdk_msg);
-
-    // TODO: Process the SDK message and send commands via self.command_sender
-    // match sdk_msg {
-    //   SdkMessage::StartFeedback { .. } => {
-    //     let cmd = HapticManagerCommand::StartFeedback(...);
-    //     self.command_sender.send(cmd).await?;
-    //   }
-    //   // ... other message types
-    // }
-
-    Ok(())
+    self
+      .handle_sdk_message(&sdk_msg)
+      .await
+      .map_err(|e| anyhow::anyhow!("Failed to handle SDK message {:?}: {}", sdk_msg, e))
   }
 
-  #[instrument(skip(self, data))]
-  async fn handle_binary_message(&mut self, data: &[u8]) -> anyhow::Result<()> {
-    info!("V3 received binary message of {} bytes", data.len());
-    // TODO: Handle binary data if needed for v3
-    Ok(())
+  #[instrument(skip(self, _data), fields(app = %self.app_ctx))]
+  async fn handle_binary_message(&mut self, _data: &[u8]) -> anyhow::Result<()> {
+    Err(anyhow::anyhow!("Binary messages are not supported."))
   }
 
-  #[instrument(skip(self))]
+  #[instrument(skip(self), fields(app = %self.app_ctx))]
   async fn handle_close(&mut self) -> anyhow::Result<()> {
-    info!("V3 WebSocket connection closing");
     Ok(())
   }
 
-  #[instrument(skip(self, event))]
+  #[instrument(skip(self, event), fields(app = %self.app_ctx))]
   async fn handle_haptic_event(&mut self, event: &HapticManagerEvent) -> anyhow::Result<()> {
-    info!("V3 received haptic event: {:?}", event);
-    // TODO: Convert HapticManagerEvent to v3 ServerMessage and send via ws_sender
-    // Example:
-    // let server_msg = self.convert_event_to_v3_message(event);
-    // let json = serde_json::to_string(&server_msg)?;
-    // self.ws_sender.send(Message::Text(json))?;
     Ok(())
   }
 }
 
 impl FeedbackHandler {
-  #[instrument(skip(self, msg))]
   async fn send_message(&self, msg: &impl Serialize) -> anyhow::Result<()> {
     let json = serde_json::to_string(msg)?;
     self.ws_sender.send(Message::Text(json.into()))?;
     Ok(())
+  }
+
+  #[instrument(skip(self, msg), fields(app = %self.app_ctx))]
+  async fn handle_sdk_message(&mut self, msg: &SdkMessage) -> anyhow::Result<()> {
+    match msg {
+      SdkMessage::SdkRequestAuth(msg) => {
+        let haptic_definitions =
+          fetch_haptic_definitions(msg.application_id(), msg.sdk_api_key()).await?;
+
+        self.register_haptic_definitions(haptic_definitions).await
+      }
+      SdkMessage::SdkRequestAuthInit(msg) => {
+        let haptic_definitions = match msg.haptic().message() {
+          Some(defs) => defs.clone(),
+          None => {
+            fetch_haptic_definitions(
+              msg.authentication().application_id(),
+              msg.authentication().sdk_api_key(),
+            )
+            .await?
+          }
+        };
+
+        self.register_haptic_definitions(haptic_definitions).await
+      }
+      SdkMessage::SdkStopAll => self
+        .command_sender
+        .send(HapticManagerCommand::StopAll {
+          namespace: self.app_ctx.workspace_id().to_string(),
+        })
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to send StopAll command: {}", e)),
+      _ => {
+        Err(anyhow::anyhow!("Unsupported SDK message: {:?}", msg)) // todo
+      }
+    }
+  }
+
+  async fn register_haptic_definitions(
+    &self,
+    haptic_definitions: HapticDefinitionsMessage,
+  ) -> anyhow::Result<()> {
+    self
+      .command_sender
+      .send(HapticManagerCommand::RegisterHapticDefinitions {
+        definitions: Box::new(haptic_definitions),
+        namespace: self.app_ctx.workspace_id().to_string(),
+      })
+      .await
+      .map_err(|e| anyhow::anyhow!("Failed to send RegisterHapticDefinitions command: {}", e))
   }
 }

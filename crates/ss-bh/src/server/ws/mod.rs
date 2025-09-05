@@ -146,8 +146,7 @@ async fn upgrade_websocket_generic<H: MessageHandler>(
                 };
 
                 if let Err(e) = result {
-                  error!("Handler error: {}", e);
-                  break;
+                  error!("Failed to handle message: {}", e);
                 }
 
                 if should_close {

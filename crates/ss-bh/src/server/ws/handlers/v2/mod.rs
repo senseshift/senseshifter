@@ -1,3 +1,5 @@
+#![allow(dead_code)] // this is a stub
+
 use axum::extract::ws::Message;
 use getset::Getters;
 use serde::{Deserialize, Serialize};
