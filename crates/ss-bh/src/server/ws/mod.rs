@@ -1,6 +1,6 @@
 use axum::body::Bytes;
-use axum::extract::OriginalUri;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
+use axum::extract::{OriginalUri, Query, State};
 use axum::http::Uri;
 use axum::{Router, routing::any};
 use tower_http::trace::TraceLayer;
@@ -18,14 +18,23 @@ use tokio_util::sync::CancellationToken;
 
 use getset::WithSetters;
 use std::sync::Arc;
-use tokio::sync::mpsc;
+use tokio::sync::{Mutex, broadcast, mpsc};
 use tracing::*;
 
 mod config;
-mod handlers;
+pub(crate) mod handlers;
 
-use crate::server::HapticManagerCommand;
+use crate::server::{HapticManagerCommand, HapticManagerEvent};
 pub use config::*;
+pub use handlers::{HandlerBuilder, MessageHandler};
+
+// Cloneable app state for axum router
+#[derive(Clone)]
+pub struct AppState {
+  command_sender: mpsc::Sender<HapticManagerCommand>,
+  event_sender: broadcast::Sender<HapticManagerEvent>,
+  cancellation_token: CancellationToken,
+}
 
 async fn kickstart_ws(socket: &mut WebSocket) -> Result<(), axum::Error> {
   socket
@@ -33,13 +42,17 @@ async fn kickstart_ws(socket: &mut WebSocket) -> Result<(), axum::Error> {
     .await
 }
 
-async fn upgrade_websocket(
+async fn upgrade_websocket_generic<H: MessageHandler>(
   ws: WebSocketUpgrade,
-  // Query(_app_ctx): Query<handlers::v3::AppContext>,
+  Query(context): Query<H::Context>,
+  event_rx: broadcast::Receiver<HapticManagerEvent>,
+  command_tx: mpsc::Sender<HapticManagerCommand>,
+  parent_token: CancellationToken,
 ) -> axum::response::Response {
-  info!("Received V3 SDK request");
+  info!("Received WebSocket upgrade request");
 
   ws.on_upgrade(async move |mut socket| {
+    // Kickstart WebSocket with initial ping
     match kickstart_ws(&mut socket).await {
       Ok(_) => {}
       Err(e) => {
@@ -48,9 +61,56 @@ async fn upgrade_websocket(
       }
     }
 
-    let (mut sender, mut receiver) = socket.split();
+    let connection_token = parent_token.child_token();
+    let (sender, mut receiver) = socket.split();
 
-    tokio::spawn(async move {
+    // Create channel for WebSocket message sending (lock-free)
+    let (ws_tx, mut ws_rx) = mpsc::unbounded_channel::<Message>();
+
+    // Build handler with required dependencies
+    let mut handler = match H::Builder::new(context, command_tx, ws_tx.clone())
+      .with_cancellation_token(connection_token.clone())
+      .build()
+      .await
+    {
+      Ok(h) => h,
+      Err(e) => {
+        error!("Failed to create handler: {}", e);
+        return;
+      }
+    };
+
+    // Call connection opened handler
+    if let Err(e) = handler.handle_connection_opened().await {
+      error!("Failed to handle connection opened: {}", e);
+      return;
+    }
+
+    let handler = Arc::new(Mutex::new(handler));
+
+    // Task 1: WebSocket sender (dedicated I/O task)
+    let connection_token_sender = connection_token.clone();
+    let sender_task = tokio::spawn(async move {
+      let mut sender = sender;
+      loop {
+        tokio::select! {
+          Some(msg) = ws_rx.recv() => {
+            if let Err(e) = sender.send(msg).await {
+              error!("Failed to send WebSocket message: {}", e);
+              break;
+            }
+          }
+          _ = connection_token_sender.cancelled() => break,
+        }
+      }
+      debug!("WebSocket sender task completed");
+    });
+
+    // Task 2: WebSocket message receiver
+    let handler_receiver = handler.clone();
+    let connection_token_receiver = connection_token.clone();
+    let ws_tx_ping = ws_tx.clone();
+    let receiver_task = tokio::spawn(async move {
       loop {
         tokio::select! {
           Some(msg) = receiver.next() => {
@@ -58,44 +118,124 @@ async fn upgrade_websocket(
               Ok(message) => {
                 debug!("Received message: {:?}", message);
 
-                match message {
-                  Message::Text(_) | Message::Binary(_) => {
-                    let raw_msg = message.into_text();
-
-                    info!("Received Text/Binary message: {:?}", raw_msg);
+                let (result, should_close) = match message {
+                  Message::Text(text) => {
+                    let res = handler_receiver.lock().await.handle_text_message(&text).await;
+                    (res, false)
+                  },
+                  Message::Binary(data) => {
+                    let res = handler_receiver.lock().await.handle_binary_message(&data).await;
+                    (res, false)
                   },
                   Message::Ping(bytes) => {
                     debug!("Received Ping: {:?}", bytes);
-                    if let Err(e) = sender.send(Message::Pong(bytes)).await {
+                    if let Err(e) = ws_tx_ping.send(Message::Pong(bytes)) {
                       error!("Failed to send Pong: {}", e);
                     }
+                    (Ok(()), false)
                   },
                   Message::Pong(_) => {
                     debug!("Received Pong");
+                    (Ok(()), false)
                   },
                   Message::Close(_) => {
                     info!("Received Close, closing connection");
-                    break;
+                    let res = handler_receiver.lock().await.handle_close().await;
+                    (res, true)
                   },
+                };
+
+                if let Err(e) = result {
+                  error!("Handler error: {}", e);
+                  break;
+                }
+
+                if should_close {
+                  break;
                 }
               }
               Err(e) => {
                 error!("WebSocket error: {:?}", e);
-                break; // Connection error, exit the loop
+                break;
               }
             }
           }
+          _ = connection_token_receiver.cancelled() => break,
         }
       }
-
-      info!("WebSocket connection closed");
+      debug!("WebSocket receiver task completed");
     });
+
+    // Task 3: Broadcast event handler
+    let handler_events = handler.clone();
+    let mut event_rx = event_rx.resubscribe();
+    let connection_token_events = connection_token.clone();
+    let event_task = tokio::spawn(async move {
+      loop {
+        tokio::select! {
+          Ok(event) = event_rx.recv() => {
+            if let Err(e) = handler_events.lock().await.handle_haptic_event(&event).await {
+              error!("Broadcast handler error: {}", e);
+            }
+          }
+          _ = connection_token_events.cancelled() => break,
+        }
+      }
+      debug!("Event handler task completed");
+    });
+
+    // Wait for any task to complete or cancellation
+    tokio::select! {
+      _ = sender_task => {},
+      _ = receiver_task => {},
+      _ = event_task => {},
+      _ = connection_token.cancelled() => {},
+    }
+
+    info!("WebSocket connection closed gracefully");
   })
+}
+
+// Version-specific WebSocket upgrade handlers
+#[cfg(feature = "v2")]
+async fn upgrade_websocket_v2(
+  ws: WebSocketUpgrade,
+  Query(context): Query<handlers::v2::AppContext>,
+  State(app_state): State<AppState>,
+) -> axum::response::Response {
+  let event_rx = app_state.event_sender.subscribe();
+  upgrade_websocket_generic::<handlers::v2::FeedbackHandler>(
+    ws,
+    Query(context),
+    event_rx,
+    app_state.command_sender,
+    app_state.cancellation_token,
+  )
+  .await
+}
+
+#[cfg(feature = "v3")]
+async fn upgrade_websocket_v3(
+  ws: WebSocketUpgrade,
+  Query(context): Query<handlers::v3::AppContext>,
+  State(app_state): State<AppState>,
+) -> axum::response::Response {
+  let event_rx = app_state.event_sender.subscribe();
+  upgrade_websocket_generic::<handlers::v3::FeedbackHandler>(
+    ws,
+    Query(context),
+    event_rx,
+    app_state.command_sender,
+    app_state.cancellation_token,
+  )
+  .await
 }
 
 #[derive(Debug, Clone, WithSetters)]
 pub struct BhWebsocketServerBuilder {
   config: BhWebsocketServerConfig,
+  command_sender: mpsc::Sender<HapticManagerCommand>,
+  event_sender: broadcast::Sender<HapticManagerEvent>,
 
   #[cfg(feature = "tls")]
   #[getset(set_with = "pub")]
@@ -106,9 +246,15 @@ pub struct BhWebsocketServerBuilder {
 }
 
 impl BhWebsocketServerBuilder {
-  pub fn new(config: BhWebsocketServerConfig) -> Self {
+  pub fn new(
+    config: BhWebsocketServerConfig,
+    command_sender: mpsc::Sender<HapticManagerCommand>,
+    event_sender: broadcast::Sender<HapticManagerEvent>,
+  ) -> Self {
     Self {
       config,
+      command_sender,
+      event_sender,
 
       #[cfg(feature = "tls")]
       tls_config: None,
@@ -117,7 +263,7 @@ impl BhWebsocketServerBuilder {
     }
   }
 
-  pub async fn build(self, sender: mpsc::Sender<HapticManagerCommand>) -> anyhow::Result<()> {
+  pub async fn build(self) -> anyhow::Result<()> {
     #[cfg(feature = "tls")]
     if self.config.listen().is_none() && self.config.listen_tls().is_none() {
       return Err(anyhow::anyhow!(
@@ -158,29 +304,46 @@ impl BhWebsocketServerBuilder {
 
     let cancellation_token = self.cancellation_token.unwrap_or_default();
 
-    let app = Router::<()>::new();
+    // Create version-specific upgrade handlers using State pattern
+    let app_state = AppState {
+      command_sender: self.command_sender,
+      event_sender: self.event_sender,
+      cancellation_token: cancellation_token.clone(),
+    };
+
+    let mut app = Router::new();
 
     // yeah, trailing URLs with slashes are routed separately...
 
+    // TODO: Add v1 handler when needed
     #[cfg(feature = "v1")]
-    let app = app
-      .route("/feedbacks", any(upgrade_websocket))
-      .route("/feedbacks/", any(upgrade_websocket));
+    {
+      // app = app
+      //   .route("/feedbacks", any(/* TODO: upgrade_v1 */))
+      //   .route("/feedbacks/", any(/* TODO: upgrade_v1 */));
+    }
 
     #[cfg(feature = "v2")]
-    let app = app
-      .route("/v2/feedbacks", any(upgrade_websocket))
-      .route("/v2/feedbacks/", any(upgrade_websocket));
+    {
+      app = app
+        .route("/v2/feedbacks", any(upgrade_websocket_v2))
+        .route("/v2/feedbacks/", any(upgrade_websocket_v2));
+    }
 
     #[cfg(feature = "v3")]
-    let app = app
-      .route("/v3/feedback", any(upgrade_websocket))
-      .route("/v3/feedback/", any(upgrade_websocket));
+    {
+      app = app
+        .route("/v3/feedback", any(upgrade_websocket_v3))
+        .route("/v3/feedback/", any(upgrade_websocket_v3));
+    }
 
+    // TODO: Add v4 handler when needed
     #[cfg(feature = "v4")]
-    let app = app
-      .route("/v4/feedback", any(upgrade_websocket))
-      .route("/v4/feedback/", any(upgrade_websocket));
+    {
+      // app = app
+      //   .route("/v4/feedback", any(/* TODO: upgrade_v4 */))
+      //   .route("/v4/feedback/", any(/* TODO: upgrade_v4 */));
+    }
 
     // log URLs to wrong paths
     let app = app.fallback(any(
@@ -188,8 +351,10 @@ impl BhWebsocketServerBuilder {
         warn!("Received request to unknown path: {uri}, original path: {original_uri}",);
       },
     ));
-    let app = app.layer(TraceLayer::new_for_http());
-    let app = app.into_make_service();
+    let app = app
+      .with_state(app_state)
+      .layer(TraceLayer::new_for_http())
+      .into_make_service();
 
     if let Some(listen) = self.config.listen() {
       let app = app.clone();
