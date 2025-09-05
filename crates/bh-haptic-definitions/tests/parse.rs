@@ -3,6 +3,7 @@ use std::fs::read_to_string;
 
 mod common;
 
+#[cfg(feature = "serde")]
 #[test]
 fn haptic_definitions_parse_valid() -> anyhow::Result<()> {
   let dir = common::fixture_path("haptic_definitions").join("valid");
@@ -31,6 +32,7 @@ fn haptic_definitions_parse_valid() -> anyhow::Result<()> {
   Ok(())
 }
 
+#[cfg(feature = "serde")]
 #[test]
 fn tact_files_parse_valid() -> anyhow::Result<()> {
   let dir = common::fixture_path("tact_file").join("valid");

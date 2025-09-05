@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: rustup update stable
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: check
+    - name: Check
+      run: cargo check --workspace
+
+  test-default:
+    name: Test Default Features
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: rustup update stable
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: test-default
+    - name: Install cargo-tarpaulin
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: cargo-tarpaulin
+        version: "0.31.2"
+    - name: Run tests with coverage
+      run: cargo tarpaulin --workspace --out xml --output-dir coverage-default
+    - name: Upload coverage to codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: ./coverage-default/cobertura.xml
+        flags: default-features
+        name: default-features
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-all-features:
+    name: Test All Features
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: rustup update stable
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: test-all-features
+    - name: Install cargo-tarpaulin
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: cargo-tarpaulin
+        version: "0.31.2"
+    - name: Run tests with coverage (all features)
+      run: cargo tarpaulin --workspace --all-features --out xml --output-dir coverage-all
+    - name: Upload coverage to codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: ./coverage-all/cobertura.xml
+        flags: all-features
+        name: all-features
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: rustup update stable && rustup component add rustfmt
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: fmt
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: rustup update stable && rustup component add clippy
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: clippy
+    - name: Run clippy (all features)
+      run: cargo clippy --workspace --all-features -- -D warnings
+
+  feature-powerset:
+    name: Feature Powerset
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: rustup update stable
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: feature-powerset
+    - name: Install cargo-hack
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: cargo-hack
+        version: "0.6.31"
+    - name: Check feature powerset
+      run: cargo hack check --feature-powerset --workspace
