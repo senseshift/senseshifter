@@ -12,6 +12,12 @@ pub struct HapticEvent {
   event_time: u32,
 }
 
+impl HapticEvent {
+  pub fn new(name: String, event_time: u32) -> Self {
+    Self { name, event_time }
+  }
+}
+
 #[derive(Derivative, Debug, Clone)]
 pub enum HapticManagerCommand {
   RegisterHapticDefinitions {

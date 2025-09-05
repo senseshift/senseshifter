@@ -42,6 +42,8 @@ v4 = ["bh-sdk/v4", "tls"]
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+tokio-tungstenite = { workspace = true }
+futures-util = { workspace = true }
 
 tokio = { workspace = true, features = ["full"] }
 

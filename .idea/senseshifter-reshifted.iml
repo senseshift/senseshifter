@@ -10,6 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/serde_handy/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/ss-bh/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/ss-bh/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/ss-bh/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

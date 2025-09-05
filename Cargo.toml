@@ -30,6 +30,7 @@ futures-util = "^0.3.31"
 tokio = "^1.47.1"
 tokio-stream = "^0.1.17"
 tokio-util = "^0.7.16"
+tokio-tungstenite = "^0.26.2"
 
 axum = "^0.8.4"
 axum-server = "^0.7.2"
