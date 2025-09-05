@@ -377,10 +377,10 @@ impl BhWebsocketServerBuilder {
                 .await;
 
               if let Err(err) = result {
-                error!("TLS server error: {}", err);
+                error!("Server error: {err:?}");
               }
 
-              info!("TLS server existed gracefully");
+              info!("Server exited gracefully");
             }
             .instrument(info_span!("bh_ws_serve")),
           );
@@ -410,10 +410,10 @@ impl BhWebsocketServerBuilder {
             .with_cancellation_token(&cancellation_token)
             .await
           {
-            error!("TLS server error: {err}");
+            error!("TLS server error: {err:?}");
           }
 
-          info!("TLS server existed gracefully");
+          info!("TLS server exited gracefully");
         }
         .instrument(info_span!("bh_ws_serve_tls")),
       );

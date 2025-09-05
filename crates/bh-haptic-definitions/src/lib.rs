@@ -42,8 +42,8 @@ impl<T> SdkApiResponseV3<T> {
 
 #[cfg(feature = "client")]
 pub async fn fetch_haptic_definitions(
-  app_id: &String,
-  api_key: &String,
+  app_id: &str,
+  api_key: &str,
   // version: String,
 ) -> Result<HapticDefinitionsMessage, Error> {
   let url = format!(
