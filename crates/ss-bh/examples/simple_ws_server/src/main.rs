@@ -26,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
   let cancellation_token = CancellationToken::new();
 
   let (command_sender, mut command_receiver) = mpsc::channel::<HapticManagerCommand>(10);
-  let (event_sender, event_receiver) = broadcast::channel::<ss_bh::server::HapticManagerEvent>(10);
+  let (event_sender, _event_receiver) = broadcast::channel::<ss_bh::server::HapticManagerEvent>(10);
 
   BhWebsocketServerBuilder::new(ws_config, command_sender, event_sender)
     .with_cancellation_token(Some(cancellation_token))

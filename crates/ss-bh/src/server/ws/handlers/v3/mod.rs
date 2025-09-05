@@ -2,7 +2,7 @@ use super::{HandlerBuilder, MessageHandler};
 use crate::server::{HapticManagerCommand, HapticManagerEvent};
 use axum::extract::ws::Message;
 use bh_haptic_definitions::{HapticDefinitionsMessage, fetch_haptic_definitions};
-use bh_sdk::v3::SdkMessage;
+use bh_sdk::v3::{SdkMessage, ServerEventListMessageItem, ServerMessage};
 use derive_more::Display;
 use getset::Getters;
 use serde::{Deserialize, Serialize};
@@ -97,7 +97,30 @@ impl MessageHandler for FeedbackHandler {
 
   #[instrument(skip(self, event), fields(app = %self.app_ctx))]
   async fn handle_haptic_event(&mut self, event: &HapticManagerEvent) -> anyhow::Result<()> {
-    Ok(())
+    match event {
+      HapticManagerEvent::HapticEventsUpdated { namespace, events } => {
+        if namespace != self.app_ctx.workspace_id() {
+          return Ok(());
+        }
+
+        self
+          .send_message(&ServerMessage::ServerEventNameList(
+            events.iter().map(|e| e.name().clone()).collect::<Vec<_>>(),
+          ))
+          .await
+          .map_err(|e| anyhow::anyhow!("Failed to send ServerEventNameList message: {}", e))?;
+
+        self
+          .send_message(&ServerMessage::ServerEventList(
+            events
+              .iter()
+              .map(|e| ServerEventListMessageItem::new(e.name().clone(), e.event_time))
+              .collect::<Vec<_>>(),
+          ))
+          .await
+          .map_err(|e| anyhow::anyhow!("Failed to send ServerEventList message: {}", e))
+      }
+    }
   }
 }
 
@@ -115,7 +138,9 @@ impl FeedbackHandler {
         let haptic_definitions =
           fetch_haptic_definitions(msg.application_id(), msg.sdk_api_key()).await?;
 
-        self.register_haptic_definitions(haptic_definitions).await
+        self.register_haptic_definitions(haptic_definitions).await?;
+
+        self.send_message(&ServerMessage::ServerReady).await
       }
       SdkMessage::SdkRequestAuthInit(msg) => {
         let haptic_definitions = match msg.haptic().message() {
@@ -129,7 +154,9 @@ impl FeedbackHandler {
           }
         };
 
-        self.register_haptic_definitions(haptic_definitions).await
+        self.register_haptic_definitions(haptic_definitions).await?;
+
+        self.send_message(&ServerMessage::ServerReady).await
       }
       SdkMessage::SdkStopAll => self
         .command_sender
@@ -138,9 +165,20 @@ impl FeedbackHandler {
         })
         .await
         .map_err(|e| anyhow::anyhow!("Failed to send StopAll command: {}", e)),
-      _ => {
-        Err(anyhow::anyhow!("Unsupported SDK message: {:?}", msg)) // todo
-      }
+      SdkMessage::SdkPlayWithStartTime(msg) => self
+        .command_sender
+        .send(HapticManagerCommand::PlayEvent {
+          namespace: self.app_ctx.workspace_id().to_string(),
+          event_name: msg.event_name().to_string(),
+          request_id: *msg.request_id(),
+          start_millis: *msg.start_millis(),
+          intensity: *msg.intensity(),
+          duration: *msg.duration(),
+          offset_x: *msg.offset_angle_x(),
+          offset_y: *msg.offset_y(),
+        })
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to send PlayEvent command: {}", e)),
     }
   }
 
