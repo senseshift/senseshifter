@@ -2188,7 +2188,6 @@ dependencies = [
  "futures-util",
  "getset",
  "hex",
- "log",
  "rand",
  "rand_chacha",
  "rsa",

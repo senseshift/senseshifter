@@ -12,8 +12,13 @@ use aes_gcm::{
   Aes256Gcm, Nonce,
   aead::{Aead, KeyInit},
 };
+use anyhow::anyhow;
 use base64::{Engine, engine::general_purpose::STANDARD};
-use rand::RngCore;
+use getset::WithSetters;
+use rand::{RngCore, SeedableRng};
+use rand_chacha::ChaCha20Rng;
+use rsa::pkcs8::{Document, EncodePublicKey};
+use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey};
 
 /// V4 AppContext with encryption support (extended from V3)
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -43,26 +48,50 @@ impl From<&AppContext> for v3::AppContext {
 /// Crypto state for V4 encryption/decryption
 #[derive(Debug)]
 struct CryptoContext {
+  rng: ChaCha20Rng,
+  private_key: RsaPrivateKey,
+  public_key_der: Document,
   aes_key: Option<[u8; 32]>,
 }
 
 impl CryptoContext {
-  fn new() -> Self {
-    Self { aes_key: None }
-  }
-
   fn set_aes_key(&mut self, key: [u8; 32]) {
     self.aes_key = Some(key);
   }
 
-  fn encrypt_aes_gcm(&self, plaintext: &str) -> anyhow::Result<String> {
+  fn decrypt_client_key_pkcs1v15(&self, encrypted_key_b64: &str) -> anyhow::Result<[u8; 32]> {
+    // Decode base64 encrypted key
+    let encrypted_key = STANDARD
+      .decode(encrypted_key_b64)
+      .map_err(|e| anyhow!("Failed to decode base64 encrypted key: {}", e))?;
+
+    // Decrypt using RSA PKCS1v15
+    let decrypted = self
+      .private_key
+      .decrypt(Pkcs1v15Encrypt, &encrypted_key)
+      .map_err(|e| anyhow!("Failed to decrypt RSA key: {}", e))?;
+
+    // Ensure we have exactly 32 bytes for AES-256
+    if decrypted.len() != 32 {
+      return Err(anyhow!(
+        "Invalid AES key length: expected 32 bytes, got {}",
+        decrypted.len()
+      ));
+    }
+
+    let mut key = [0u8; 32];
+    key.copy_from_slice(&decrypted);
+    Ok(key)
+  }
+
+  fn encrypt_aes_gcm(&mut self, plaintext: &str) -> anyhow::Result<String> {
     let key = self
       .aes_key
       .ok_or_else(|| anyhow::anyhow!("AES key not established"))?;
 
     let cipher = Aes256Gcm::new_from_slice(&key)?;
     let mut iv = [0u8; 12];
-    rand::thread_rng().fill_bytes(&mut iv);
+    self.rng.fill_bytes(&mut iv);
     let nonce = Nonce::from_slice(&iv);
 
     let ciphertext = cipher
@@ -101,9 +130,12 @@ impl CryptoContext {
 }
 
 /// V4 Handler Builder - accepts a pre-built V3 handler
+#[derive(WithSetters)]
 pub struct FeedbackHandlerBuilder {
   app_ctx: AppContext,
   v3_handler: Option<v3::FeedbackHandler>,
+  #[getset(set_with = "pub")]
+  private_key: Option<RsaPrivateKey>,
   ws_sender: mpsc::UnboundedSender<Message>,
   cancellation_token: Option<CancellationToken>,
 }
@@ -121,6 +153,7 @@ impl HandlerBuilder for FeedbackHandlerBuilder {
     Self {
       app_ctx: context,
       v3_handler: None, // Will be set by with_v3_handler
+      private_key: None,
       ws_sender,
       cancellation_token: None,
     }
@@ -136,11 +169,31 @@ impl HandlerBuilder for FeedbackHandlerBuilder {
       .v3_handler
       .ok_or_else(|| anyhow::anyhow!("V3 handler not provided"))?;
 
+    let mut rng = ChaCha20Rng::from_rng(&mut rand::rng());
+
+    let private_key = match self.private_key {
+      Some(key) => key,
+      None => {
+        warn!("Generating new RSA key. This is a slow operation, please configure persistent key");
+
+        RsaPrivateKey::new(&mut rng, 2048)
+          .map_err(|err| anyhow!("Failed to generate RSA key: {}", err))?
+      }
+    };
+
+    let public_key = RsaPublicKey::from(&private_key);
+    let public_key_der = public_key.to_public_key_der()?;
+
     Ok(FeedbackHandler {
       app_ctx: self.app_ctx,
       v3_handler,
       ws_sender: self.ws_sender,
-      crypto: CryptoContext::new(),
+      crypto: CryptoContext {
+        rng,
+        private_key,
+        public_key_der,
+        aes_key: None,
+      },
       handshake_complete: false,
     })
   }
@@ -174,19 +227,14 @@ impl MessageHandler for FeedbackHandler {
       self.app_ctx.workspace_id
     );
 
-    // Send server's public key to initiate encryption handshake
-    // TODO: Implement RSA key generation and send ServerKey message
-    // let server_key_msg = SdkEncryptedMessage::server_key(self.public_key_spki_b64.clone());
-    // let json = serde_json::to_string(&server_key_msg)?;
-    // self.ws_sender.send(Message::Text(json.into()))?;
+    let public_key_spki_b64 = STANDARD.encode(self.crypto.public_key_der.as_bytes());
+    let server_key_msg = SdkEncryptedMessage::server_key(public_key_spki_b64);
 
-    Ok(())
+    self.send_raw_message(&server_key_msg).await
   }
 
   #[instrument(skip(self, msg))]
   async fn handle_text_message(&mut self, msg: &str) -> anyhow::Result<()> {
-    info!("V4 Encrypted received message: {}", msg);
-
     let sdk_msg: SdkEncryptedMessage = serde_json::from_str(msg)
       .map_err(|e| anyhow::anyhow!("Failed to parse V4 encrypted message: {}", e))?;
 
@@ -194,10 +242,15 @@ impl MessageHandler for FeedbackHandler {
       SdkEncryptedMessageType::SdkClientKey => {
         if let Some(encrypted_key) = sdk_msg.key() {
           info!("Received client AES key, establishing encryption");
-          // TODO: Decrypt RSA-encrypted AES key and store it
-          // let decrypted_key = self.decrypt_client_key_pkcs1v15(encrypted_key)?;
-          // self.crypto.set_aes_key(decrypted_key);
+
+          // Decrypt RSA-encrypted AES key and store it
+          let decrypted_key = self.crypto.decrypt_client_key_pkcs1v15(encrypted_key)?;
+          self.crypto.set_aes_key(decrypted_key);
           self.handshake_complete = true;
+
+          info!("V4 encryption handshake completed successfully");
+        } else {
+          warn!("Received SdkClientKey message without key data");
         }
         Ok(())
       }
@@ -210,7 +263,7 @@ impl MessageHandler for FeedbackHandler {
         if let Some(encrypted_data) = sdk_msg.data() {
           // Decrypt the V4 message to get V3 JSON
           let v3_json = self.crypto.decrypt_aes_gcm(encrypted_data)?;
-          info!("Decrypted V4 → V3: {}", v3_json);
+          debug!("Decrypted V4 → V3: {}", v3_json);
 
           // Forward decrypted message to wrapped V3 handler
           self.v3_handler.handle_text_message(&v3_json).await?;
@@ -228,14 +281,9 @@ impl MessageHandler for FeedbackHandler {
     }
   }
 
-  #[instrument(skip(self, data))]
-  async fn handle_binary_message(&mut self, data: &[u8]) -> anyhow::Result<()> {
-    info!(
-      "V4 Encrypted received binary message of {} bytes",
-      data.len()
-    );
-    // V4 typically uses text messages for encrypted data
-    Ok(())
+  #[instrument(skip(self, _data))]
+  async fn handle_binary_message(&mut self, _data: &[u8]) -> anyhow::Result<()> {
+    Err(anyhow::anyhow!("Binary messages not supported"))
   }
 
   #[instrument(skip(self))]
@@ -266,9 +314,9 @@ impl MessageHandler for FeedbackHandler {
 }
 
 impl FeedbackHandler {
-  /// Helper to send encrypted messages back to client
+  /// Helper to send encrypted messages back to the client
   #[instrument(skip(self, v3_json))]
-  async fn send_encrypted_v3_message(&self, v3_json: &str) -> anyhow::Result<()> {
+  async fn send_encrypted_v3_message(&mut self, v3_json: &str) -> anyhow::Result<()> {
     if !self.handshake_complete {
       return Err(anyhow::anyhow!(
         "Cannot send encrypted message before handshake"
@@ -280,12 +328,13 @@ impl FeedbackHandler {
 
     // Wrap in V4 SdkData message
     let v4_msg = SdkEncryptedMessage::sdk_data(encrypted_data);
-    let v4_json = serde_json::to_string(&v4_msg)?;
 
-    // Send to client
-    self.ws_sender.send(Message::Text(v4_json.into()))?;
-    info!("Sent encrypted V3 → V4: {}", v3_json);
+    self.send_raw_message(&v4_msg).await
+  }
 
+  async fn send_raw_message(&self, msg: &impl Serialize) -> anyhow::Result<()> {
+    let json = serde_json::to_string(msg)?;
+    self.ws_sender.send(Message::Text(json.into()))?;
     Ok(())
   }
 }

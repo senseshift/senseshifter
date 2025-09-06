@@ -225,7 +225,6 @@ async fn upgrade_websocket_with_strategy<
 
                 if let Err(e) = result {
                   error!("Handler error: {}", e);
-                  break;
                 }
 
                 if should_close {
