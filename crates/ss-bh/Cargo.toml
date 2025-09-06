@@ -42,12 +42,27 @@ v4 = ["bh-sdk/v4", "tls"]
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-tokio-tungstenite = { workspace = true }
-futures-util = { workspace = true }
 
+tokio-tungstenite = { workspace = true }
+
+base64 = { workspace = true }
+hex = "0.4"
+
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+
+rsa = "0.10.0-rc.6"
+aes-gcm = "0.10.3"
+
+futures-util = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 
 [[example]]
 name = "simple_ws_server"
 path = "examples/simple_ws_server/src/main.rs"
 required-features = ["ws", "tls", "v1", "v2", "v3", "v4"]
+
+[[example]]
+name = "v4_mitm_proxy"
+path = "examples/v4_mitm_proxy/main.rs"
+required-features = ["ws", "tls", "v4"]
