@@ -87,7 +87,7 @@ impl MessageHandler for FeedbackHandler {
   #[instrument(skip(self, msg), fields(app = %self.app_ctx))]
   async fn handle_text_message(&mut self, msg: &str) -> anyhow::Result<()> {
     let sdk_msg: SdkMessage = serde_json::from_str(msg)
-      .map_err(|e| anyhow::anyhow!("Failed to parse SDK message: {}", e))?;
+      .map_err(|e| anyhow::anyhow!("Failed to parse message \"{msg}\": {e}"))?;
 
     self
       .handle_sdk_message(&sdk_msg)
@@ -164,13 +164,6 @@ impl FeedbackHandler {
 
         self.init(haptic_definitions).await
       }
-      SdkMessage::SdkStopAll => self
-        .command_sender
-        .send(HapticManagerCommand::StopAll {
-          namespace: self.app_ctx.workspace_id().to_string(),
-        })
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to send StopAll command: {}", e)),
       SdkMessage::SdkPlayWithStartTime(msg) => self
         .command_sender
         .send(HapticManagerCommand::PlayEvent {
@@ -185,6 +178,19 @@ impl FeedbackHandler {
         })
         .await
         .map_err(|e| anyhow::anyhow!("Failed to send PlayEvent command: {}", e)),
+      SdkMessage::SdkPingAll
+      | SdkMessage::SdkStopByEventId(_)
+      | SdkMessage::SdkPlayDotMode(_)
+      | SdkMessage::SdkPlayPathMode(_) => {
+        Err(anyhow::anyhow!("Not implemented yet")) // todo: implement
+      }
+      SdkMessage::SdkStopAll => self
+        .command_sender
+        .send(HapticManagerCommand::StopAll {
+          namespace: self.app_ctx.workspace_id().to_string(),
+        })
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to send StopAll command: {}", e)),
     }
   }
 
@@ -449,7 +455,7 @@ mod tests {
       result
         .unwrap_err()
         .to_string()
-        .contains("Failed to parse SDK message")
+        .contains("Failed to parse message")
     );
   }
 }
