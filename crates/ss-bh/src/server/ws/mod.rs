@@ -42,13 +42,86 @@ async fn kickstart_ws(socket: &mut WebSocket) -> Result<(), axum::Error> {
     .await
 }
 
-async fn upgrade_websocket_generic<H: MessageHandler>(
+/// Strategy trait for building handlers with different construction patterns
+trait HandlerBuildStrategy<H: MessageHandler>: Send + Sync {
+  fn build_handler(
+    &self,
+    context: H::Context,
+    command_tx: mpsc::Sender<HapticManagerCommand>,
+    ws_tx: mpsc::UnboundedSender<Message>,
+    token: CancellationToken,
+  ) -> impl std::future::Future<Output = anyhow::Result<H>> + Send;
+}
+
+/// Standard strategy: build handler directly using the trait
+struct StandardHandlerStrategy;
+
+impl<H: MessageHandler> HandlerBuildStrategy<H> for StandardHandlerStrategy {
+  fn build_handler(
+    &self,
+    context: H::Context,
+    command_tx: mpsc::Sender<HapticManagerCommand>,
+    ws_tx: mpsc::UnboundedSender<Message>,
+    token: CancellationToken,
+  ) -> impl std::future::Future<Output = anyhow::Result<H>> + Send {
+    async move {
+      H::Builder::new(context, command_tx, ws_tx)
+        .with_cancellation_token(token)
+        .build()
+        .await
+    }
+  }
+}
+
+/// V4 Composition strategy: build V3 externally, then wrap in V4
+#[cfg(feature = "v4")]
+struct V4CompositionStrategy;
+
+#[cfg(feature = "v4")]
+impl HandlerBuildStrategy<handlers::v4::FeedbackHandler> for V4CompositionStrategy {
+  fn build_handler(
+    &self,
+    context: handlers::v4::AppContext,
+    command_tx: mpsc::Sender<HapticManagerCommand>,
+    ws_tx: mpsc::UnboundedSender<Message>,
+    token: CancellationToken,
+  ) -> impl std::future::Future<Output = anyhow::Result<handlers::v4::FeedbackHandler>> + Send {
+    async move {
+      // Convert V4 context to V3 context for the wrapped handler
+      let v3_context: handlers::v3::AppContext = (&context).into();
+
+      // Build V3 handler first (for composition)
+      let v3_handler = handlers::v3::FeedbackHandlerBuilder::new(
+        v3_context,
+        command_tx.clone(),
+        mpsc::unbounded_channel().0, // dummy sender - V4 will intercept
+      )
+      .with_cancellation_token(token.clone())
+      .build()
+      .await?;
+
+      // Build V4 handler with the V3 handler
+      handlers::v4::FeedbackHandlerBuilder::new(context, command_tx, ws_tx)
+        .with_v3_handler(v3_handler)
+        .with_cancellation_token(token)
+        .build()
+        .await
+    }
+  }
+}
+
+/// Unified WebSocket upgrade handler with pluggable handler build strategy
+async fn upgrade_websocket_with_strategy<
+  H: MessageHandler,
+  S: HandlerBuildStrategy<H> + Send + 'static,
+>(
   ws: WebSocketUpgrade,
   Query(context): Query<H::Context>,
-  event_rx: broadcast::Receiver<HapticManagerEvent>,
-  command_tx: mpsc::Sender<HapticManagerCommand>,
-  parent_token: CancellationToken,
+  State(app_state): State<AppState>,
+  strategy: S,
 ) -> axum::response::Response {
+  let event_rx = app_state.event_sender.subscribe();
+
   info!("Received WebSocket upgrade request");
 
   ws.on_upgrade(async move |mut socket| {
@@ -61,16 +134,20 @@ async fn upgrade_websocket_generic<H: MessageHandler>(
       }
     }
 
-    let connection_token = parent_token.child_token();
+    let connection_token = app_state.cancellation_token.child_token();
     let (sender, mut receiver) = socket.split();
 
     // Create channel for WebSocket message sending (lock-free)
     let (ws_tx, mut ws_rx) = mpsc::unbounded_channel::<Message>();
 
-    // Build handler with required dependencies
-    let mut handler = match H::Builder::new(context, command_tx, ws_tx.clone())
-      .with_cancellation_token(connection_token.clone())
-      .build()
+    // Build handler using the provided strategy
+    let mut handler = match strategy
+      .build_handler(
+        context,
+        app_state.command_sender,
+        ws_tx.clone(),
+        connection_token.clone(),
+      )
       .await
     {
       Ok(h) => h,
@@ -103,11 +180,11 @@ async fn upgrade_websocket_generic<H: MessageHandler>(
           _ = connection_token_sender.cancelled() => break,
         }
       }
-      debug!("WebSocket sender task completed");
+      debug!("Sender task completed");
     });
 
-    // Task 2: WebSocket message receiver
-    let handler_receiver = handler.clone();
+    // Task 2: WebSocket receiver
+    let handler_receiver = Arc::clone(&handler);
     let connection_token_receiver = connection_token.clone();
     let ws_tx_ping = ws_tx.clone();
     let receiver_task = tokio::spawn(async move {
@@ -127,208 +204,11 @@ async fn upgrade_websocket_generic<H: MessageHandler>(
                     let res = handler_receiver.lock().await.handle_binary_message(&data).await;
                     (res, false)
                   },
-                  Message::Ping(bytes) => {
-                    debug!("Received Ping: {:?}", bytes);
-                    if let Err(e) = ws_tx_ping.send(Message::Pong(bytes)) {
-                      error!("Failed to send Pong: {}", e);
-                    }
-                    (Ok(()), false)
-                  },
-                  Message::Pong(_) => {
-                    debug!("Received Pong");
-                    (Ok(()), false)
-                  },
-                  Message::Close(_) => {
-                    info!("Received Close, closing connection");
-                    let res = handler_receiver.lock().await.handle_close().await;
-                    (res, true)
-                  },
-                };
-
-                if let Err(e) = result {
-                  error!("Failed to handle message: {}", e);
-                }
-
-                if should_close {
-                  break;
-                }
-              }
-              Err(e) => {
-                error!("WebSocket error: {:?}", e);
-                break;
-              }
-            }
-          }
-          _ = connection_token_receiver.cancelled() => break,
-        }
-      }
-      debug!("WebSocket receiver task completed");
-    });
-
-    // Task 3: Broadcast event handler
-    let handler_events = handler.clone();
-    let mut event_rx = event_rx.resubscribe();
-    let connection_token_events = connection_token.clone();
-    let event_task = tokio::spawn(async move {
-      loop {
-        tokio::select! {
-          Ok(event) = event_rx.recv() => {
-            if let Err(e) = handler_events.lock().await.handle_haptic_event(&event).await {
-              error!("Broadcast handler error: {}", e);
-            }
-          }
-          _ = connection_token_events.cancelled() => break,
-        }
-      }
-      debug!("Event handler task completed");
-    });
-
-    // Wait for any task to complete or cancellation
-    tokio::select! {
-      _ = sender_task => {},
-      _ = receiver_task => {},
-      _ = event_task => {},
-      _ = connection_token.cancelled() => {},
-    }
-
-    info!("WebSocket connection closed gracefully");
-  })
-}
-
-// Generic version-agnostic WebSocket upgrade handler
-async fn upgrade_websocket<H: MessageHandler>(
-  ws: WebSocketUpgrade,
-  Query(context): Query<H::Context>,
-  State(app_state): State<AppState>,
-) -> axum::response::Response {
-  let event_rx = app_state.event_sender.subscribe();
-
-  upgrade_websocket_generic::<H>(
-    ws,
-    Query(context),
-    event_rx,
-    app_state.command_sender,
-    app_state.cancellation_token,
-  )
-  .await
-}
-
-// Special V4 upgrade handler that builds V3 handler externally
-#[cfg(feature = "v4")]
-async fn upgrade_websocket_v4_with_composition(
-  ws: WebSocketUpgrade,
-  Query(context): Query<handlers::v4::AppContext>,
-  State(app_state): State<AppState>,
-) -> axum::response::Response {
-  let event_rx = app_state.event_sender.subscribe();
-
-  // Convert V4 context to V3 context for the wrapped handler
-  let v3_context = (&context).into();
-
-  // This is where we do the composition differently from the generic handler
-  ws.on_upgrade(async move |mut socket| {
-    // Kickstart WebSocket with initial ping
-    match kickstart_ws(&mut socket).await {
-      Ok(_) => {}
-      Err(e) => {
-        error!("Failed to kickstart websocket: {}", e);
-        return;
-      }
-    }
-
-    let connection_token = app_state.cancellation_token.child_token();
-    let (sender, mut receiver) = socket.split();
-
-    // Create channel for WebSocket message sending (lock-free)
-    let (ws_tx, mut ws_rx) = mpsc::unbounded_channel::<Message>();
-
-    // Build V3 handler first (for composition)
-    let v3_handler = match handlers::v3::FeedbackHandlerBuilder::new(
-      v3_context,
-      app_state.command_sender.clone(),
-      mpsc::unbounded_channel().0, // dummy sender - V4 will intercept
-    )
-    .with_cancellation_token(connection_token.clone())
-    .build()
-    .await
-    {
-      Ok(h) => h,
-      Err(e) => {
-        error!("Failed to create V3 handler: {}", e);
-        return;
-      }
-    };
-
-    // Build V4 handler with the V3 handler
-    let mut v4_handler = match handlers::v4::FeedbackHandlerBuilder::new(
-      context,
-      app_state.command_sender,
-      ws_tx.clone(),
-    )
-    .with_v3_handler(v3_handler)
-    .with_cancellation_token(connection_token.clone())
-    .build()
-    .await
-    {
-      Ok(h) => h,
-      Err(e) => {
-        error!("Failed to create V4 handler: {}", e);
-        return;
-      }
-    };
-
-    // Call connection opened handler
-    if let Err(e) = v4_handler.handle_connection_opened().await {
-      error!("Failed to handle connection opened: {}", e);
-      return;
-    }
-
-    let handler = Arc::new(Mutex::new(v4_handler));
-
-    // Continue with the same task spawning logic as generic handler
-    // Task 1: WebSocket sender (dedicated I/O task)
-    let connection_token_sender = connection_token.clone();
-    let sender_task = tokio::spawn(async move {
-      let mut sender = sender;
-      loop {
-        tokio::select! {
-          Some(msg) = ws_rx.recv() => {
-            if let Err(e) = sender.send(msg).await {
-              error!("Failed to send WebSocket message: {}", e);
-              break;
-            }
-          }
-          _ = connection_token_sender.cancelled() => break,
-        }
-      }
-      debug!("WebSocket sender task completed");
-    });
-
-    // Task 2: WebSocket message receiver
-    let handler_receiver = handler.clone();
-    let connection_token_receiver = connection_token.clone();
-    let ws_tx_ping = ws_tx.clone();
-    let receiver_task = tokio::spawn(async move {
-      loop {
-        tokio::select! {
-          Some(msg) = receiver.next() => {
-            match msg {
-              Ok(message) => {
-                debug!("Received message: {:?}", message);
-
-                let (result, should_close) = match message {
-                  Message::Text(text) => {
-                    let res = handler_receiver.lock().await.handle_text_message(&text).await;
-                    (res, false)
-                  },
-                  Message::Binary(data) => {
-                    let res = handler_receiver.lock().await.handle_binary_message(&data).await;
-                    (res, false)
-                  },
-                  Message::Ping(bytes) => {
-                    debug!("Received Ping: {:?}", bytes);
-                    if let Err(e) = ws_tx_ping.send(Message::Pong(bytes)) {
-                      error!("Failed to send Pong: {}", e);
+                  Message::Ping(data) => {
+                    debug!("Received Ping, responding with Pong");
+                    let pong_result = ws_tx_ping.send(Message::Pong(data));
+                    if let Err(e) = pong_result {
+                      error!("Failed to send pong: {}", e);
                     }
                     (Ok(()), false)
                   },
@@ -361,11 +241,11 @@ async fn upgrade_websocket_v4_with_composition(
           _ = connection_token_receiver.cancelled() => break,
         }
       }
-      debug!("WebSocket receiver task completed");
+      debug!("Receiver task completed");
     });
 
-    // Task 3: Broadcast event handler
-    let handler_events = handler.clone();
+    // Task 3: Event broadcaster
+    let handler_events = Arc::clone(&handler);
     let mut event_rx = event_rx.resubscribe();
     let connection_token_events = connection_token.clone();
     let event_task = tokio::spawn(async move {
@@ -392,6 +272,39 @@ async fn upgrade_websocket_v4_with_composition(
 
     info!("WebSocket connection closed gracefully");
   })
+}
+
+// Simplified upgrade functions using the strategy pattern
+
+/// Standard WebSocket upgrade handler using the default build strategy
+async fn upgrade_websocket_standard<H: MessageHandler>(
+  ws: WebSocketUpgrade,
+  Query(context): Query<H::Context>,
+  State(app_state): State<AppState>,
+) -> axum::response::Response {
+  upgrade_websocket_with_strategy::<H, StandardHandlerStrategy>(
+    ws,
+    Query(context),
+    State(app_state),
+    StandardHandlerStrategy,
+  )
+  .await
+}
+
+/// V4 WebSocket upgrade handler using the composition strategy
+#[cfg(feature = "v4")]
+async fn upgrade_websocket_v4_composition(
+  ws: WebSocketUpgrade,
+  Query(context): Query<handlers::v4::AppContext>,
+  State(app_state): State<AppState>,
+) -> axum::response::Response {
+  upgrade_websocket_with_strategy::<handlers::v4::FeedbackHandler, V4CompositionStrategy>(
+    ws,
+    Query(context),
+    State(app_state),
+    V4CompositionStrategy,
+  )
+  .await
 }
 
 #[derive(Debug, Clone, WithSetters)]
@@ -483,11 +396,11 @@ impl BhWebsocketServerBuilder {
       app = app
         .route(
           "/feedbacks",
-          any(upgrade_websocket::<handlers::v1::FeedbackHandler>),
+          any(upgrade_websocket_standard::<handlers::v1::FeedbackHandler>),
         )
         .route(
           "/feedbacks/",
-          any(upgrade_websocket::<handlers::v1::FeedbackHandler>),
+          any(upgrade_websocket_standard::<handlers::v1::FeedbackHandler>),
         );
     }
 
@@ -496,11 +409,11 @@ impl BhWebsocketServerBuilder {
       app = app
         .route(
           "/v2/feedbacks",
-          any(upgrade_websocket::<handlers::v2::FeedbackHandler>),
+          any(upgrade_websocket_standard::<handlers::v2::FeedbackHandler>),
         )
         .route(
           "/v2/feedbacks/",
-          any(upgrade_websocket::<handlers::v2::FeedbackHandler>),
+          any(upgrade_websocket_standard::<handlers::v2::FeedbackHandler>),
         );
     }
 
@@ -509,19 +422,19 @@ impl BhWebsocketServerBuilder {
       app = app
         .route(
           "/v3/feedback",
-          any(upgrade_websocket::<handlers::v3::FeedbackHandler>),
+          any(upgrade_websocket_standard::<handlers::v3::FeedbackHandler>),
         )
         .route(
           "/v3/feedback/",
-          any(upgrade_websocket::<handlers::v3::FeedbackHandler>),
+          any(upgrade_websocket_standard::<handlers::v3::FeedbackHandler>),
         );
     }
 
     #[cfg(feature = "v4")]
     {
       app = app
-        .route("/v4/feedback", any(upgrade_websocket_v4_with_composition))
-        .route("/v4/feedback/", any(upgrade_websocket_v4_with_composition));
+        .route("/v4/feedback", any(upgrade_websocket_v4_composition))
+        .route("/v4/feedback/", any(upgrade_websocket_v4_composition));
     }
 
     // log URLs to wrong paths
