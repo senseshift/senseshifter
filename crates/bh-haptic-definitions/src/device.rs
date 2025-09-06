@@ -1,28 +1,31 @@
 use derivative::Derivative;
-use strum::{Display as StrumDisplay, EnumString};
+use strum::{Display as StrumDisplay, EnumString, FromRepr};
 
-#[derive(Derivative, StrumDisplay, EnumString)]
+#[derive(Derivative, StrumDisplay, EnumString, FromRepr)]
 #[derivative(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[repr(u8)]
 pub enum DevicePosition {
-  Head,
-  Tactal,
+  Vest = 0,
 
-  VestFront,
-  VestBack,
-  Vest,
+  ForearmL = 1,
+  ForearmR = 2,
 
-  GloveL,
-  GloveR,
+  Head = 3,
 
-  HandL,
-  HandR,
+  HandL = 4,
+  HandR = 5,
 
-  ForearmL,
-  ForearmR,
+  FootL = 6,
+  FootR = 7,
 
-  FootL,
-  FootR,
+  GloveL = 8,
+  GloveR = 9,
+
+  Tactal = 200,
+
+  VestFront = 201,
+  VestBack = 202,
 }
 
 impl DevicePosition {

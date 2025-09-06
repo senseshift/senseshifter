@@ -15,6 +15,7 @@ strum = { workspace = true, features = ["derive"] }
 serde = { workspace = true, optional = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
 serde_handy = { workspace = true, optional = true }
+serde_with = { workspace = true, optional = true, features = ["base64"] }
 
 base64 = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true, features = ["json"] }
@@ -23,5 +24,5 @@ reqwest = { workspace = true, optional = true, features = ["json"] }
 walkdir = { workspace = true }
 
 [features]
-serde = ["dep:serde", "dep:serde_json", "dep:serde_handy", "dep:base64"]
+serde = ["dep:serde", "dep:serde_json", "dep:serde_handy", "dep:serde_with", "dep:base64"]
 client = ["dep:reqwest", "serde"]
