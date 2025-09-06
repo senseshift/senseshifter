@@ -10,6 +10,7 @@ use bh_sdk::v4::SdkEncryptedMessage;
 
 use anyhow::anyhow;
 use base64::{Engine, engine::general_purpose::STANDARD};
+use bh_sdk::v3::{SdkMessage, SdkRequestAuthMessage};
 use getset::WithSetters;
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
@@ -26,6 +27,8 @@ async fn encrypt_and_send_v3_message(
   v3_json: &str,
   ws_sender: &mpsc::UnboundedSender<Message>,
 ) -> anyhow::Result<()> {
+  debug!("Encrypting V3 → V4: {}", v3_json);
+
   // Encrypt V3 JSON using crypto context
   let encrypted_data = crypto.encrypt_aes_gcm(v3_json).await?;
 
@@ -181,7 +184,9 @@ impl MessageHandler for FeedbackHandler {
     let public_key_spki_b64 = STANDARD.encode(self.crypto.public_key_der().as_bytes());
     let server_key_msg = SdkEncryptedMessage::server_key(public_key_spki_b64);
 
-    self.send_raw_message(&server_key_msg).await
+    self.send_raw_message(&server_key_msg).await?;
+
+    self.v3_handler.handle_connection_opened().await
   }
 
   #[instrument(skip(self, msg))]
@@ -191,14 +196,24 @@ impl MessageHandler for FeedbackHandler {
 
     match sdk_msg {
       SdkEncryptedMessage::SdkClientKey { key: encrypted_key } => {
-        info!("Received client AES key, establishing encryption");
-
         // Decrypt RSA-encrypted AES key and store it
         let decrypted_key = self.crypto.decrypt_client_key_pkcs1v15(&encrypted_key)?;
         self.crypto.set_aes_key(decrypted_key);
 
         info!("V4 encryption handshake completed successfully");
-        Ok(())
+
+        // sending message to the v3 handler, to fetch haptic definitions, since the v4 clients do not send these messages themselves
+        // todo: I'm not sure what these empty values are doing, so I just left them empty, since in my implementation they do not do anything
+        self
+          .v3_handler
+          .handle_sdk_message(&SdkMessage::SdkRequestAuth(SdkRequestAuthMessage::new(
+            "".to_string(),
+            self.app_ctx.workspace_id.clone(),
+            "".to_string(),
+            "".to_string(),
+            self.app_ctx.api_key.clone(),
+          )))
+          .await
       }
 
       SdkEncryptedMessage::SdkData {
@@ -241,16 +256,6 @@ impl MessageHandler for FeedbackHandler {
       return Ok(()); // Skip events until encryption is established
     }
 
-    info!("V4 Encrypted received haptic event: {:?}", event);
-
-    // Let V3 handler process the event (this might generate a response)
-    // In a real implementation, we'd need to:
-    // 1. Let V3 handler generate its response JSON
-    // 2. Encrypt that JSON using AES-GCM
-    // 3. Wrap in SdkEncryptedMessage::SdkData
-    // 4. Send via self.ws_sender
-
-    // For now, delegate to V3 handler
     self.v3_handler.handle_haptic_event(event).await
   }
 }
@@ -288,8 +293,6 @@ impl FeedbackHandler {
     crypto: CryptoContext,
   ) {
     tokio::spawn(async move {
-      info!("V3→V4 message interceptor task started");
-
       while let Some(v3_message) = v3_message_rx.recv().await {
         match v3_message {
           Message::Text(text) => {

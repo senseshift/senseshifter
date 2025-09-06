@@ -20,6 +20,10 @@ impl HapticEvent {
 
 #[derive(Derivative, Debug, Clone)]
 pub enum HapticManagerCommand {
+  ClientConnected {
+    namespace: String,
+  },
+
   RegisterHapticDefinitions {
     namespace: String,
     definitions: Box<HapticDefinitionsMessage>, // using box, since the message is quite large

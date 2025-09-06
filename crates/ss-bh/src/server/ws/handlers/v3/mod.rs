@@ -142,15 +142,13 @@ impl FeedbackHandler {
   }
 
   #[instrument(skip(self, msg), fields(app = %self.app_ctx))]
-  async fn handle_sdk_message(&mut self, msg: &SdkMessage) -> anyhow::Result<()> {
+  pub(crate) async fn handle_sdk_message(&mut self, msg: &SdkMessage) -> anyhow::Result<()> {
     match msg {
       SdkMessage::SdkRequestAuth(msg) => {
         let haptic_definitions =
           fetch_haptic_definitions(msg.application_id(), msg.sdk_api_key()).await?;
 
-        self.register_haptic_definitions(haptic_definitions).await?;
-
-        self.send_message(&ServerMessage::ServerReady).await
+        self.init(haptic_definitions).await
       }
       SdkMessage::SdkRequestAuthInit(msg) => {
         let haptic_definitions = match msg.haptic().message() {
@@ -164,9 +162,7 @@ impl FeedbackHandler {
           }
         };
 
-        self.register_haptic_definitions(haptic_definitions).await?;
-
-        self.send_message(&ServerMessage::ServerReady).await
+        self.init(haptic_definitions).await
       }
       SdkMessage::SdkStopAll => self
         .command_sender
@@ -190,6 +186,22 @@ impl FeedbackHandler {
         .await
         .map_err(|e| anyhow::anyhow!("Failed to send PlayEvent command: {}", e)),
     }
+  }
+
+  async fn init(&self, haptic_definitions: HapticDefinitionsMessage) -> anyhow::Result<()> {
+    self
+      .command_sender
+      .send(HapticManagerCommand::ClientConnected {
+        namespace: self.app_ctx.workspace_id().to_string(),
+      })
+      .await
+      .map_err(|e| anyhow::anyhow!("Failed to send ClientConnected command: {}", e))?;
+
+    self.send_message(&ServerMessage::ServerReady).await?;
+
+    self.register_haptic_definitions(haptic_definitions).await?;
+
+    Ok(())
   }
 
   async fn register_haptic_definitions(

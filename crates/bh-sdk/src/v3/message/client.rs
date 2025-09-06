@@ -110,6 +110,24 @@ pub struct SdkRequestAuthMessage {
   sdk_api_key: String,
 }
 
+impl SdkRequestAuthMessage {
+  pub fn new(
+    cipher: String,
+    application_id: String,
+    nonce_hash_value: String,
+    application_id_hash_value: String,
+    sdk_api_key: String,
+  ) -> Self {
+    Self {
+      cipher,
+      application_id,
+      nonce_hash_value,
+      application_id_hash_value,
+      sdk_api_key,
+    }
+  }
+}
+
 #[derive(Derivative, Getters)]
 #[get = "pub"]
 #[derivative(Debug, Clone, PartialEq, Eq)]
