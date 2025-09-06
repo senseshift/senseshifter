@@ -112,7 +112,7 @@ impl HandlerBuilder for FeedbackHandlerBuilder {
       .v3_message_rx
       .ok_or_else(|| anyhow::anyhow!("V3 message receiver not provided"))?;
 
-    let mut rng = ChaCha20Rng::from_rng(&mut rand::rng());
+    let mut rng = ChaCha20Rng::from_os_rng();
 
     let private_key = match self.private_key {
       Some(key) => key,
