@@ -15,111 +15,108 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: rustup update stable
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: check
-    - name: Check
-      run: cargo check --workspace
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: rustup update stable
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: check
+      - name: Check
+        run: cargo check --workspace
 
-  test-default:
-    name: Test Default Features
-    runs-on: ubuntu-latest
+  tests:
+    name: Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        features: [ "default", "all" ]
+        profile: [ "unit", "integration" ]
+    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: rustup update stable
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: test-default
-    - name: Install cargo-tarpaulin
-      uses: baptiste0928/cargo-install@v3
-      with:
-        crate: cargo-tarpaulin
-        version: "0.31.2"
-    - name: Run tests with coverage
-      run: cargo tarpaulin --workspace --out xml --output-dir coverage-default
-    - name: Upload coverage to codecov
-      uses: codecov/codecov-action@v5
-      with:
-        files: ./coverage-default/cobertura.xml
-        flags: default-features
-        name: default-features
-        token: ${{ secrets.CODECOV_TOKEN }}
-
-  test-all-features:
-    name: Test All Features
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: rustup update stable
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: test-all-features
-    - name: Install cargo-tarpaulin
-      uses: baptiste0928/cargo-install@v3
-      with:
-        crate: cargo-tarpaulin
-        version: "0.31.2"
-    - name: Run tests with coverage (all features)
-      run: cargo tarpaulin --workspace --all-features --out xml --output-dir coverage-all
-    - name: Upload coverage to codecov
-      uses: codecov/codecov-action@v5
-      with:
-        files: ./coverage-all/cobertura.xml
-        flags: all-features
-        name: all-features
-        token: ${{ secrets.CODECOV_TOKEN }}
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: tests-${{ matrix.os }}-${{ matrix.features }}-${{ matrix.profile }}
+      - name: Install cargo-nextest and cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest,cargo-llvm-cov
+      - name: Run tests with coverage (default features)
+        if: matrix.features == 'default'
+        run: |
+          cargo llvm-cov nextest --profile ${{ matrix.profile }} --lcov --output-path lcov-${{ matrix.profile }}-default.info --no-fail-fast --no-tests=warn
+          cargo nextest run --profile ${{ matrix.profile }} --config-file .config/nextest.toml --no-fail-fast --no-tests=warn
+      - name: Run tests with coverage (all features)
+        if: matrix.features == 'all'
+        run: |
+          cargo llvm-cov nextest --profile ${{ matrix.profile }} --all-features --lcov --output-path lcov-${{ matrix.profile }}-all.info --no-fail-fast
+          cargo nextest run --profile ${{ matrix.profile }} --all-features --config-file .config/nextest.toml --no-fail-fast
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./lcov-${{ matrix.profile }}-${{ matrix.features }}.info
+          flags: rust,${{ matrix.profile }},${{ matrix.features }}-features,${{ matrix.os }}
+          name: rust-${{ matrix.profile }}-${{ matrix.features }}-${{ matrix.os }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload JUnit test results to codecov
+        uses: codecov/test-results-action@v1
+        if: always()
+        with:
+          files: ./junit-${{ matrix.profile }}.xml
+          flags: rust,${{ matrix.profile }},${{ matrix.features }}-features,${{ matrix.os }}
+          name: rust-${{ matrix.profile }}-${{ matrix.features }}-${{ matrix.os }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: rustup update stable && rustup component add rustfmt
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: fmt
-    - name: Check formatting
-      run: cargo fmt --all -- --check
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: rustup update stable && rustup component add rustfmt
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: fmt
+      - name: Check formatting
+        run: cargo fmt --all -- --check
 
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: rustup update stable && rustup component add clippy
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: clippy
-    - name: Run clippy (all features)
-      run: cargo clippy --workspace --all-features -- -D warnings
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: rustup update stable && rustup component add clippy
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: clippy
+      - name: Run clippy (all features)
+        run: cargo clippy --workspace --all-features -- -D warnings
 
   feature-powerset:
     name: Feature Powerset
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: rustup update stable
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: feature-powerset
-    - name: Install cargo-hack
-      uses: baptiste0928/cargo-install@v3
-      with:
-        crate: cargo-hack
-        version: "0.6.31"
-    - name: Check feature powerset
-      run: cargo hack check --feature-powerset --workspace
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: rustup update stable
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: feature-powerset
+      - name: Install cargo-hack
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-hack
+          version: "0.6.31"
+      - name: Check feature powerset
+        run: cargo hack check --feature-powerset --workspace
