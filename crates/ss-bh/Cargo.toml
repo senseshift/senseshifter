@@ -13,20 +13,28 @@ tracing = { workspace = true }
 derivative = { workspace = true }
 derive_more = { workspace = true, features = ["display"] }
 getset = { workspace = true }
+async-trait = { workspace = true }
 
 serde = { workspace = true, optional = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
+base64 = { workspace = true, optional = true }
+hex = { version = "0.4.3", optional = true }
 
 axum = { workspace = true, optional = true, features = ["json", "ws", "tokio"] }
 axum-server = { workspace = true, optional = true }
-rustls = { workspace = true, optional = true }
 tower = { workspace = true, optional = true }
 tower-http = { workspace = true, optional = true, features = ["trace", "normalize-path"] }
+
+rustls = { workspace = true, optional = true }
+aes-gcm = { version = "0.10.3", optional = true }
+rsa = { version = "0.10.0-rc.6", optional = true }
 
 futures-util = { workspace = true }
 tokio = { workspace = true, features = ["net", "sync"] }
 tokio-util = { workspace = true }
-log = "0.4.28"
+
+rand = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
 
 [features]
 serde = ["dep:serde", "dep:serde_json", "bh-haptic-definitions/serde", "bh-sdk/serde"]
@@ -38,16 +46,22 @@ ws = ["serde", "dep:axum", "axum/ws", "dep:axum-server", "dep:tower", "dep:tower
 v1 = ["bh-sdk/v1"]
 v2 = ["bh-sdk/v2"]
 v3 = ["bh-sdk/v3", "tls"]
-v4 = ["bh-sdk/v4", "tls"]
+v4 = ["bh-sdk/v4", "v3", "tls", "dep:rsa", "dep:aes-gcm", "dep:rand", "dep:rand_chacha", "dep:base64", "dep:hex"]
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-tokio-tungstenite = { workspace = true }
-futures-util = { workspace = true }
 
+tokio-tungstenite = { workspace = true }
+
+futures-util = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 
 [[example]]
 name = "simple_ws_server"
 path = "examples/simple_ws_server/src/main.rs"
 required-features = ["ws", "tls", "v1", "v2", "v3", "v4"]
+
+[[example]]
+name = "v4_mitm_proxy"
+path = "examples/v4_mitm_proxy/main.rs"
+required-features = ["ws", "tls", "v4"]

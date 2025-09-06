@@ -31,4 +31,4 @@ serde = ["dep:serde", "dep:serde_json", "dep:serde_handy", "dep:serde_with", "bh
 v1 = []
 v2 = []
 v3 = ["serde", "bh-haptic-definitions/client"]
-v4 = ["serde", "bh-haptic-definitions/client"]
+v4 = ["serde", "bh-haptic-definitions/client", "v3"] # a bit weird, but v4 is basically encrypted v3
