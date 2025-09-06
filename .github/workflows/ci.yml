@@ -102,6 +102,29 @@ jobs:
       - name: Run clippy (all features)
         run: cargo clippy --workspace --all-features -- -D warnings
 
+  examples:
+    name: Compile Examples
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        features: [ "default", "all" ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: rustup update stable
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: examples-${{ matrix.os }}-${{ matrix.features }}
+      - name: Compile examples (default features)
+        if: matrix.features == 'default'
+        run: cargo build --examples --workspace
+      - name: Compile examples (all features)
+        if: matrix.features == 'all'
+        run: cargo build --examples --workspace --all-features
+
   feature-powerset:
     name: Feature Powerset
     runs-on: ubuntu-latest
