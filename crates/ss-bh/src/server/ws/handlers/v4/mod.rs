@@ -1,6 +1,7 @@
 use axum::extract::ws::Message;
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc;
+use std::sync::Arc;
+use tokio::sync::{Mutex, mpsc};
 use tokio_util::sync::CancellationToken;
 use tracing::*;
 
@@ -134,6 +135,7 @@ impl CryptoContext {
 pub struct FeedbackHandlerBuilder {
   app_ctx: AppContext,
   v3_handler: Option<v3::FeedbackHandler>,
+  v3_message_rx: Option<mpsc::UnboundedReceiver<Message>>,
   #[getset(set_with = "pub")]
   private_key: Option<RsaPrivateKey>,
   ws_sender: mpsc::UnboundedSender<Message>,
@@ -152,7 +154,8 @@ impl HandlerBuilder for FeedbackHandlerBuilder {
     // This will be called from a custom upgrade function that builds V3 externally
     Self {
       app_ctx: context,
-      v3_handler: None, // Will be set by with_v3_handler
+      v3_handler: None,    // Will be set by with_v3_handler
+      v3_message_rx: None, // Will be set by with_v3_message_receiver
       private_key: None,
       ws_sender,
       cancellation_token: None,
@@ -169,6 +172,10 @@ impl HandlerBuilder for FeedbackHandlerBuilder {
       .v3_handler
       .ok_or_else(|| anyhow::anyhow!("V3 handler not provided"))?;
 
+    let v3_message_rx = self
+      .v3_message_rx
+      .ok_or_else(|| anyhow::anyhow!("V3 message receiver not provided"))?;
+
     let mut rng = ChaCha20Rng::from_rng(&mut rand::rng());
 
     let private_key = match self.private_key {
@@ -184,16 +191,25 @@ impl HandlerBuilder for FeedbackHandlerBuilder {
     let public_key = RsaPublicKey::from(&private_key);
     let public_key_der = public_key.to_public_key_der()?;
 
+    let crypto = Arc::new(Mutex::new(CryptoContext {
+      rng,
+      private_key,
+      public_key_der,
+      aes_key: None,
+    }));
+
+    // Start V3 message interceptor task
+    FeedbackHandler::start_v3_message_interceptor(
+      v3_message_rx,
+      self.ws_sender.clone(),
+      Arc::clone(&crypto),
+    );
+
     Ok(FeedbackHandler {
       app_ctx: self.app_ctx,
       v3_handler,
       ws_sender: self.ws_sender,
-      crypto: CryptoContext {
-        rng,
-        private_key,
-        public_key_der,
-        aes_key: None,
-      },
+      crypto,
       handshake_complete: false,
     })
   }
@@ -205,6 +221,15 @@ impl FeedbackHandlerBuilder {
     self.v3_handler = Some(v3_handler);
     self
   }
+
+  /// Set the V3 message receiver for intercepting outgoing V3 messages
+  pub fn with_v3_message_receiver(
+    mut self,
+    v3_message_rx: mpsc::UnboundedReceiver<Message>,
+  ) -> Self {
+    self.v3_message_rx = Some(v3_message_rx);
+    self
+  }
 }
 
 /// V4 Encrypted Handler - wraps V3 handler with encryption layer
@@ -212,7 +237,7 @@ pub struct FeedbackHandler {
   app_ctx: AppContext,
   v3_handler: v3::FeedbackHandler, // Wrapped V3 handler
   ws_sender: mpsc::UnboundedSender<Message>,
-  crypto: CryptoContext,
+  crypto: Arc<Mutex<CryptoContext>>,
   handshake_complete: bool,
 }
 
@@ -227,7 +252,10 @@ impl MessageHandler for FeedbackHandler {
       self.app_ctx.workspace_id
     );
 
-    let public_key_spki_b64 = STANDARD.encode(self.crypto.public_key_der.as_bytes());
+    let public_key_spki_b64 = {
+      let crypto = self.crypto.lock().await;
+      STANDARD.encode(crypto.public_key_der.as_bytes())
+    };
     let server_key_msg = SdkEncryptedMessage::server_key(public_key_spki_b64);
 
     self.send_raw_message(&server_key_msg).await
@@ -243,8 +271,9 @@ impl MessageHandler for FeedbackHandler {
         info!("Received client AES key, establishing encryption");
 
         // Decrypt RSA-encrypted AES key and store it
-        let decrypted_key = self.crypto.decrypt_client_key_pkcs1v15(&encrypted_key)?;
-        self.crypto.set_aes_key(decrypted_key);
+        let mut crypto = self.crypto.lock().await;
+        let decrypted_key = crypto.decrypt_client_key_pkcs1v15(&encrypted_key)?;
+        crypto.set_aes_key(decrypted_key);
         self.handshake_complete = true;
 
         info!("V4 encryption handshake completed successfully");
@@ -259,7 +288,7 @@ impl MessageHandler for FeedbackHandler {
         }
 
         // Decrypt the V4 message to get V3 JSON
-        let v3_json = self.crypto.decrypt_aes_gcm(&encrypted_data)?;
+        let v3_json = self.crypto.lock().await.decrypt_aes_gcm(&encrypted_data)?;
         debug!("Decrypted V4 → V3: {}", v3_json);
 
         // Forward decrypted message to wrapped V3 handler
@@ -316,7 +345,7 @@ impl FeedbackHandler {
     }
 
     // Encrypt V3 JSON
-    let encrypted_data = self.crypto.encrypt_aes_gcm(v3_json)?;
+    let encrypted_data = self.crypto.lock().await.encrypt_aes_gcm(v3_json)?;
 
     // Wrap in V4 SdkData message
     let v4_msg = SdkEncryptedMessage::sdk_data(encrypted_data);
@@ -328,5 +357,56 @@ impl FeedbackHandler {
     let json = serde_json::to_string(msg)?;
     self.ws_sender.send(Message::Text(json.into()))?;
     Ok(())
+  }
+
+  /// Start background task to intercept V3 messages and encrypt them
+  fn start_v3_message_interceptor(
+    mut v3_message_rx: mpsc::UnboundedReceiver<Message>,
+    ws_sender: mpsc::UnboundedSender<Message>,
+    crypto: Arc<Mutex<CryptoContext>>,
+  ) {
+    tokio::spawn(async move {
+      info!("V3→V4 message interceptor task started");
+
+      while let Some(v3_message) = v3_message_rx.recv().await {
+        match v3_message {
+          Message::Text(text) => {
+            debug!("Intercepted V3 text message: {}", text);
+
+            // Encrypt V3 JSON and send as V4 message
+            let mut crypto_guard = crypto.lock().await;
+            match crypto_guard.encrypt_aes_gcm(&text) {
+              Ok(encrypted_data) => {
+                drop(crypto_guard); // Release lock early
+
+                let v4_msg = SdkEncryptedMessage::sdk_data(encrypted_data);
+                match serde_json::to_string(&v4_msg) {
+                  Ok(json) => {
+                    if let Err(e) = ws_sender.send(Message::Text(json.into())) {
+                      error!("Failed to send encrypted V3→V4 message: {}", e);
+                      break;
+                    }
+                  }
+                  Err(e) => {
+                    error!("Failed to serialize V4 message: {}", e);
+                  }
+                }
+              }
+              Err(e) => {
+                error!("Failed to encrypt V3 message: {}", e);
+              }
+            }
+          }
+          Message::Binary(_) => {
+            warn!("V3 binary messages not supported for encryption");
+          }
+          _ => {
+            debug!("Ignoring non-content V3 message type");
+          }
+        }
+      }
+
+      info!("V3→V4 message interceptor task completed");
+    });
   }
 }

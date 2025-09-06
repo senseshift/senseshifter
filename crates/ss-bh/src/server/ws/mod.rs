@@ -91,19 +91,23 @@ impl HandlerBuildStrategy<handlers::v4::FeedbackHandler> for V4CompositionStrate
     // Convert V4 context to V3 context for the wrapped handler
     let v3_context: handlers::v3::AppContext = (&context).into();
 
-    // Build V3 handler first (for composition)
+    // Create interceptor channel for V3 messages
+    let (v3_message_tx, v3_message_rx) = mpsc::unbounded_channel::<Message>();
+
+    // Build V3 handler with interceptor sender
     let v3_handler = handlers::v3::FeedbackHandlerBuilder::new(
       v3_context,
       command_tx.clone(),
-      mpsc::unbounded_channel().0, // dummy sender - V4 will intercept
+      v3_message_tx, // V3 messages will be captured here
     )
     .with_cancellation_token(token.clone())
     .build()
     .await?;
 
-    // Build V4 handler with the V3 handler
+    // Build V4 handler with the V3 handler and interceptor receiver
     handlers::v4::FeedbackHandlerBuilder::new(context, command_tx, ws_tx)
       .with_v3_handler(v3_handler)
+      .with_v3_message_receiver(v3_message_rx)
       .with_cancellation_token(token)
       .build()
       .await
