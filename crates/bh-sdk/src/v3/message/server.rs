@@ -40,6 +40,15 @@ pub struct ServerEventListMessageItem {
   event_time: u32,
 }
 
+impl ServerEventListMessageItem {
+  pub fn new(event_name: String, event_time: u32) -> Self {
+    Self {
+      event_name,
+      event_time,
+    }
+  }
+}
+
 #[derive(Derivative, Getters)]
 #[get = "pub"]
 #[derivative(Debug, Clone, PartialEq, Eq)]

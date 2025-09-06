@@ -115,14 +115,84 @@ pub struct SdkRequestAuthMessage {
 #[derivative(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "serde", serde_inline_default::serde_inline_default)]
 pub struct SdkPlayWithStartTimeMessage {
   event_name: String,
   request_id: u32,
+
+  #[cfg_attr(
+    feature = "serde",
+    serde(default = "SdkPlayWithStartTimeMessage::default_start_millis")
+  )]
   start_millis: u64,
+
+  /// Intensity scale factor: 0.0-1.0
+  #[cfg_attr(
+    feature = "serde",
+    serde(default = "SdkPlayWithStartTimeMessage::default_intensity")
+  )]
   intensity: f64,
+
+  /// Duration scale factor: 0.0-1.0
+  #[cfg_attr(
+    feature = "serde",
+    serde(default = "SdkPlayWithStartTimeMessage::default_duration")
+  )]
   duration: f64,
+
+  #[cfg_attr(
+    feature = "serde",
+    serde(default = "SdkPlayWithStartTimeMessage::default_offset_angle_x")
+  )]
   offset_angle_x: f64,
+
+  #[cfg_attr(
+    feature = "serde",
+    serde(default = "SdkPlayWithStartTimeMessage::default_offset_y")
+  )]
   offset_y: f64,
+}
+
+impl SdkPlayWithStartTimeMessage {
+  pub fn new(
+    event_name: String,
+    request_id: u32,
+    start_millis: u64,
+    intensity: f64,
+    duration: f64,
+    offset_angle_x: f64,
+    offset_y: f64,
+  ) -> Self {
+    Self {
+      event_name,
+      request_id,
+      start_millis,
+      intensity,
+      duration,
+      offset_angle_x,
+      offset_y,
+    }
+  }
+
+  pub const fn default_start_millis() -> u64 {
+    0
+  }
+
+  pub const fn default_intensity() -> f64 {
+    1.0
+  }
+
+  pub const fn default_duration() -> f64 {
+    1.0
+  }
+
+  pub const fn default_offset_angle_x() -> f64 {
+    0.0
+  }
+
+  pub const fn default_offset_y() -> f64 {
+    0.0
+  }
 }
 
 #[cfg(test)]

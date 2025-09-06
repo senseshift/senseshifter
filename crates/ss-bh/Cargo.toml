@@ -1,0 +1,53 @@
+[package]
+name = "ss-bh"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bh-haptic-definitions = { workspace = true }
+bh-sdk = { workspace = true }
+
+anyhow = { workspace = true }
+tracing = { workspace = true }
+
+derivative = { workspace = true }
+derive_more = { workspace = true, features = ["display"] }
+getset = { workspace = true }
+
+serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true, optional = true }
+
+axum = { workspace = true, optional = true, features = ["json", "ws", "tokio"] }
+axum-server = { workspace = true, optional = true }
+rustls = { workspace = true, optional = true }
+tower = { workspace = true, optional = true }
+tower-http = { workspace = true, optional = true, features = ["trace", "normalize-path"] }
+
+futures-util = { workspace = true }
+tokio = { workspace = true, features = ["net", "sync"] }
+tokio-util = { workspace = true }
+log = "0.4.28"
+
+[features]
+serde = ["dep:serde", "dep:serde_json", "bh-haptic-definitions/serde", "bh-sdk/serde"]
+
+tls = ["dep:rustls", "axum-server/tls-rustls"]
+
+ws = ["serde", "dep:axum", "axum/ws", "dep:axum-server", "dep:tower", "dep:tower-http"]
+
+v1 = ["bh-sdk/v1"]
+v2 = ["bh-sdk/v2"]
+v3 = ["bh-sdk/v3", "tls"]
+v4 = ["bh-sdk/v4", "tls"]
+
+[dev-dependencies]
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+tokio-tungstenite = { workspace = true }
+futures-util = { workspace = true }
+
+tokio = { workspace = true, features = ["full"] }
+
+[[example]]
+name = "simple_ws_server"
+path = "examples/simple_ws_server/src/main.rs"
+required-features = ["ws", "tls", "v1", "v2", "v3", "v4"]
