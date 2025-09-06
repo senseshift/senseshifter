@@ -16,6 +16,7 @@ use tokio::net::TcpListener;
 use tokio_util::future::FutureExt;
 use tokio_util::sync::CancellationToken;
 
+use async_trait::async_trait;
 use getset::WithSetters;
 use std::sync::Arc;
 use tokio::sync::{Mutex, broadcast, mpsc};
@@ -43,33 +44,33 @@ async fn kickstart_ws(socket: &mut WebSocket) -> Result<(), axum::Error> {
 }
 
 /// Strategy trait for building handlers with different construction patterns
+#[async_trait]
 trait HandlerBuildStrategy<H: MessageHandler>: Send + Sync {
-  fn build_handler(
+  async fn build_handler(
     &self,
     context: H::Context,
     command_tx: mpsc::Sender<HapticManagerCommand>,
     ws_tx: mpsc::UnboundedSender<Message>,
     token: CancellationToken,
-  ) -> impl std::future::Future<Output = anyhow::Result<H>> + Send;
+  ) -> anyhow::Result<H>;
 }
 
 /// Standard strategy: build handler directly using the trait
 struct StandardHandlerStrategy;
 
+#[async_trait]
 impl<H: MessageHandler> HandlerBuildStrategy<H> for StandardHandlerStrategy {
-  fn build_handler(
+  async fn build_handler(
     &self,
     context: H::Context,
     command_tx: mpsc::Sender<HapticManagerCommand>,
     ws_tx: mpsc::UnboundedSender<Message>,
     token: CancellationToken,
-  ) -> impl std::future::Future<Output = anyhow::Result<H>> + Send {
-    async move {
-      H::Builder::new(context, command_tx, ws_tx)
-        .with_cancellation_token(token)
-        .build()
-        .await
-    }
+  ) -> anyhow::Result<H> {
+    H::Builder::new(context, command_tx, ws_tx)
+      .with_cancellation_token(token)
+      .build()
+      .await
   }
 }
 
@@ -78,35 +79,34 @@ impl<H: MessageHandler> HandlerBuildStrategy<H> for StandardHandlerStrategy {
 struct V4CompositionStrategy;
 
 #[cfg(feature = "v4")]
+#[async_trait]
 impl HandlerBuildStrategy<handlers::v4::FeedbackHandler> for V4CompositionStrategy {
-  fn build_handler(
+  async fn build_handler(
     &self,
     context: handlers::v4::AppContext,
     command_tx: mpsc::Sender<HapticManagerCommand>,
     ws_tx: mpsc::UnboundedSender<Message>,
     token: CancellationToken,
-  ) -> impl std::future::Future<Output = anyhow::Result<handlers::v4::FeedbackHandler>> + Send {
-    async move {
-      // Convert V4 context to V3 context for the wrapped handler
-      let v3_context: handlers::v3::AppContext = (&context).into();
+  ) -> anyhow::Result<handlers::v4::FeedbackHandler> {
+    // Convert V4 context to V3 context for the wrapped handler
+    let v3_context: handlers::v3::AppContext = (&context).into();
 
-      // Build V3 handler first (for composition)
-      let v3_handler = handlers::v3::FeedbackHandlerBuilder::new(
-        v3_context,
-        command_tx.clone(),
-        mpsc::unbounded_channel().0, // dummy sender - V4 will intercept
-      )
-      .with_cancellation_token(token.clone())
+    // Build V3 handler first (for composition)
+    let v3_handler = handlers::v3::FeedbackHandlerBuilder::new(
+      v3_context,
+      command_tx.clone(),
+      mpsc::unbounded_channel().0, // dummy sender - V4 will intercept
+    )
+    .with_cancellation_token(token.clone())
+    .build()
+    .await?;
+
+    // Build V4 handler with the V3 handler
+    handlers::v4::FeedbackHandlerBuilder::new(context, command_tx, ws_tx)
+      .with_v3_handler(v3_handler)
+      .with_cancellation_token(token)
       .build()
-      .await?;
-
-      // Build V4 handler with the V3 handler
-      handlers::v4::FeedbackHandlerBuilder::new(context, command_tx, ws_tx)
-        .with_v3_handler(v3_handler)
-        .with_cancellation_token(token)
-        .build()
-        .await
-    }
+      .await
   }
 }
 

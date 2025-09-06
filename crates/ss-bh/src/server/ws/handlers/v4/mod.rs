@@ -6,7 +6,7 @@ use tracing::*;
 
 use super::{HandlerBuilder, MessageHandler, v3};
 use crate::server::{HapticManagerCommand, HapticManagerEvent};
-use bh_sdk::v4::{SdkEncryptedMessage, SdkEncryptedMessageType};
+use bh_sdk::v4::SdkEncryptedMessage;
 
 use aes_gcm::{
   Aes256Gcm, Nonce,
@@ -238,44 +238,36 @@ impl MessageHandler for FeedbackHandler {
     let sdk_msg: SdkEncryptedMessage = serde_json::from_str(msg)
       .map_err(|e| anyhow::anyhow!("Failed to parse V4 encrypted message: {}", e))?;
 
-    match sdk_msg.r#type() {
-      SdkEncryptedMessageType::SdkClientKey => {
-        if let Some(encrypted_key) = sdk_msg.key() {
-          info!("Received client AES key, establishing encryption");
+    match sdk_msg {
+      SdkEncryptedMessage::SdkClientKey { key: encrypted_key } => {
+        info!("Received client AES key, establishing encryption");
 
-          // Decrypt RSA-encrypted AES key and store it
-          let decrypted_key = self.crypto.decrypt_client_key_pkcs1v15(encrypted_key)?;
-          self.crypto.set_aes_key(decrypted_key);
-          self.handshake_complete = true;
+        // Decrypt RSA-encrypted AES key and store it
+        let decrypted_key = self.crypto.decrypt_client_key_pkcs1v15(&encrypted_key)?;
+        self.crypto.set_aes_key(decrypted_key);
+        self.handshake_complete = true;
 
-          info!("V4 encryption handshake completed successfully");
-        } else {
-          warn!("Received SdkClientKey message without key data");
-        }
+        info!("V4 encryption handshake completed successfully");
         Ok(())
       }
 
-      SdkEncryptedMessageType::SdkData => {
+      SdkEncryptedMessage::SdkData {
+        data: encrypted_data,
+      } => {
         if !self.handshake_complete {
           return Err(anyhow::anyhow!("Received data before handshake complete"));
         }
 
-        if let Some(encrypted_data) = sdk_msg.data() {
-          // Decrypt the V4 message to get V3 JSON
-          let v3_json = self.crypto.decrypt_aes_gcm(encrypted_data)?;
-          debug!("Decrypted V4 → V3: {}", v3_json);
+        // Decrypt the V4 message to get V3 JSON
+        let v3_json = self.crypto.decrypt_aes_gcm(&encrypted_data)?;
+        debug!("Decrypted V4 → V3: {}", v3_json);
 
-          // Forward decrypted message to wrapped V3 handler
-          self.v3_handler.handle_text_message(&v3_json).await?;
-        }
-        Ok(())
+        // Forward decrypted message to wrapped V3 handler
+        self.v3_handler.handle_text_message(&v3_json).await
       }
 
-      _ => {
-        warn!(
-          "Unhandled V4 encrypted message type: {:?}",
-          sdk_msg.r#type()
-        );
+      SdkEncryptedMessage::ServerKey { .. } => {
+        warn!("Received unexpected ServerKey message from client");
         Ok(())
       }
     }

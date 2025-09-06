@@ -13,6 +13,7 @@ tracing = { workspace = true }
 derivative = { workspace = true }
 derive_more = { workspace = true, features = ["display"] }
 getset = { workspace = true }
+async-trait = { workspace = true }
 
 serde = { workspace = true, optional = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true }
@@ -45,7 +46,7 @@ ws = ["serde", "dep:axum", "axum/ws", "dep:axum-server", "dep:tower", "dep:tower
 v1 = ["bh-sdk/v1"]
 v2 = ["bh-sdk/v2"]
 v3 = ["bh-sdk/v3", "tls"]
-v4 = ["bh-sdk/v4", "tls", "dep:rsa", "dep:aes-gcm", "dep:base64", "dep:rand", "dep:rand_chacha", "dep:base64", "dep:hex"]
+v4 = ["bh-sdk/v4", "v3", "tls", "dep:rsa", "dep:aes-gcm", "dep:base64", "dep:rand", "dep:rand_chacha", "dep:base64", "dep:hex"]
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }

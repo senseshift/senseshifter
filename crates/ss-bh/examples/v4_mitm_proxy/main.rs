@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow};
 use base64::{Engine, engine::general_purpose::STANDARD};
-use bh_sdk::v4::{SdkEncryptedMessage, SdkEncryptedMessageType};
+use bh_sdk::v4::SdkEncryptedMessage;
 use futures_util::{SinkExt, StreamExt};
 
 use rand::prelude::*;
@@ -48,7 +48,7 @@ impl CryptoContext {
 
     let cipher = Aes256Gcm::new_from_slice(&key)?;
     let mut iv = [0u8; 12];
-    rand::thread_rng().fill_bytes(&mut iv);
+    rand::rng().fill_bytes(&mut iv);
     let nonce = Nonce::from_slice(&iv);
 
     let ciphertext = cipher
@@ -104,15 +104,13 @@ struct MitmServer {
 }
 
 struct MitmConnection {
-  conn_id: String,
   client_crypto: CryptoContext,
   server_crypto: CryptoContext,
 }
 
 impl MitmConnection {
-  fn new(conn_id: String) -> Self {
+  fn new(_conn_id: String) -> Self {
     Self {
-      conn_id,
       client_crypto: CryptoContext::new(),
       server_crypto: CryptoContext::new(),
     }
@@ -160,7 +158,7 @@ impl MitmServer {
     let public_key = RsaPublicKey::from_public_key_pem(public_key_pem)
       .or_else(|_| RsaPublicKey::from_pkcs1_pem(public_key_pem))?;
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let encrypted = public_key.encrypt(&mut rng, Pkcs1v15Encrypt, data)?;
 
     Ok(STANDARD.encode(encrypted))
@@ -189,41 +187,47 @@ impl MitmServer {
     let (mut write, mut read) = ws_stream.split();
 
     let mut _server_public_key_pem = None;
-    let mut aes_key = None;
+    let aes_key;
 
     // Handle server handshake
     while let Some(msg) = read.next().await {
       if let Message::Text(text) = msg?
         && let Ok(sdk_msg) = serde_json::from_str::<SdkEncryptedMessage>(&text)
-        && sdk_msg.r#type() == SdkEncryptedMessageType::ServerKey
-        && let Some(key_b64) = sdk_msg.key()
       {
-        info!("[{}] Got ServerKey from target server", conn_id);
+        match sdk_msg {
+          SdkEncryptedMessage::ServerKey { key: key_b64 } => {
+            info!("[{}] Got ServerKey from target server", conn_id);
 
-        // Convert to PEM format
-        let server_pem = spki_b64_to_pem(key_b64);
-        _server_public_key_pem = Some(server_pem.clone());
+            // Convert to PEM format
+            let server_pem = spki_b64_to_pem(&key_b64);
+            _server_public_key_pem = Some(server_pem.clone());
 
-        // Generate AES key for server communication
-        let mut server_aes_key = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut server_aes_key);
-        aes_key = Some(server_aes_key);
+            // Generate AES key for server communication
+            let mut server_aes_key = [0u8; 32];
+            rand::rng().fill_bytes(&mut server_aes_key);
+            aes_key = server_aes_key;
 
-        // Encrypt AES key with server's public key
-        let encrypted_key_b64 = self.encrypt_rsa_pkcs1v15(&server_pem, &server_aes_key)?;
+            // Encrypt AES key with server's public key
+            let encrypted_key_b64 = self.encrypt_rsa_pkcs1v15(&server_pem, &server_aes_key)?;
 
-        // Send SdkClientKey to server
-        let client_key_msg = SdkEncryptedMessage::sdk_client_key(encrypted_key_b64);
+            // Send SdkClientKey to server
+            let client_key_msg = SdkEncryptedMessage::sdk_client_key(encrypted_key_b64);
 
-        let json = serde_json::to_string(&client_key_msg)?;
-        write.send(Message::Text(json.into())).await?;
-        info!("[{}] Sent SdkClientKey to target server", conn_id);
+            let json = serde_json::to_string(&client_key_msg)?;
+            write.send(Message::Text(json.into())).await?;
+            info!("[{}] Sent SdkClientKey to target server", conn_id);
 
-        // Reunite the split streams and return the same connection
-        let ws_stream = write
-          .reunite(read)
-          .map_err(|e| anyhow!("Failed to reunite streams: {}", e))?;
-        return Ok((ws_stream, aes_key.unwrap()));
+            // Reunite the split streams and return the same connection
+            let ws_stream = write
+              .reunite(read)
+              .map_err(|e| anyhow!("Failed to reunite streams: {}", e))?;
+            return Ok((ws_stream, aes_key));
+          }
+          _ => {
+            // Ignore other message types during handshake
+            continue;
+          }
+        }
       }
     }
 
@@ -282,81 +286,77 @@ impl MitmServer {
       match msg? {
         Message::Text(text) => {
           if let Ok(sdk_msg) = serde_json::from_str::<SdkEncryptedMessage>(&text) {
-            match sdk_msg.r#type() {
-              SdkEncryptedMessageType::SdkClientKey => {
-                if let Some(encrypted_key_b64) = sdk_msg.key() {
-                  info!("[{}] Got SdkClientKey from client", conn_id);
+            match sdk_msg {
+              SdkEncryptedMessage::SdkClientKey {
+                key: encrypted_key_b64,
+              } => {
+                info!("[{}] Got SdkClientKey from client", conn_id);
 
-                  // Decrypt client's AES key
-                  match self.decrypt_client_key_pkcs1v15(encrypted_key_b64) {
-                    Ok(client_aes_key) => {
-                      info!(
-                        "[{}] Client AES key: {}",
-                        conn_id,
-                        hex::encode(client_aes_key)
-                      );
+                // Decrypt client's AES key
+                match self.decrypt_client_key_pkcs1v15(&encrypted_key_b64) {
+                  Ok(client_aes_key) => {
+                    info!(
+                      "[{}] Client AES key: {}",
+                      conn_id,
+                      hex::encode(client_aes_key)
+                    );
 
-                      // Store client AES key
-                      {
-                        let mut connections = self.connections.lock().await;
-                        if let Some(conn) = connections.get_mut(&conn_id) {
-                          conn.client_crypto.set_aes_key(client_aes_key);
-                        }
+                    // Store client AES key
+                    {
+                      let mut connections = self.connections.lock().await;
+                      if let Some(conn) = connections.get_mut(&conn_id) {
+                        conn.client_crypto.set_aes_key(client_aes_key);
                       }
+                    }
 
-                      // Now connect to the real server and get its AES key
-                      match self.connect_to_server(&conn_id, &query_params).await {
-                        Ok((server_ws, server_aes_key)) => {
-                          info!(
-                            "[{}] Server AES key: {}",
-                            conn_id,
-                            hex::encode(server_aes_key)
-                          );
+                    // Now connect to the real server and get its AES key
+                    match self.connect_to_server(&conn_id, &query_params).await {
+                      Ok((server_ws, server_aes_key)) => {
+                        info!(
+                          "[{}] Server AES key: {}",
+                          conn_id,
+                          hex::encode(server_aes_key)
+                        );
 
-                          // Store server AES key
-                          {
-                            let mut connections = self.connections.lock().await;
-                            if let Some(conn) = connections.get_mut(&conn_id) {
-                              conn.server_crypto.set_aes_key(server_aes_key);
-                            }
+                        // Store server AES key
+                        {
+                          let mut connections = self.connections.lock().await;
+                          if let Some(conn) = connections.get_mut(&conn_id) {
+                            conn.server_crypto.set_aes_key(server_aes_key);
                           }
-
-                          info!(
-                            "[{}] MITM setup complete! Ready to intercept messages",
-                            conn_id
-                          );
-
-                          // Start a message interception loop
-                          return self
-                            .start_message_interception(
-                              conn_id.clone(),
-                              client_write,
-                              client_read,
-                              server_ws,
-                            )
-                            .await;
                         }
-                        Err(e) => {
-                          error!("[{}] Failed to connect to server: {}", conn_id, e);
-                        }
+
+                        info!(
+                          "[{}] MITM setup complete! Ready to intercept messages",
+                          conn_id
+                        );
+
+                        // Start a message interception loop
+                        return self
+                          .start_message_interception(
+                            conn_id.clone(),
+                            client_write,
+                            client_read,
+                            server_ws,
+                          )
+                          .await;
+                      }
+                      Err(e) => {
+                        error!("[{}] Failed to connect to server: {}", conn_id, e);
                       }
                     }
-                    Err(e) => {
-                      error!("[{}] Failed to decrypt client key: {}", conn_id, e);
-                    }
+                  }
+                  Err(e) => {
+                    error!("[{}] Failed to decrypt client key: {}", conn_id, e);
                   }
                 }
               }
-              SdkEncryptedMessageType::SdkData => {
+              SdkEncryptedMessage::SdkData { .. } => {
                 // This should be handled in the interception loop after full setup
                 warn!("[{}] Got SdkData before full setup", conn_id);
               }
-              _ => {
-                info!(
-                  "[{}] Other message type from client: {:?}",
-                  conn_id,
-                  sdk_msg.r#type()
-                );
+              SdkEncryptedMessage::ServerKey { .. } => {
+                info!("[{}] Unexpected ServerKey message from client", conn_id);
               }
             }
           }
@@ -403,37 +403,38 @@ impl MitmServer {
               match client_msg {
                   Some(Ok(Message::Text(text))) => {
                       if let Ok(sdk_msg) = serde_json::from_str::<SdkEncryptedMessage>(&text) {
-                          match sdk_msg.r#type() {
-                              SdkEncryptedMessageType::SdkData => {
-                                  if let Some(encrypted_data) = sdk_msg.data() {
-                                      // Decrypt message from client
-                                      let connections = self.connections.lock().await;
-                                      if let Some(conn) = connections.get(&conn_id) {
-                                          match conn.client_crypto.decrypt_aes_gcm(encrypted_data) {
-                                              Ok(plaintext) => {
-                                                  info!("[{}] 📤 CLIENT → SERVER: {}", conn_id, plaintext);
+                          match sdk_msg {
+                              SdkEncryptedMessage::SdkData { data: encrypted_data } => {
+                                  // Decrypt message from client
+                                  let connections = self.connections.lock().await;
+                                  if let Some(conn) = connections.get(&conn_id) {
+                                      match conn.client_crypto.decrypt_aes_gcm(&encrypted_data) {
+                                          Ok(plaintext) => {
+                                              info!("[{}] 📤 CLIENT → SERVER: {}", conn_id, plaintext);
 
-                                                  // Re-encrypt for server
-                                                  match conn.server_crypto.encrypt_aes_gcm(&plaintext) {
-                                                      Ok(server_encrypted) => {
-                                                          let server_msg = SdkEncryptedMessage::sdk_data(server_encrypted);
+                                              // Re-encrypt for server
+                                              match conn.server_crypto.encrypt_aes_gcm(&plaintext) {
+                                                  Ok(server_encrypted) => {
+                                                      let server_msg = SdkEncryptedMessage::sdk_data(server_encrypted);
 
-                                                          let server_json = serde_json::to_string(&server_msg)?;
-                                                          if let Err(e) = server_write.send(Message::Text(server_json.into())).await {
-                                                              error!("[{}] Failed to send to server: {}", conn_id, e);
-                                                              break;
-                                                          }
+                                                      let server_json = serde_json::to_string(&server_msg)?;
+                                                      if let Err(e) = server_write.send(Message::Text(server_json.into())).await {
+                                                          error!("[{}] Failed to send to server: {}", conn_id, e);
+                                                          break;
                                                       }
-                                                      Err(e) => error!("[{}] Failed to encrypt for server: {}", conn_id, e),
                                                   }
+                                                  Err(e) => error!("[{}] Failed to encrypt for server: {}", conn_id, e),
                                               }
-                                              Err(e) => error!("[{}] Failed to decrypt client message: {}", conn_id, e),
                                           }
+                                          Err(e) => error!("[{}] Failed to decrypt client message: {}", conn_id, e),
                                       }
                                   }
                               }
-                              _ => {
-                                  info!("[{}] Other message type from client: {:?}", conn_id, sdk_msg.r#type());
+                              SdkEncryptedMessage::SdkClientKey { .. } => {
+                                  info!("[{}] Unexpected SdkClientKey during interception", conn_id);
+                              }
+                              SdkEncryptedMessage::ServerKey { .. } => {
+                                  info!("[{}] Unexpected ServerKey from client during interception", conn_id);
                               }
                           }
                       }
@@ -460,37 +461,38 @@ impl MitmServer {
                   Some(Ok(Message::Text(text))) => {
                       // info!("[{}] Received from server: {}", conn_id, text);
                       if let Ok(sdk_msg) = serde_json::from_str::<SdkEncryptedMessage>(&text) {
-                          match sdk_msg.r#type() {
-                              SdkEncryptedMessageType::SdkData => {
-                                  if let Some(encrypted_data) = sdk_msg.data() {
-                                      // Decrypt message from server
-                                      let connections = self.connections.lock().await;
-                                      if let Some(conn) = connections.get(&conn_id) {
-                                          match conn.server_crypto.decrypt_aes_gcm(encrypted_data) {
-                                              Ok(plaintext) => {
-                                                  info!("[{}] 📥 SERVER → CLIENT: {}", conn_id, plaintext);
+                          match sdk_msg {
+                              SdkEncryptedMessage::SdkData { data: encrypted_data } => {
+                                  // Decrypt message from server
+                                  let connections = self.connections.lock().await;
+                                  if let Some(conn) = connections.get(&conn_id) {
+                                      match conn.server_crypto.decrypt_aes_gcm(&encrypted_data) {
+                                          Ok(plaintext) => {
+                                              info!("[{}] 📥 SERVER → CLIENT: {}", conn_id, plaintext);
 
-                                                  // Re-encrypt for client
-                                                  match conn.client_crypto.encrypt_aes_gcm(&plaintext) {
-                                                      Ok(client_encrypted) => {
-                                                          let client_msg = SdkEncryptedMessage::sdk_data(client_encrypted);
+                                              // Re-encrypt for client
+                                              match conn.client_crypto.encrypt_aes_gcm(&plaintext) {
+                                                  Ok(client_encrypted) => {
+                                                      let client_msg = SdkEncryptedMessage::sdk_data(client_encrypted);
 
-                                                          let client_json = serde_json::to_string(&client_msg)?;
-                                                          if let Err(e) = client_write.send(Message::Text(client_json.into())).await {
-                                                              error!("[{}] Failed to send to client: {}", conn_id, e);
-                                                              break;
-                                                          }
+                                                      let client_json = serde_json::to_string(&client_msg)?;
+                                                      if let Err(e) = client_write.send(Message::Text(client_json.into())).await {
+                                                          error!("[{}] Failed to send to client: {}", conn_id, e);
+                                                          break;
                                                       }
-                                                      Err(e) => error!("[{}] Failed to encrypt for client: {}", conn_id, e),
                                                   }
+                                                  Err(e) => error!("[{}] Failed to encrypt for client: {}", conn_id, e),
                                               }
-                                              Err(e) => error!("[{}] Failed to decrypt server message: {}", conn_id, e),
                                           }
+                                          Err(e) => error!("[{}] Failed to decrypt server message: {}", conn_id, e),
                                       }
                                   }
                               }
-                              _ => {
-                                  info!("[{}] Other message type from server: {:?}", conn_id, sdk_msg.r#type());
+                              SdkEncryptedMessage::ServerKey { .. } => {
+                                  info!("[{}] Unexpected ServerKey from server during interception", conn_id);
+                              }
+                              SdkEncryptedMessage::SdkClientKey { .. } => {
+                                  info!("[{}] Unexpected SdkClientKey from server during interception", conn_id);
                               }
                           }
                       }
