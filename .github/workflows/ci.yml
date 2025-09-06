@@ -52,12 +52,10 @@ jobs:
         if: matrix.features == 'default'
         run: |
           cargo llvm-cov nextest --profile ${{ matrix.profile }} --lcov --output-path lcov-${{ matrix.profile }}-default.info --no-fail-fast --no-tests=warn
-          cargo nextest run --profile ${{ matrix.profile }} --config-file .config/nextest.toml --no-fail-fast --no-tests=warn
       - name: Run tests with coverage (all features)
         if: matrix.features == 'all'
         run: |
           cargo llvm-cov nextest --profile ${{ matrix.profile }} --all-features --lcov --output-path lcov-${{ matrix.profile }}-all.info --no-fail-fast
-          cargo nextest run --profile ${{ matrix.profile }} --all-features --config-file .config/nextest.toml --no-fail-fast
       - name: Upload coverage to codecov
         uses: codecov/codecov-action@v5
         with:
