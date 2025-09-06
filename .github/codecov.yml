@@ -1,10 +1,10 @@
 ignore:
-  - "crates/**/tests/**/*"
-  - "crates/**/examples/**/*"
-  - "crates/**/benches/**/*"
+  - "crates/**/tests/*"
+  - "crates/**/examples/*"
+  - "crates/**/benches/*"
   - "crates/**/build.rs"
 
-  - "apps/**/tests/**/*"
-  - "apps/**/examples/**/*"
-  - "apps/**/benches/**/*"
+  - "apps/**/tests/*"
+  - "apps/**/examples/*"
+  - "apps/**/benches/*"
   - "apps/**/build.rs"
