@@ -193,38 +193,37 @@ impl MitmServer {
 
     // Handle server handshake
     while let Some(msg) = read.next().await {
-      if let Message::Text(text) = msg? {
-        if let Ok(sdk_msg) = serde_json::from_str::<SdkEncryptedMessage>(&text)
-          && sdk_msg.r#type() == SdkEncryptedMessageType::ServerKey
-          && let Some(key_b64) = sdk_msg.key()
-        {
-          info!("[{}] Got ServerKey from target server", conn_id);
+      if let Message::Text(text) = msg?
+        && let Ok(sdk_msg) = serde_json::from_str::<SdkEncryptedMessage>(&text)
+        && sdk_msg.r#type() == SdkEncryptedMessageType::ServerKey
+        && let Some(key_b64) = sdk_msg.key()
+      {
+        info!("[{}] Got ServerKey from target server", conn_id);
 
-          // Convert to PEM format
-          let server_pem = spki_b64_to_pem(key_b64);
-          _server_public_key_pem = Some(server_pem.clone());
+        // Convert to PEM format
+        let server_pem = spki_b64_to_pem(key_b64);
+        _server_public_key_pem = Some(server_pem.clone());
 
-          // Generate AES key for server communication
-          let mut server_aes_key = [0u8; 32];
-          rand::thread_rng().fill_bytes(&mut server_aes_key);
-          aes_key = Some(server_aes_key);
+        // Generate AES key for server communication
+        let mut server_aes_key = [0u8; 32];
+        rand::thread_rng().fill_bytes(&mut server_aes_key);
+        aes_key = Some(server_aes_key);
 
-          // Encrypt AES key with server's public key
-          let encrypted_key_b64 = self.encrypt_rsa_pkcs1v15(&server_pem, &server_aes_key)?;
+        // Encrypt AES key with server's public key
+        let encrypted_key_b64 = self.encrypt_rsa_pkcs1v15(&server_pem, &server_aes_key)?;
 
-          // Send SdkClientKey to server
-          let client_key_msg = SdkEncryptedMessage::sdk_client_key(encrypted_key_b64);
+        // Send SdkClientKey to server
+        let client_key_msg = SdkEncryptedMessage::sdk_client_key(encrypted_key_b64);
 
-          let json = serde_json::to_string(&client_key_msg)?;
-          write.send(Message::Text(json.into())).await?;
-          info!("[{}] Sent SdkClientKey to target server", conn_id);
+        let json = serde_json::to_string(&client_key_msg)?;
+        write.send(Message::Text(json.into())).await?;
+        info!("[{}] Sent SdkClientKey to target server", conn_id);
 
-          // Reunite the split streams and return the same connection
-          let ws_stream = write
-            .reunite(read)
-            .map_err(|e| anyhow!("Failed to reunite streams: {}", e))?;
-          return Ok((ws_stream, aes_key.unwrap()));
-        }
+        // Reunite the split streams and return the same connection
+        let ws_stream = write
+          .reunite(read)
+          .map_err(|e| anyhow!("Failed to reunite streams: {}", e))?;
+        return Ok((ws_stream, aes_key.unwrap()));
       }
     }
 

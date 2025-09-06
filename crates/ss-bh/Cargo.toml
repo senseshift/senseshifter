@@ -28,6 +28,11 @@ tokio = { workspace = true, features = ["net", "sync"] }
 tokio-util = { workspace = true }
 log = "0.4.28"
 
+# Crypto dependencies (optional, for v4 encrypted handler)
+aes-gcm = { version = "0.10.3", optional = true }
+base64 = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+
 [features]
 serde = ["dep:serde", "dep:serde_json", "bh-haptic-definitions/serde", "bh-sdk/serde"]
 
@@ -38,7 +43,7 @@ ws = ["serde", "dep:axum", "axum/ws", "dep:axum-server", "dep:tower", "dep:tower
 v1 = ["bh-sdk/v1"]
 v2 = ["bh-sdk/v2"]
 v3 = ["bh-sdk/v3", "tls"]
-v4 = ["bh-sdk/v4", "tls"]
+v4 = ["bh-sdk/v4", "tls", "dep:aes-gcm", "dep:base64", "dep:rand"]
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }

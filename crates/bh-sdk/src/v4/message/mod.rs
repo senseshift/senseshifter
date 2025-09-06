@@ -6,12 +6,21 @@ use strum::{EnumDiscriminants, EnumString, IntoDiscriminant, VariantNames};
 #[strum_discriminants(name(SdkEncryptedMessageType))]
 #[strum_discriminants(derive(EnumString, VariantNames))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(tag = "type"))]
+#[cfg_attr(feature = "serde", serde(tag = "Type"))]
 #[cfg_attr(feature = "serde", serde_with::serde_as)]
 pub enum SdkEncryptedMessage {
-  ServerKey { key: String },
-  SdkClientKey { key: String },
-  SdkData { data: String },
+  ServerKey {
+    #[cfg_attr(feature = "serde", serde(rename = "Key"))]
+    key: String,
+  },
+  SdkClientKey {
+    #[cfg_attr(feature = "serde", serde(rename = "Key"))]
+    key: String,
+  },
+  SdkData {
+    #[cfg_attr(feature = "serde", serde(rename = "Data"))]
+    data: String,
+  },
 }
 
 impl SdkEncryptedMessage {

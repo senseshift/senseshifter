@@ -213,6 +213,187 @@ async fn upgrade_websocket<H: MessageHandler>(
   .await
 }
 
+// Special V4 upgrade handler that builds V3 handler externally
+#[cfg(feature = "v4")]
+async fn upgrade_websocket_v4_with_composition(
+  ws: WebSocketUpgrade,
+  Query(context): Query<handlers::v4::AppContext>,
+  State(app_state): State<AppState>,
+) -> axum::response::Response {
+  let event_rx = app_state.event_sender.subscribe();
+
+  // Convert V4 context to V3 context for the wrapped handler
+  let v3_context = (&context).into();
+
+  // This is where we do the composition differently from the generic handler
+  ws.on_upgrade(async move |mut socket| {
+    // Kickstart WebSocket with initial ping
+    match kickstart_ws(&mut socket).await {
+      Ok(_) => {}
+      Err(e) => {
+        error!("Failed to kickstart websocket: {}", e);
+        return;
+      }
+    }
+
+    let connection_token = app_state.cancellation_token.child_token();
+    let (sender, mut receiver) = socket.split();
+
+    // Create channel for WebSocket message sending (lock-free)
+    let (ws_tx, mut ws_rx) = mpsc::unbounded_channel::<Message>();
+
+    // Build V3 handler first (for composition)
+    let v3_handler = match handlers::v3::FeedbackHandlerBuilder::new(
+      v3_context,
+      app_state.command_sender.clone(),
+      mpsc::unbounded_channel().0, // dummy sender - V4 will intercept
+    )
+    .with_cancellation_token(connection_token.clone())
+    .build()
+    .await
+    {
+      Ok(h) => h,
+      Err(e) => {
+        error!("Failed to create V3 handler: {}", e);
+        return;
+      }
+    };
+
+    // Build V4 handler with the V3 handler
+    let mut v4_handler = match handlers::v4::FeedbackHandlerBuilder::new(
+      context,
+      app_state.command_sender,
+      ws_tx.clone(),
+    )
+    .with_v3_handler(v3_handler)
+    .with_cancellation_token(connection_token.clone())
+    .build()
+    .await
+    {
+      Ok(h) => h,
+      Err(e) => {
+        error!("Failed to create V4 handler: {}", e);
+        return;
+      }
+    };
+
+    // Call connection opened handler
+    if let Err(e) = v4_handler.handle_connection_opened().await {
+      error!("Failed to handle connection opened: {}", e);
+      return;
+    }
+
+    let handler = Arc::new(Mutex::new(v4_handler));
+
+    // Continue with the same task spawning logic as generic handler
+    // Task 1: WebSocket sender (dedicated I/O task)
+    let connection_token_sender = connection_token.clone();
+    let sender_task = tokio::spawn(async move {
+      let mut sender = sender;
+      loop {
+        tokio::select! {
+          Some(msg) = ws_rx.recv() => {
+            if let Err(e) = sender.send(msg).await {
+              error!("Failed to send WebSocket message: {}", e);
+              break;
+            }
+          }
+          _ = connection_token_sender.cancelled() => break,
+        }
+      }
+      debug!("WebSocket sender task completed");
+    });
+
+    // Task 2: WebSocket message receiver
+    let handler_receiver = handler.clone();
+    let connection_token_receiver = connection_token.clone();
+    let ws_tx_ping = ws_tx.clone();
+    let receiver_task = tokio::spawn(async move {
+      loop {
+        tokio::select! {
+          Some(msg) = receiver.next() => {
+            match msg {
+              Ok(message) => {
+                debug!("Received message: {:?}", message);
+
+                let (result, should_close) = match message {
+                  Message::Text(text) => {
+                    let res = handler_receiver.lock().await.handle_text_message(&text).await;
+                    (res, false)
+                  },
+                  Message::Binary(data) => {
+                    let res = handler_receiver.lock().await.handle_binary_message(&data).await;
+                    (res, false)
+                  },
+                  Message::Ping(bytes) => {
+                    debug!("Received Ping: {:?}", bytes);
+                    if let Err(e) = ws_tx_ping.send(Message::Pong(bytes)) {
+                      error!("Failed to send Pong: {}", e);
+                    }
+                    (Ok(()), false)
+                  },
+                  Message::Pong(_) => {
+                    debug!("Received Pong");
+                    (Ok(()), false)
+                  },
+                  Message::Close(_) => {
+                    info!("Received Close, closing connection");
+                    let res = handler_receiver.lock().await.handle_close().await;
+                    (res, true)
+                  },
+                };
+
+                if let Err(e) = result {
+                  error!("Handler error: {}", e);
+                  break;
+                }
+
+                if should_close {
+                  break;
+                }
+              }
+              Err(e) => {
+                error!("WebSocket error: {:?}", e);
+                break;
+              }
+            }
+          }
+          _ = connection_token_receiver.cancelled() => break,
+        }
+      }
+      debug!("WebSocket receiver task completed");
+    });
+
+    // Task 3: Broadcast event handler
+    let handler_events = handler.clone();
+    let mut event_rx = event_rx.resubscribe();
+    let connection_token_events = connection_token.clone();
+    let event_task = tokio::spawn(async move {
+      loop {
+        tokio::select! {
+          Ok(event) = event_rx.recv() => {
+            if let Err(e) = handler_events.lock().await.handle_haptic_event(&event).await {
+              error!("Broadcast handler error: {}", e);
+            }
+          }
+          _ = connection_token_events.cancelled() => break,
+        }
+      }
+      debug!("Event handler task completed");
+    });
+
+    // Wait for any task to complete or cancellation
+    tokio::select! {
+      _ = sender_task => {},
+      _ = receiver_task => {},
+      _ = event_task => {},
+      _ = connection_token.cancelled() => {},
+    }
+
+    info!("WebSocket connection closed gracefully");
+  })
+}
+
 #[derive(Debug, Clone, WithSetters)]
 pub struct BhWebsocketServerBuilder {
   config: BhWebsocketServerConfig,
@@ -339,14 +520,8 @@ impl BhWebsocketServerBuilder {
     #[cfg(feature = "v4")]
     {
       app = app
-        .route(
-          "/v4/feedback",
-          any(upgrade_websocket::<handlers::v4::FeedbackHandler>),
-        )
-        .route(
-          "/v4/feedback/",
-          any(upgrade_websocket::<handlers::v4::FeedbackHandler>),
-        );
+        .route("/v4/feedback", any(upgrade_websocket_v4_with_composition))
+        .route("/v4/feedback/", any(upgrade_websocket_v4_with_composition));
     }
 
     // log URLs to wrong paths

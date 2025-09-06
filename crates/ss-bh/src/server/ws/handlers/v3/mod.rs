@@ -19,6 +19,16 @@ pub struct AppContext {
   version: Option<String>,
 }
 
+impl AppContext {
+  pub fn new(workspace_id: String, api_key: String, version: Option<String>) -> Self {
+    Self {
+      workspace_id,
+      api_key,
+      version,
+    }
+  }
+}
+
 pub struct FeedbackHandlerBuilder {
   app_ctx: AppContext,
   command_sender: mpsc::Sender<HapticManagerCommand>,
