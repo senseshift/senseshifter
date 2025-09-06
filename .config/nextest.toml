@@ -1,0 +1,36 @@
+[profile.default]
+
+[profile.ci]
+# Don't fail fast in CI to see all test results
+fail-fast = false
+
+[profile.ci.junit]
+path = "junit.xml"
+report-name = "nextest-run"
+store-success-output = false
+store-failure-output = true
+
+[profile.unit]
+# Profile for unit tests - lib and proc-macro tests only
+default-filter = 'kind(lib) + kind(proc-macro)'
+
+[profile.unit.junit]
+path = "junit-unit.xml"
+report-name = "nextest-unit-tests"
+store-success-output = false
+store-failure-output = true
+
+[profile.integration]
+# Profile for integration tests - integration test targets only  
+default-filter = 'kind(test)'
+
+[profile.integration.junit]
+path = "junit-integration.xml"
+report-name = "nextest-integration-tests"
+store-success-output = false
+store-failure-output = true
+
+# Override for integration tests - longer timeout
+[[profile.integration.overrides]]
+filter = 'all()'
+slow-timeout = { period = "120s", terminate-after = 2 }
