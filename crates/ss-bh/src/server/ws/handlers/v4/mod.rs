@@ -1,7 +1,6 @@
 use axum::extract::ws::Message;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tracing::*;
 
@@ -9,17 +8,35 @@ use super::{HandlerBuilder, MessageHandler, v3};
 use crate::server::{HapticManagerCommand, HapticManagerEvent};
 use bh_sdk::v4::SdkEncryptedMessage;
 
-use aes_gcm::{
-  Aes256Gcm, Nonce,
-  aead::{Aead, KeyInit},
-};
 use anyhow::anyhow;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use getset::WithSetters;
-use rand::{RngCore, SeedableRng};
+use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
-use rsa::pkcs8::{Document, EncodePublicKey};
-use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey};
+use rsa::pkcs8::EncodePublicKey;
+use rsa::{RsaPrivateKey, RsaPublicKey};
+use serde_json;
+
+mod crypto;
+use crypto::CryptoContext;
+
+/// Shared helper function for encrypting V3 messages and sending as V4
+async fn encrypt_and_send_v3_message(
+  crypto: &CryptoContext,
+  v3_json: &str,
+  ws_sender: &mpsc::UnboundedSender<Message>,
+) -> anyhow::Result<()> {
+  // Encrypt V3 JSON using crypto context
+  let encrypted_data = crypto.encrypt_aes_gcm(v3_json).await?;
+
+  // Wrap in V4 SdkData message
+  let v4_msg = SdkEncryptedMessage::sdk_data(encrypted_data);
+  let json = serde_json::to_string(&v4_msg)?;
+
+  // Send via WebSocket
+  ws_sender.send(Message::Text(json.into()))?;
+  Ok(())
+}
 
 /// V4 AppContext with encryption support (extended from V3)
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -43,90 +60,6 @@ impl From<&AppContext> for v3::AppContext {
       val.api_key.clone(),
       val.version.clone(),
     )
-  }
-}
-
-/// Crypto state for V4 encryption/decryption
-#[derive(Debug)]
-struct CryptoContext {
-  rng: ChaCha20Rng,
-  private_key: RsaPrivateKey,
-  public_key_der: Document,
-  aes_key: Option<[u8; 32]>,
-}
-
-impl CryptoContext {
-  fn set_aes_key(&mut self, key: [u8; 32]) {
-    self.aes_key = Some(key);
-  }
-
-  fn decrypt_client_key_pkcs1v15(&self, encrypted_key_b64: &str) -> anyhow::Result<[u8; 32]> {
-    // Decode base64 encrypted key
-    let encrypted_key = STANDARD
-      .decode(encrypted_key_b64)
-      .map_err(|e| anyhow!("Failed to decode base64 encrypted key: {}", e))?;
-
-    // Decrypt using RSA PKCS1v15
-    let decrypted = self
-      .private_key
-      .decrypt(Pkcs1v15Encrypt, &encrypted_key)
-      .map_err(|e| anyhow!("Failed to decrypt RSA key: {}", e))?;
-
-    // Ensure we have exactly 32 bytes for AES-256
-    if decrypted.len() != 32 {
-      return Err(anyhow!(
-        "Invalid AES key length: expected 32 bytes, got {}",
-        decrypted.len()
-      ));
-    }
-
-    let mut key = [0u8; 32];
-    key.copy_from_slice(&decrypted);
-    Ok(key)
-  }
-
-  fn encrypt_aes_gcm(&mut self, plaintext: &str) -> anyhow::Result<String> {
-    let key = self
-      .aes_key
-      .ok_or_else(|| anyhow::anyhow!("AES key not established"))?;
-
-    let cipher = Aes256Gcm::new_from_slice(&key)?;
-    let mut iv = [0u8; 12];
-    self.rng.fill_bytes(&mut iv);
-    let nonce = Nonce::from_slice(&iv);
-
-    let ciphertext = cipher
-      .encrypt(nonce, plaintext.as_bytes())
-      .map_err(|e| anyhow::anyhow!("Encryption failed: {}", e))?;
-
-    let mut result = Vec::with_capacity(12 + ciphertext.len());
-    result.extend_from_slice(&iv);
-    result.extend_from_slice(&ciphertext);
-
-    Ok(STANDARD.encode(result))
-  }
-
-  fn decrypt_aes_gcm(&self, data_b64: &str) -> anyhow::Result<String> {
-    let key = self
-      .aes_key
-      .ok_or_else(|| anyhow::anyhow!("AES key not established"))?;
-
-    let raw = STANDARD.decode(data_b64)?;
-    if raw.len() < 12 + 16 {
-      return Err(anyhow::anyhow!("Cipher too short"));
-    }
-
-    let iv = &raw[0..12];
-    let ciphertext = &raw[12..];
-
-    let cipher = Aes256Gcm::new_from_slice(&key)?;
-    let nonce = Nonce::from_slice(iv);
-
-    let plaintext = cipher
-      .decrypt(nonce, ciphertext)
-      .map_err(|e| anyhow::anyhow!("Decryption failed: {}", e))?;
-
-    Ok(String::from_utf8(plaintext)?)
   }
 }
 
@@ -191,18 +124,13 @@ impl HandlerBuilder for FeedbackHandlerBuilder {
     let public_key = RsaPublicKey::from(&private_key);
     let public_key_der = public_key.to_public_key_der()?;
 
-    let crypto = Arc::new(Mutex::new(CryptoContext {
-      rng,
-      private_key,
-      public_key_der,
-      aes_key: None,
-    }));
+    let crypto = CryptoContext::new(rng, private_key, public_key_der);
 
-    // Start V3 message interceptor task
+    // Start V3 message interceptor task with shared crypto context
     FeedbackHandler::start_v3_message_interceptor(
       v3_message_rx,
       self.ws_sender.clone(),
-      Arc::clone(&crypto),
+      crypto.clone(),
     );
 
     Ok(FeedbackHandler {
@@ -210,7 +138,6 @@ impl HandlerBuilder for FeedbackHandlerBuilder {
       v3_handler,
       ws_sender: self.ws_sender,
       crypto,
-      handshake_complete: false,
     })
   }
 }
@@ -237,8 +164,7 @@ pub struct FeedbackHandler {
   app_ctx: AppContext,
   v3_handler: v3::FeedbackHandler, // Wrapped V3 handler
   ws_sender: mpsc::UnboundedSender<Message>,
-  crypto: Arc<Mutex<CryptoContext>>,
-  handshake_complete: bool,
+  crypto: CryptoContext,
 }
 
 impl MessageHandler for FeedbackHandler {
@@ -252,10 +178,7 @@ impl MessageHandler for FeedbackHandler {
       self.app_ctx.workspace_id
     );
 
-    let public_key_spki_b64 = {
-      let crypto = self.crypto.lock().await;
-      STANDARD.encode(crypto.public_key_der.as_bytes())
-    };
+    let public_key_spki_b64 = STANDARD.encode(self.crypto.public_key_der().as_bytes());
     let server_key_msg = SdkEncryptedMessage::server_key(public_key_spki_b64);
 
     self.send_raw_message(&server_key_msg).await
@@ -271,10 +194,8 @@ impl MessageHandler for FeedbackHandler {
         info!("Received client AES key, establishing encryption");
 
         // Decrypt RSA-encrypted AES key and store it
-        let mut crypto = self.crypto.lock().await;
-        let decrypted_key = crypto.decrypt_client_key_pkcs1v15(&encrypted_key)?;
-        crypto.set_aes_key(decrypted_key);
-        self.handshake_complete = true;
+        let decrypted_key = self.crypto.decrypt_client_key_pkcs1v15(&encrypted_key)?;
+        self.crypto.set_aes_key(decrypted_key);
 
         info!("V4 encryption handshake completed successfully");
         Ok(())
@@ -283,12 +204,12 @@ impl MessageHandler for FeedbackHandler {
       SdkEncryptedMessage::SdkData {
         data: encrypted_data,
       } => {
-        if !self.handshake_complete {
+        if !self.is_handshake_complete() {
           return Err(anyhow::anyhow!("Received data before handshake complete"));
         }
 
         // Decrypt the V4 message to get V3 JSON
-        let v3_json = self.crypto.lock().await.decrypt_aes_gcm(&encrypted_data)?;
+        let v3_json = self.crypto.decrypt_aes_gcm(&encrypted_data)?;
         debug!("Decrypted V4 → V3: {}", v3_json);
 
         // Forward decrypted message to wrapped V3 handler
@@ -316,7 +237,7 @@ impl MessageHandler for FeedbackHandler {
 
   #[instrument(skip(self, event))]
   async fn handle_haptic_event(&mut self, event: &HapticManagerEvent) -> anyhow::Result<()> {
-    if !self.handshake_complete {
+    if !self.is_handshake_complete() {
       return Ok(()); // Skip events until encryption is established
     }
 
@@ -335,22 +256,23 @@ impl MessageHandler for FeedbackHandler {
 }
 
 impl FeedbackHandler {
+  /// Check if the encryption handshake is complete (AES key established)
+  fn is_handshake_complete(&self) -> bool {
+    self.crypto.get_aes_key().is_some()
+  }
+
   /// Helper to send encrypted messages back to the client
+  #[allow(dead_code)]
   #[instrument(skip(self, v3_json))]
   async fn send_encrypted_v3_message(&mut self, v3_json: &str) -> anyhow::Result<()> {
-    if !self.handshake_complete {
+    if !self.is_handshake_complete() {
       return Err(anyhow::anyhow!(
         "Cannot send encrypted message before handshake"
       ));
     }
 
-    // Encrypt V3 JSON
-    let encrypted_data = self.crypto.lock().await.encrypt_aes_gcm(v3_json)?;
-
-    // Wrap in V4 SdkData message
-    let v4_msg = SdkEncryptedMessage::sdk_data(encrypted_data);
-
-    self.send_raw_message(&v4_msg).await
+    // Use shared encrypt+send logic
+    encrypt_and_send_v3_message(&self.crypto, v3_json, &self.ws_sender).await
   }
 
   async fn send_raw_message(&self, msg: &impl Serialize) -> anyhow::Result<()> {
@@ -363,7 +285,7 @@ impl FeedbackHandler {
   fn start_v3_message_interceptor(
     mut v3_message_rx: mpsc::UnboundedReceiver<Message>,
     ws_sender: mpsc::UnboundedSender<Message>,
-    crypto: Arc<Mutex<CryptoContext>>,
+    crypto: CryptoContext,
   ) {
     tokio::spawn(async move {
       info!("V3→V4 message interceptor task started");
@@ -373,28 +295,9 @@ impl FeedbackHandler {
           Message::Text(text) => {
             debug!("Intercepted V3 text message: {}", text);
 
-            // Encrypt V3 JSON and send as V4 message
-            let mut crypto_guard = crypto.lock().await;
-            match crypto_guard.encrypt_aes_gcm(&text) {
-              Ok(encrypted_data) => {
-                drop(crypto_guard); // Release lock early
-
-                let v4_msg = SdkEncryptedMessage::sdk_data(encrypted_data);
-                match serde_json::to_string(&v4_msg) {
-                  Ok(json) => {
-                    if let Err(e) = ws_sender.send(Message::Text(json.into())) {
-                      error!("Failed to send encrypted V3→V4 message: {}", e);
-                      break;
-                    }
-                  }
-                  Err(e) => {
-                    error!("Failed to serialize V4 message: {}", e);
-                  }
-                }
-              }
-              Err(e) => {
-                error!("Failed to encrypt V3 message: {}", e);
-              }
+            // Use the same shared encrypt+send logic as the handler!
+            if let Err(e) = encrypt_and_send_v3_message(&crypto, &text, &ws_sender).await {
+              error!("Failed to encrypt and send V3→V4 message: {}", e);
             }
           }
           Message::Binary(_) => {
