@@ -49,6 +49,13 @@ pub enum HapticManagerCommand {
   StopAll {
     namespace: String,
   },
+
+  StopByEventName {
+    namespace: String,
+    event_name: String,
+  },
+
+  PingAll,
 }
 
 #[derive(Derivative, Debug, Clone)]

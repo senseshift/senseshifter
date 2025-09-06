@@ -178,10 +178,20 @@ impl FeedbackHandler {
         })
         .await
         .map_err(|e| anyhow::anyhow!("Failed to send PlayEvent command: {}", e)),
-      SdkMessage::SdkPingAll
-      | SdkMessage::SdkStopByEventId(_)
-      | SdkMessage::SdkPlayDotMode(_)
-      | SdkMessage::SdkPlayPathMode(_) => {
+      SdkMessage::SdkPingAll => self
+        .command_sender
+        .send(HapticManagerCommand::PingAll)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to send PingAll command: {}", e)),
+      SdkMessage::SdkStopByEventId(event_name) => self
+        .command_sender
+        .send(HapticManagerCommand::StopByEventName {
+          namespace: self.app_ctx.workspace_id().to_string(),
+          event_name: event_name.to_string(),
+        })
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to send StopByEventName command: {}", e)),
+      SdkMessage::SdkPlayDotMode(_) | SdkMessage::SdkPlayPathMode(_) => {
         Err(anyhow::anyhow!("Not implemented yet")) // todo: implement
       }
       SdkMessage::SdkStopAll => self
