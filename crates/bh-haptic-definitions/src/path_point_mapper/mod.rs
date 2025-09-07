@@ -33,6 +33,16 @@ pub struct InterpolatingMapper {
   pub y_points: usize,
 }
 
+impl InterpolatingMapper {
+  pub fn new(max_points: usize, x_points: usize, y_points: usize) -> Self {
+    Self {
+      max_points,
+      x_points,
+      y_points,
+    }
+  }
+}
+
 impl Mapper for InterpolatingMapper {
   /// Selects max N points on the grid.
   fn map(&self, x: f32, y: f32) -> HashMap<usize, f64> {
@@ -135,6 +145,15 @@ pub struct InterpolatingMapperWithCoordinates {
 
   /// All grid points in (x, y) format, 0.0..1.0
   pub grid_points: Vec<(f32, f32)>,
+}
+
+impl InterpolatingMapperWithCoordinates {
+  pub fn new(max_points: usize, grid_points: Vec<(f32, f32)>) -> Self {
+    Self {
+      max_points,
+      grid_points,
+    }
+  }
 }
 
 impl Mapper for InterpolatingMapperWithCoordinates {

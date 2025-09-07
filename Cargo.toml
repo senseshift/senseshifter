@@ -5,9 +5,11 @@ members = [
 ]
 
 [workspace.dependencies]
+# internal crates
 bh-haptic-definitions = { path = "crates/bh-haptic-definitions" }
 bh-sdk = { path = "crates/bh-sdk" }
 
+# internal utility crates
 serde_handy = { path = "crates/serde_handy" }
 
 anyhow = "^1.0.99"
@@ -15,37 +17,45 @@ thiserror = "^2.0.16"
 tracing = "^0.1.41"
 tracing-subscriber = "^0.3.20"
 
+# common helpers
 derivative = "^2.2.0"
 derive_more = "^2.0.1"
 getset = "^0.1.6"
+lazy_static = "^1.5.0"
 strum = "^0.27.2"
 
+# serialization
+base64 = "^0.22.1"
 serde = "^1.0.219"
 serde_json = "^1.0.143"
 serde_with = "^3.14.0"
 serde-inline-default = "^1.0.0"
 serde_repr = "^0.1.20"
 
+# async
 async-trait = "^0.1.89"
 futures = "^0.3.31"
 futures-util = "^0.3.31"
 tokio = "^1.47.1"
 tokio-stream = "^0.1.17"
 tokio-util = "^0.7.16"
-tokio-tungstenite = "^0.26.2"
 
+# web / networking
 axum = "^0.8.4"
 axum-server = "^0.7.2"
 tower = "^0.5.2"
 tower-http = "^0.6.6"
+tokio-tungstenite = "^0.26.2"
 
+reqwest = "^0.12.23"
+
+# cryptography / randomness
 rand = "^0.9.2"
 rand_chacha = "^0.9.0"
-
-base64 = "^0.22.1"
-reqwest = "^0.12.23"
 rustls = "^0.23.31"
-walkdir = "^2.5.0"
 
 # common dev-dependencies
 cargo-husky = { version = "^1.5.0", default-features = false, features = ["precommit-hook", "run-cargo-check", "run-cargo-fmt", "run-cargo-clippy"] }
+criterion = "^0.7.0"
+iai = "^0.1.1"
+walkdir = "^2.5.0"
