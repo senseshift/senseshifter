@@ -1,4 +1,6 @@
-use bh_haptic_definitions::{HapticDefinitionsMessage, PathPoint, SdkApiResponseV3};
+use bh_haptic_definitions::{
+  DevicePosition, HapticDefinitionsMessage, PathPoint, SdkApiResponseV3,
+};
 
 use derivative::Derivative;
 use getset::Getters;
@@ -236,12 +238,109 @@ impl SdkPlayWithStartTimeMessage {
 pub struct SdkPlayDotModeMessage {
   request_id: u32,
 
-  // todo: use DevicePosition repr for this
-  position: u32,
+  #[cfg_attr(
+    feature = "serde",
+    serde(
+      serialize_with = "DevicePosition::serialize_as_repr",
+      deserialize_with = "DevicePosition::deserialize_from_repr"
+    )
+  )]
+  position: DevicePosition,
 
   duration_millis: u64,
 
-  // todo: this is usually [u8; 40] as for 40 motors (values 0-100)
+  /// Intensity per motor index. Usually these bits are representative of what BLE protocol is sending
+  ///
+  /// # Values per device position
+  ///
+  /// ## [DevicePosition::Vest]
+  ///
+  /// First 20 is front, last 20 is back
+  ///
+  /// ```text
+  /// |    Front    |    Back     |
+  /// +-------------+-------------+
+  /// | 0   1  2  3 | 20 21 22 23 |
+  /// | 4   5  6  7 | 24 25 26 27 |
+  /// | 8   9 10 11 | 28 29 30 31 |
+  /// | 12 13 14 15 | 32 33 34 35 |
+  /// | 16 17 18 19 | 36 37 38 39 | <- this row only for the X40 suit
+  /// +-------------+-------------+
+  /// ```
+  ///
+  /// ## [DevicePosition::VestFront], [DevicePosition::VestBack]
+  ///
+  /// From what I can see it is rarely, if ever, used.
+  ///
+  /// ```text
+  /// +-------------+
+  /// | 0   1  2  3 |
+  /// | 4   5  6  7 |
+  /// | 8   9 10 11 |
+  /// | 12 13 14 15 |
+  /// | 16 17 18 19 |
+  /// +-------------+
+  /// ```
+  ///
+  /// ## [DevicePosition::Head]
+  ///
+  /// ```text
+  /// +-------------------+
+  /// |   0   1   2   3   |
+  /// | +---------------+ |
+  /// | |               | |
+  /// | +---+       +---+ |
+  /// +-----+       +-----+
+  /// ```
+  ///
+  /// ## [DevicePosition::ForearmL], [DevicePosition::ForearmR]
+  ///
+  /// ```text
+  /// +---------+
+  /// |         |
+  /// | 0  1  2 |
+  /// |         |
+  /// +---------+
+  /// ```
+  ///
+  /// ## [DevicePosition::HandL], [DevicePosition::HandR]
+  ///
+  /// ```text
+  /// +-----+
+  /// |  0  |
+  /// |  1  |
+  /// |  2  |
+  /// +-----+
+  /// ```
+  ///
+  /// ## [DevicePosition::GloveL], [DevicePosition::GloveR]
+  ///
+  /// ```text
+  ///     .-.
+  ///   .-|2|-.
+  ///   |1| |3|
+  ///   | | | |-.
+  ///   | | | |4|
+  /// .-| | | | |
+  /// |0|     ` |
+  /// | |       |
+  /// |         |
+  /// \         /
+  ///  |   5   |
+  ///  |       |
+  /// ```
+  ///
+  /// ## [DevicePosition::FootL], [DevicePosition::FootR]
+  ///
+  /// ```text
+  /// +---------+
+  /// |         |
+  /// | 0  1  2 |
+  /// |         |
+  /// +---------+
+  /// ```
+  ///
+  /// todo: this is usually [u8; 40] as for 40 motors (values 0-100)
   motor_values: Vec<u8>,
 }
 
@@ -253,8 +352,14 @@ pub struct SdkPlayDotModeMessage {
 pub struct SdkPlayPathModeMessage {
   request_id: u32,
 
-  // todo: use DevicePosition repr for this
-  position: u32,
+  #[cfg_attr(
+    feature = "serde",
+    serde(
+      serialize_with = "DevicePosition::serialize_as_repr",
+      deserialize_with = "DevicePosition::deserialize_from_repr"
+    )
+  )]
+  position: DevicePosition,
 
   duration_millis: u64,
 
