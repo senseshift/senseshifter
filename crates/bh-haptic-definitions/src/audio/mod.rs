@@ -32,7 +32,7 @@ pub struct HapticDefinitionAudioFileClip {
   version: i32,
   duration: u32,
 
-  // todo: `Vec<u8>` is more like `[u8; 40]`
+  // todo: `Vec<u8>` is more like `[u8; 20]`
   #[cfg(feature = "serde")]
   #[serde_as(deserialize_as = "HashMap<_, Vec<Base64>>")]
   patterns: HashMap<DevicePosition, Vec<Vec<u8>>>,

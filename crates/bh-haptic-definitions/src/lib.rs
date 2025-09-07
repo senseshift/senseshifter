@@ -1,5 +1,6 @@
 mod audio;
 mod device;
+pub mod path_point_mapper;
 mod tact;
 
 pub use audio::*;

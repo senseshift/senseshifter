@@ -1,6 +1,6 @@
 use crate::DevicePosition;
 use derivative::Derivative;
-use getset::Getters;
+use getset::{Getters, WithSetters};
 
 #[derive(Derivative, Getters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
@@ -25,7 +25,13 @@ pub struct DotPoint {
   intensity: u32,
 }
 
-#[derive(Derivative, Getters)]
+impl DotPoint {
+  pub fn new(index: u32, intensity: u32) -> Self {
+    Self { index, intensity }
+  }
+}
+
+#[derive(Derivative, Getters, WithSetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
 #[get = "pub"]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -35,8 +41,20 @@ pub struct PathPoint {
   y: f64,
   intensity: u32,
 
+  #[getset(get = "pub", set_with = "pub")]
   #[cfg_attr(feature = "serde", serde(default = "default_motor_count"))]
   motor_count: usize,
+}
+
+impl PathPoint {
+  pub fn new(x: f64, y: f64, intensity: u32) -> Self {
+    Self {
+      x,
+      y,
+      intensity,
+      motor_count: default_motor_count(),
+    }
+  }
 }
 
 pub const fn default_motor_count() -> usize {
