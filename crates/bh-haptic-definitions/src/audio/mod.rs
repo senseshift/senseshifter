@@ -16,7 +16,26 @@ use serde_with::{base64::Base64, serde_as};
 pub struct HapticDefinitionAudioFilePattern {
   pattern_id: String,
   snapshot_id: String,
+
+  /// todo: or is it string?
+  ///
+  /// because we can get the following:
+  /// ```json
+  /// {
+  ///   "position": "Vest",
+  ///   "clip: {
+  ///     "patterns": {
+  ///       "ForearmL": [],
+  ///       "ForearmR": [],
+  ///     }
+  ///   }
+  /// }
+  /// ```
+  ///
+  /// So there are some conflicting stuff... It is usually the same stuff as the [DevicePosition]
+  /// but completely not related to the behavior.
   position: DevicePosition,
+
   clip: HapticDefinitionAudioFileClip,
 }
 

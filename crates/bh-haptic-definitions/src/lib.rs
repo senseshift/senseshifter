@@ -2,6 +2,7 @@ mod audio;
 mod device;
 pub mod path_point_mapper;
 mod tact;
+mod traits;
 
 pub use audio::*;
 pub use device::*;

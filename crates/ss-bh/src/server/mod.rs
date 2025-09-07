@@ -36,10 +36,10 @@ pub enum HapticManagerCommand {
 
     start_millis: u64,
 
-    // Intensity scale factor: 0.0-1.0
+    /// Intensity scale factor: `[0.0 .. =1.0]`
     intensity: f64,
 
-    // Duration scale factor: 0.0-1.0
+    /// Duration scale factor: `[0.0 .. =1.0]`
     duration: f64,
 
     offset_x: f64,
