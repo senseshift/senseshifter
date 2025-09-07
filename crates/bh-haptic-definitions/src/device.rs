@@ -77,28 +77,67 @@ impl DevicePosition {
 #[derive(Derivative, StrumDisplay, EnumString)]
 #[derivative(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum DeviceType {
+pub enum DeviceType {}
+
+#[derive(Derivative, StrumDisplay, EnumString)]
+#[derivative(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum DeviceModel {
   Tactosy,
   Tactosy2,
+
+  /// Tactosy for Hands
   TactosyH,
+
+  /// Tactosy for Feet
   TactosyF,
 
-  TactVisor,
-  TactFacial,
-
-  Tactal,
-
+  /// Developer Kit of Haptic Vests with 40 motors
   Tactot,
+  /// Developer Kit of Haptic Vests with 40 motors
   Tactot2,
+  /// Developer Kit of Haptic Vests with 40 motors
   Tactot3,
-  TactSuitX40,
+
+  /// 1st generation of the Vest with 16 motors
   TactSuitX16,
-  TactSuitPro,
+  /// 1st generation of the Vest with 40 motors
+  TactSuitX40,
+  /// 2nd generation of the Vest with 16 motors
   TactSuitAir,
+  /// 2nd generation of the Vest with 32 motors
+  TactSuitPro,
 
-  TactGloveL,
-  TactGloveR,
+  /// 1st generation of Facial Interface with 5 motors
+  Tactal,
+  /// 2nd generation of Facial Interface with 4 motors
+  TactVisor,
+  // GloveL,
+  // GloveR,
+  // GloveDK3L,
+  // GloveDK3R,
+}
 
-  Hand,
-  Foot,
+impl DeviceModel {
+  pub fn possible_positions(&self) -> Vec<DevicePosition> {
+    match self {
+      DeviceModel::Tactosy | DeviceModel::Tactosy2 => {
+        vec![DevicePosition::ForearmL, DevicePosition::ForearmR]
+      }
+      DeviceModel::TactosyH => vec![DevicePosition::HandL, DevicePosition::HandR],
+      DeviceModel::TactosyF => vec![DevicePosition::FootL, DevicePosition::FootR],
+      DeviceModel::Tactot
+      | DeviceModel::Tactot2
+      | DeviceModel::Tactot3
+      | DeviceModel::TactSuitX16
+      | DeviceModel::TactSuitX40
+      | DeviceModel::TactSuitAir
+      | DeviceModel::TactSuitPro => {
+        vec![DevicePosition::Vest]
+      }
+      DeviceModel::Tactal | DeviceModel::TactVisor => {
+        vec![DevicePosition::Head]
+      }
+    }
+  }
 }

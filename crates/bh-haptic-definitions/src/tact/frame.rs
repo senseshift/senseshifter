@@ -1,6 +1,6 @@
 use crate::DevicePosition;
 use derivative::Derivative;
-use getset::{Getters, WithSetters};
+use getset::{Getters, MutGetters, WithSetters};
 
 #[derive(Derivative, Getters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
@@ -15,19 +15,27 @@ pub struct HapticFrame {
   path_points: Vec<PathPoint>,
 }
 
-#[derive(Derivative, Getters)]
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub(crate)")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct DotPoint {
-  index: u32,
+  /// On-device index of the dot.
+  index: usize,
+
+  /// Intensity of the dot. Range: `0 .. =100`
   intensity: u32,
 }
 
 impl DotPoint {
-  pub fn new(index: u32, intensity: u32) -> Self {
-    Self { index, intensity }
+  pub const MAX_INTENSITY: u32 = 100;
+
+  pub fn new(index: usize, intensity: u32) -> Self {
+    Self {
+      index,
+      intensity: intensity.min(Self::MAX_INTENSITY),
+    }
   }
 }
 
@@ -37,21 +45,30 @@ impl DotPoint {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct PathPoint {
+  /// X coordinate of the point. Range: `0.0 .. =1.0`
   x: f64,
-  y: f64,
-  intensity: u32,
 
+  /// Y coordinate of the point. Range: `0.0 .. =1.0`
+  y: f64,
+
+  /// Intensity of the point. Range: `0 .. =100`
+  intensity: u8,
+
+  /// Numbers of motors, to interpolate the point between.
+  /// I've only seen `3`
   #[getset(get = "pub", set_with = "pub")]
   #[cfg_attr(feature = "serde", serde(default = "default_motor_count"))]
   motor_count: usize,
 }
 
 impl PathPoint {
-  pub fn new(x: f64, y: f64, intensity: u32) -> Self {
+  pub const MAX_INTENSITY: u8 = 100;
+
+  pub fn new(x: f64, y: f64, intensity: u8) -> Self {
     Self {
       x,
       y,
-      intensity,
+      intensity: intensity.min(Self::MAX_INTENSITY),
       motor_count: default_motor_count(),
     }
   }

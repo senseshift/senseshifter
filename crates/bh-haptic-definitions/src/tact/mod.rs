@@ -6,6 +6,7 @@ pub use effect::*;
 pub use frame::*;
 pub use track::*;
 
+use crate::DevicePosition;
 use derivative::Derivative;
 use derive_more::with_trait::Display;
 use getset::Getters;
@@ -69,10 +70,13 @@ pub struct TactFileProject {
 pub struct Layout {
   name: String,
 
+  /// Presumably, a weird/old version [crate::DeviceModel] with additional options,
+  /// such as `Hand`, `Foot`.
+  /// But for the most part, what I've seen is the same.
   r#type: String,
 
   /// List of points to reference in tracks.
-  layouts: Option<HashMap<String, Vec<LayoutPoint>>>,
+  layouts: Option<HashMap<DevicePosition, Vec<LayoutPoint>>>,
 }
 
 #[derive(Derivative, Getters)]

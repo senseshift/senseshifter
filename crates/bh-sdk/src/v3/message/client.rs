@@ -258,7 +258,7 @@ pub struct SdkPlayDotModeMessage {
   /// First 20 is front, last 20 is back
   ///
   /// ```text
-  /// |    Front    |    Back     |
+  /// |L   Front   R|L   Back    R|
   /// +-------------+-------------+
   /// | 0   1  2  3 | 20 21 22 23 |
   /// | 4   5  6  7 | 24 25 26 27 |
@@ -273,6 +273,7 @@ pub struct SdkPlayDotModeMessage {
   /// From what I can see it is rarely, if ever, used.
   ///
   /// ```text
+  /// |L           R|
   /// +-------------+
   /// | 0   1  2  3 |
   /// | 4   5  6  7 |

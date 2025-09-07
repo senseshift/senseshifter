@@ -4,6 +4,7 @@ mod path;
 use dot::*;
 use path::*;
 
+use crate::DevicePosition;
 use derivative::Derivative;
 use getset::Getters;
 use std::collections::HashMap;
@@ -19,7 +20,7 @@ pub struct HapticEffect {
   offset_time: Option<u32>,
   start_time: Option<u32>,
 
-  modes: HashMap<String, EffectMode>,
+  modes: HashMap<DevicePosition, EffectMode>,
 }
 
 /// From the clients I always receive both `dotMode` and `pathMode` fields, but from observation,
