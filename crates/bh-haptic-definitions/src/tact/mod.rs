@@ -1,10 +1,12 @@
 mod effect;
 mod frame;
+mod frame_compilation;
 mod rotation;
 mod track;
 
 pub use effect::*;
 pub use frame::*;
+pub use frame_compilation::*;
 pub use track::*;
 
 use crate::DevicePosition;

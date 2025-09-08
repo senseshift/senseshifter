@@ -1,19 +1,5 @@
-use crate::DevicePosition;
 use derivative::Derivative;
 use getset::{Getters, MutGetters, WithSetters};
-
-#[derive(Derivative, Getters)]
-#[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-pub struct HapticFrame {
-  duration_millis: u32,
-  position_type: DevicePosition,
-
-  dot_points: Vec<DotPoint>,
-  path_points: Vec<PathPoint>,
-}
 
 #[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
