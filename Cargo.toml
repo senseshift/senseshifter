@@ -24,6 +24,8 @@ getset = "^0.1.6"
 lazy_static = "^1.5.0"
 strum = "^0.27.2"
 
+approx = "^0.5.1"
+
 # serialization
 base64 = "^0.22.1"
 serde = "^1.0.219"

@@ -1,5 +1,6 @@
 mod effect;
 mod frame;
+mod rotation;
 mod track;
 
 pub use effect::*;
