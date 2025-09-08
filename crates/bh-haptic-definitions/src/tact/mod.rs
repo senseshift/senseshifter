@@ -66,11 +66,11 @@ pub struct TactFileProject {
 
 impl ScaleEffect for TactFileProject {
   #[inline]
-  fn scale_effect(&mut self, duration: f64, intensity: f64) {
+  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
     self
       .tracks
       .iter_mut()
-      .for_each(|t| t.scale_effect(duration, intensity));
+      .for_each(|t| t.scale_effect(duration_scale, intensity));
   }
 }
 

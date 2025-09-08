@@ -20,11 +20,11 @@ impl EffectPathMode {
 
 impl ScaleEffect for EffectPathMode {
   #[inline]
-  fn scale_effect(&mut self, duration: f64, intensity: f64) {
+  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
     self
       .feedback
       .iter_mut()
-      .for_each(|f| f.scale_effect(duration, intensity));
+      .for_each(|f| f.scale_effect(duration_scale, intensity));
   }
 }
 
@@ -58,11 +58,11 @@ impl EffectPathModeFeedback {
 
 impl ScaleEffect for EffectPathModeFeedback {
   #[inline]
-  fn scale_effect(&mut self, duration: f64, intensity: f64) {
+  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
     self
       .point_list
       .iter_mut()
-      .for_each(|p| p.scale_effect(duration, intensity));
+      .for_each(|p| p.scale_effect(duration_scale, intensity));
   }
 }
 
@@ -97,9 +97,9 @@ impl EffectPathModePoint {
 
 impl ScaleEffect for EffectPathModePoint {
   #[inline]
-  fn scale_effect(&mut self, duration: f64, intensity: f64) {
+  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
     self.intensity *= intensity;
-    self.time = ((self.time as f64) * duration) as u32;
+    self.time = ((self.time as f64) * duration_scale) as u32;
   }
 }
 

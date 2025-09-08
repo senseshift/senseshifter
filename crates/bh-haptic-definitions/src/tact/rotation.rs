@@ -44,20 +44,26 @@ impl TactFileProject {
     Self::normalize_degrees(x * 360.0 + rotation_deg)
   }
 
-  fn map_angle_to_device(angle_deg: f64, original_device: DevicePosition) -> (DevicePosition, f64) {
+  fn map_angle_to_device(
+    angle_deg: f64,
+    original_device: DevicePosition,
+  ) -> anyhow::Result<(DevicePosition, f64)> {
     let a = Self::normalize_degrees(angle_deg);
 
     match original_device {
-      DevicePosition::Head => (DevicePosition::Head, a / 360.0),
+      DevicePosition::Head => Ok((DevicePosition::Head, a / 360.0)),
       DevicePosition::VestFront | DevicePosition::VestBack => {
         // For vest devices, map 0-180° to Front, 180-360° to Back
         if a < 180.0 {
-          (DevicePosition::VestFront, a / 180.0)
+          Ok((DevicePosition::VestFront, a / 180.0))
         } else {
-          (DevicePosition::VestBack, (a - 180.0) / 180.0)
+          Ok((DevicePosition::VestBack, (a - 180.0) / 180.0))
         }
       }
-      _ => panic!("Invalid device position: {:?}", original_device),
+      _ => anyhow::bail!(
+        "Rotation not supported for device position: {:?}",
+        original_device
+      ),
     }
   }
 
@@ -78,7 +84,10 @@ impl TactFileProject {
 
     // Apply rotation
     let angle_deg = Self::ring_x_to_degrees(x, offset_angle_x);
-    let (target_device, local_x) = Self::map_angle_to_device(angle_deg, original_device);
+    let (target_device, local_x) = match Self::map_angle_to_device(angle_deg, original_device) {
+      Ok(result) => result,
+      Err(_) => return None, // Skip points for unsupported devices
+    };
 
     // Clamp coordinates
     let clamped_x = local_x.clamp(0.0, 1.0);
@@ -261,7 +270,7 @@ mod tests {
     assert_eq!(TactFileProject::normalize_offset_angle_x(360.0), 0.0);
     assert_eq!(TactFileProject::normalize_offset_angle_x(-360.0), 0.0);
     assert_eq!(TactFileProject::normalize_offset_angle_x(361.0), 1.0);
-    assert_eq!(TactFileProject::normalize_offset_angle_x(-361.0), -1.0);
+    assert_eq!(TactFileProject::normalize_offset_angle_x(-361.0), 359.0);
   }
 
   #[test]

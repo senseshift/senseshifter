@@ -24,10 +24,10 @@ impl Track {
 
 impl ScaleEffect for Track {
   #[inline]
-  fn scale_effect(&mut self, duration: f64, intensity: f64) {
+  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
     self
       .effects
       .iter_mut()
-      .for_each(|e| e.scale_effect(duration, intensity));
+      .for_each(|e| e.scale_effect(duration_scale, intensity));
   }
 }

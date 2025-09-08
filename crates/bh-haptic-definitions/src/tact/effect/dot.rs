@@ -27,11 +27,11 @@ impl EffectDotMode {
 
 impl ScaleEffect for EffectDotMode {
   #[inline]
-  fn scale_effect(&mut self, duration: f64, intensity: f64) {
+  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
     self
       .feedback
       .iter_mut()
-      .for_each(|f| f.scale_effect(duration, intensity));
+      .for_each(|f| f.scale_effect(duration_scale, intensity));
   }
 }
 
@@ -65,13 +65,13 @@ impl EffectDotModeFeedback {
 
 impl ScaleEffect for EffectDotModeFeedback {
   #[inline]
-  fn scale_effect(&mut self, duration: f64, intensity: f64) {
-    self.start_time = ((self.start_time as f64) * duration) as u32;
-    self.end_time = ((self.end_time as f64) * duration) as u32;
+  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
+    self.start_time = ((self.start_time as f64) * duration_scale) as u32;
+    self.end_time = ((self.end_time as f64) * duration_scale) as u32;
     self
       .point_list
       .iter_mut()
-      .for_each(|p| p.scale_effect(duration, intensity));
+      .for_each(|p| p.scale_effect(duration_scale, intensity));
   }
 }
 
@@ -98,7 +98,7 @@ impl EffectDotModePoint {
 }
 
 impl ScaleEffect for EffectDotModePoint {
-  fn scale_effect(&mut self, _duration: f64, intensity: f64) {
+  fn scale_effect(&mut self, _duration_scale: f64, intensity: f64) {
     self.intensity *= intensity;
   }
 }

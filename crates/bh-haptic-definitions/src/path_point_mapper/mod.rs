@@ -32,23 +32,39 @@ impl Default for PositionMapper {
 }
 
 impl PositionMapper {
-  pub fn map_point(&self, device: &DevicePosition, point: &PathPoint) -> Vec<DotPoint> {
-    let mapper = self.device_position_mappers.get(device).unwrap();
+  pub fn map_point(
+    &self,
+    device: &DevicePosition,
+    point: &PathPoint,
+  ) -> anyhow::Result<Vec<DotPoint>> {
+    let mapper = self
+      .device_position_mappers
+      .get(device)
+      .ok_or_else(|| anyhow::anyhow!("No mapper found for device position: {:?}", device))?;
 
     let points = mapper.map(*point.x() as f32, *point.y() as f32, *point.motor_count());
 
-    points
+    let result = points
       .into_iter()
       .map(|(index, intensity)| {
         let intensity = *point.intensity() as f64 * intensity;
 
         DotPoint::new(index, (intensity as u32).min(DotPoint::MAX_INTENSITY))
       })
-      .collect()
+      .collect();
+
+    Ok(result)
   }
 
-  pub fn map_points(&self, device: &DevicePosition, points: &Vec<PathPoint>) -> Vec<DotPoint> {
-    let mapper = self.device_position_mappers.get(device).unwrap();
+  pub fn map_points(
+    &self,
+    device: &DevicePosition,
+    points: &Vec<PathPoint>,
+  ) -> anyhow::Result<Vec<DotPoint>> {
+    let mapper = self
+      .device_position_mappers
+      .get(device)
+      .ok_or_else(|| anyhow::anyhow!("No mapper found for device position: {:?}", device))?;
 
     let mut mapped_points: Vec<DotPoint> = Vec::new();
 
@@ -73,6 +89,6 @@ impl PositionMapper {
       }
     }
 
-    mapped_points
+    Ok(mapped_points)
   }
 }

@@ -45,13 +45,13 @@ impl HapticEffect {
 
 impl ScaleEffect for HapticEffect {
   #[inline]
-  fn scale_effect(&mut self, duration: f64, intensity: f64) {
-    self.offset_time = ((self.offset_time as f64) * duration) as u32;
-    self.start_time = ((self.start_time as f64) * duration) as u32;
+  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
+    self.offset_time = ((self.offset_time as f64) * duration_scale) as u32;
+    self.start_time = ((self.start_time as f64) * duration_scale) as u32;
     self
       .modes
       .values_mut()
-      .for_each(|m| m.scale_effect(duration, intensity));
+      .for_each(|m| m.scale_effect(duration_scale, intensity));
   }
 }
 
@@ -87,13 +87,13 @@ impl EffectMode {
 
 impl ScaleEffect for EffectMode {
   #[inline]
-  fn scale_effect(&mut self, duration: f64, intensity: f64) {
+  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
     match self {
       EffectMode::DotMode { dot_mode } => {
-        dot_mode.scale_effect(duration, intensity);
+        dot_mode.scale_effect(duration_scale, intensity);
       }
       EffectMode::PathMode { path_mode } => {
-        path_mode.scale_effect(duration, intensity);
+        path_mode.scale_effect(duration_scale, intensity);
       }
     }
   }
