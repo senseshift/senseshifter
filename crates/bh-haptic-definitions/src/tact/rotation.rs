@@ -9,11 +9,8 @@ use std::sync::Arc;
 
 impl TactFileProject {
   pub(crate) fn normalize_offset_angle_x(offset_angle_x: f64) -> f64 {
-    let mut angle = offset_angle_x;
-    if angle < 0.0 {
-      angle += 360.0;
-    }
-    angle % 360.0
+    let result = offset_angle_x % 360.0;
+    if result < 0.0 { result + 360.0 } else { result }
   }
 
   pub(crate) fn in_none_offset_angle_x(offset_angle_x: f64) -> bool {
@@ -551,5 +548,201 @@ mod tests {
         .modes()
         .contains_key(&DevicePosition::VestBack)
     );
+  }
+
+  #[test]
+  fn test_continuous_tube_rotation_120_degrees() {
+    let layout = create_test_layout();
+    let project = TactFileProject {
+      id: None,
+      name: None,
+      description: None,
+      tracks: vec![Track::new(
+        Some(true),
+        vec![HapticEffect::new(
+          Some("tube_test".to_string()),
+          1000,
+          0,
+          HashMap::from([(
+            DevicePosition::VestFront,
+            EffectMode::path_mode(EffectPathMode::new(vec![EffectPathModeFeedback::new(
+              EffectFeedbackPlaybackType::None,
+              EffectPathModeMovingPattern::ConstSpeed,
+              true,
+              vec![EffectPathModePoint::new(0.8, 100, 0.0, 0.5)], // x=0.0 at VestFront
+            )])),
+          )]),
+        )],
+      )],
+      layout,
+      media_file_duration: None,
+      created_at: None,
+      updated_at: None,
+    };
+
+    // Apply 120-degree rotation - should stay on VestFront but move x coordinate
+    let rotated = project.apply_rotation(
+      Arc::new(Box::new(
+        crate::path_point_mapper::InterpolatingMapperEvenGrid::new(8, 4),
+      )),
+      120.0,
+      0.0,
+    );
+
+    let rotated_effect = &rotated.tracks[0].effects()[0];
+
+    // Should still be on VestFront (120° < 180°)
+    assert!(
+      rotated_effect
+        .modes()
+        .contains_key(&DevicePosition::VestFront)
+    );
+    assert!(
+      !rotated_effect
+        .modes()
+        .contains_key(&DevicePosition::VestBack)
+    );
+
+    // Check that x coordinate changed: 120° / 180° = 0.667
+    if let EffectMode::PathMode { path_mode } = &rotated_effect.modes()[&DevicePosition::VestFront]
+    {
+      let point = &path_mode.feedback()[0].point_list()[0];
+      let expected_x = 120.0 / 180.0; // 0.667
+      assert!(
+        (point.x() - expected_x).abs() < 0.001,
+        "Expected x≈{}, got {}",
+        expected_x,
+        point.x()
+      );
+    }
+  }
+
+  #[test]
+  fn test_continuous_tube_rotation_240_degrees() {
+    let layout = create_test_layout();
+    let project = TactFileProject {
+      id: None,
+      name: None,
+      description: None,
+      tracks: vec![Track::new(
+        Some(true),
+        vec![HapticEffect::new(
+          Some("tube_test".to_string()),
+          1000,
+          0,
+          HashMap::from([(
+            DevicePosition::VestFront,
+            EffectMode::path_mode(EffectPathMode::new(vec![EffectPathModeFeedback::new(
+              EffectFeedbackPlaybackType::None,
+              EffectPathModeMovingPattern::ConstSpeed,
+              true,
+              vec![EffectPathModePoint::new(0.8, 100, 0.0, 0.5)], // x=0.0 at VestFront
+            )])),
+          )]),
+        )],
+      )],
+      layout,
+      media_file_duration: None,
+      created_at: None,
+      updated_at: None,
+    };
+
+    // Apply 240-degree rotation - should move to VestBack
+    let rotated = project.apply_rotation(
+      Arc::new(Box::new(
+        crate::path_point_mapper::InterpolatingMapperEvenGrid::new(8, 4),
+      )),
+      240.0,
+      0.0,
+    );
+
+    let rotated_effect = &rotated.tracks[0].effects()[0];
+
+    // Should be on VestBack (240° > 180°)
+    assert!(
+      !rotated_effect
+        .modes()
+        .contains_key(&DevicePosition::VestFront)
+    );
+    assert!(
+      rotated_effect
+        .modes()
+        .contains_key(&DevicePosition::VestBack)
+    );
+
+    // Check that x coordinate: (240° - 180°) / 180° = 60° / 180° = 0.333
+    if let EffectMode::PathMode { path_mode } = &rotated_effect.modes()[&DevicePosition::VestBack] {
+      let point = &path_mode.feedback()[0].point_list()[0];
+      let expected_x = (240.0 - 180.0) / 180.0; // 0.333
+      assert!(
+        (point.x() - expected_x).abs() < 0.001,
+        "Expected x≈{}, got {}",
+        expected_x,
+        point.x()
+      );
+    }
+  }
+
+  #[test]
+  fn test_vestback_to_vestfront_rotation() {
+    let layout = create_test_layout();
+    let project = TactFileProject {
+      id: None,
+      name: None,
+      description: None,
+      tracks: vec![Track::new(
+        Some(true),
+        vec![HapticEffect::new(
+          Some("tube_test".to_string()),
+          1000,
+          0,
+          HashMap::from([(
+            DevicePosition::VestBack,
+            EffectMode::path_mode(EffectPathMode::new(vec![EffectPathModeFeedback::new(
+              EffectFeedbackPlaybackType::None,
+              EffectPathModeMovingPattern::ConstSpeed,
+              true,
+              vec![EffectPathModePoint::new(0.8, 100, 0.5, 0.5)], // x=0.5 at VestBack should rotate to VestFront
+            )])),
+          )]),
+        )],
+      )],
+      layout,
+      media_file_duration: None,
+      created_at: None,
+      updated_at: None,
+    };
+
+    // Apply 180-degree rotation - VestBack x=0.5 should move to VestFront x=0.5
+    // VestBack is treated same as VestFront in the mapping logic
+    let rotated = project.apply_rotation(
+      Arc::new(Box::new(
+        crate::path_point_mapper::InterpolatingMapperEvenGrid::new(8, 4),
+      )),
+      180.0,
+      0.0,
+    );
+
+    let rotated_effect = &rotated.tracks[0].effects()[0];
+
+    // Should move from VestBack to VestFront
+    assert!(
+      rotated_effect
+        .modes()
+        .contains_key(&DevicePosition::VestFront)
+    );
+    assert!(
+      !rotated_effect
+        .modes()
+        .contains_key(&DevicePosition::VestBack)
+    );
+
+    // Both VestBack and VestFront share the same coordinate mapping, so rotation should work predictably
+    if let EffectMode::PathMode { path_mode } = &rotated_effect.modes()[&DevicePosition::VestFront]
+    {
+      let point = &path_mode.feedback()[0].point_list()[0];
+      // The exact coordinate depends on the mapping, but it should have rotated
+      println!("Rotated VestBack x=0.5 to VestFront x={}", point.x());
+    }
   }
 }

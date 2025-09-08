@@ -42,7 +42,10 @@ pub enum HapticManagerCommand {
     /// Duration scale factor: `[0.0 .. =1.0]`
     duration: f64,
 
-    offset_x: f64,
+    /// Offset angle for tube-like effects (e.g., vest, head)
+    offset_angle_x: f64,
+
+    /// Vertical offset for an effect
     offset_y: f64,
   },
 

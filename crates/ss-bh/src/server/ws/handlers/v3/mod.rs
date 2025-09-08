@@ -173,7 +173,7 @@ impl FeedbackHandler {
           start_millis: *msg.start_millis(),
           intensity: *msg.intensity(),
           duration: *msg.duration(),
-          offset_x: *msg.offset_angle_x(),
+          offset_angle_x: *msg.offset_angle_x(),
           offset_y: *msg.offset_y(),
         })
         .await
@@ -426,7 +426,7 @@ mod tests {
         start_millis,
         intensity,
         duration,
-        offset_x,
+        offset_angle_x,
         offset_y,
       } => {
         assert_eq!(namespace, "test-workspace");
@@ -435,7 +435,7 @@ mod tests {
         assert_eq!(start_millis, 1000);
         assert_eq!(intensity, 0.8);
         assert_eq!(duration, 0.5);
-        assert_eq!(offset_x, -10.0);
+        assert_eq!(offset_angle_x, -10.0);
         assert_eq!(offset_y, 5.0);
       }
       _ => panic!("Expected PlayEvent command"),
