@@ -87,7 +87,7 @@ impl MessageHandler for FeedbackHandler {
   #[instrument(skip(self, msg), fields(app = %self.app_ctx))]
   async fn handle_text_message(&mut self, msg: &str) -> anyhow::Result<()> {
     let sdk_msg: SdkMessage = serde_json::from_str(msg)
-      .map_err(|e| anyhow::anyhow!("Failed to parse SDK message: {}", e))?;
+      .map_err(|e| anyhow::anyhow!("Failed to parse message \"{msg}\": {e}"))?;
 
     self
       .handle_sdk_message(&sdk_msg)
@@ -164,13 +164,6 @@ impl FeedbackHandler {
 
         self.init(haptic_definitions).await
       }
-      SdkMessage::SdkStopAll => self
-        .command_sender
-        .send(HapticManagerCommand::StopAll {
-          namespace: self.app_ctx.workspace_id().to_string(),
-        })
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to send StopAll command: {}", e)),
       SdkMessage::SdkPlayWithStartTime(msg) => self
         .command_sender
         .send(HapticManagerCommand::PlayEvent {
@@ -180,11 +173,34 @@ impl FeedbackHandler {
           start_millis: *msg.start_millis(),
           intensity: *msg.intensity(),
           duration: *msg.duration(),
-          offset_x: *msg.offset_angle_x(),
+          offset_angle_x: *msg.offset_angle_x(),
           offset_y: *msg.offset_y(),
         })
         .await
         .map_err(|e| anyhow::anyhow!("Failed to send PlayEvent command: {}", e)),
+      SdkMessage::SdkPingAll => self
+        .command_sender
+        .send(HapticManagerCommand::PingAll)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to send PingAll command: {}", e)),
+      SdkMessage::SdkStopByEventId(event_name) => self
+        .command_sender
+        .send(HapticManagerCommand::StopByEventName {
+          namespace: self.app_ctx.workspace_id().to_string(),
+          event_name: event_name.to_string(),
+        })
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to send StopByEventName command: {}", e)),
+      SdkMessage::SdkPlayDotMode(_) | SdkMessage::SdkPlayPathMode(_) => {
+        Err(anyhow::anyhow!("Not implemented yet")) // todo: implement
+      }
+      SdkMessage::SdkStopAll => self
+        .command_sender
+        .send(HapticManagerCommand::StopAll {
+          namespace: self.app_ctx.workspace_id().to_string(),
+        })
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to send StopAll command: {}", e)),
     }
   }
 
@@ -410,7 +426,7 @@ mod tests {
         start_millis,
         intensity,
         duration,
-        offset_x,
+        offset_angle_x,
         offset_y,
       } => {
         assert_eq!(namespace, "test-workspace");
@@ -419,7 +435,7 @@ mod tests {
         assert_eq!(start_millis, 1000);
         assert_eq!(intensity, 0.8);
         assert_eq!(duration, 0.5);
-        assert_eq!(offset_x, -10.0);
+        assert_eq!(offset_angle_x, -10.0);
         assert_eq!(offset_y, 5.0);
       }
       _ => panic!("Expected PlayEvent command"),
@@ -449,7 +465,7 @@ mod tests {
       result
         .unwrap_err()
         .to_string()
-        .contains("Failed to parse SDK message")
+        .contains("Failed to parse message")
     );
   }
 }

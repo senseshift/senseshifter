@@ -1,4 +1,4 @@
-use bh_haptic_definitions::{HapticFrame, TactFileProject};
+use bh_haptic_definitions::{DevicePosition, DotPoint, PathPoint, TactFileProject};
 use derivative::Derivative;
 use getset::Getters;
 
@@ -102,8 +102,21 @@ pub enum ClientSubmitMessage {
     )]
     key: String,
 
-    frame: HapticFrame,
+    frame: Frame,
   },
+}
+
+#[derive(Derivative, Getters)]
+#[derivative(Debug, Clone, PartialEq, Eq)]
+#[get = "pub"]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+pub struct Frame {
+  duration_millis: u32,
+  position_type: DevicePosition,
+
+  dot_points: Vec<DotPoint>,
+  path_points: Vec<PathPoint>,
 }
 
 #[cfg(test)]

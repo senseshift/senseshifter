@@ -154,7 +154,7 @@ async fn test_websocket_server_lifecycle_and_message_exchange() {
       start_millis,
       intensity,
       duration,
-      offset_x,
+      offset_angle_x,
       offset_y,
     } => {
       assert_eq!(namespace, "test-workspace");
@@ -163,7 +163,7 @@ async fn test_websocket_server_lifecycle_and_message_exchange() {
       assert_eq!(start_millis, 1000);
       assert_eq!(intensity, 0.8);
       assert_eq!(duration, 0.5);
-      assert_eq!(offset_x, -10.0);
+      assert_eq!(offset_angle_x, -10.0);
       assert_eq!(offset_y, 5.0);
       info!("✅ Received expected PlayEvent command with correct parameters");
     }

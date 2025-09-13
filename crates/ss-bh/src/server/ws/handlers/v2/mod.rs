@@ -80,18 +80,14 @@ impl MessageHandler for FeedbackHandler {
     Ok(())
   }
 
-  #[instrument(skip(self, msg))]
-  async fn handle_text_message(&mut self, msg: &str) -> anyhow::Result<()> {
-    info!("V2 received text message: {}", msg);
-    // TODO: Parse v2 ClientMessage and handle accordingly
-    unimplemented!()
+  #[instrument(skip(self, _msg))]
+  async fn handle_text_message(&mut self, _msg: &str) -> anyhow::Result<()> {
+    Err(anyhow::anyhow!("Not implemented yet"))
   }
 
-  #[instrument(skip(self, data))]
-  async fn handle_binary_message(&mut self, data: &[u8]) -> anyhow::Result<()> {
-    info!("V2 received binary message of {} bytes", data.len());
-    // TODO: Handle binary data if needed for v2
-    Ok(())
+  #[instrument(skip(self, _data))]
+  async fn handle_binary_message(&mut self, _data: &[u8]) -> anyhow::Result<()> {
+    Err(anyhow::anyhow!("Binary messages are not supported."))
   }
 
   #[instrument(skip(self))]

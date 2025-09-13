@@ -1,14 +1,18 @@
 mod effect;
 mod frame;
+mod frame_compilation;
+mod rotation;
 mod track;
 
 pub use effect::*;
 pub use frame::*;
+pub use frame_compilation::*;
 pub use track::*;
 
+use crate::DevicePosition;
 use derivative::Derivative;
 use derive_more::with_trait::Display;
-use getset::Getters;
+use getset::{Getters, MutGetters};
 use std::collections::HashMap;
 
 #[derive(Derivative, Getters)]
@@ -32,9 +36,9 @@ pub struct TactFile {
   project: TactFileProject,
 }
 
-#[derive(Derivative, Getters)]
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct TactFileProject {
@@ -69,10 +73,13 @@ pub struct TactFileProject {
 pub struct Layout {
   name: String,
 
+  /// Presumably, a weird/old version [crate::DeviceModel] with additional options,
+  /// such as `Hand`, `Foot`.
+  /// But for the most part, what I've seen is the same.
   r#type: String,
 
   /// List of points to reference in tracks.
-  layouts: Option<HashMap<String, Vec<LayoutPoint>>>,
+  layouts: Option<HashMap<DevicePosition, Vec<LayoutPoint>>>,
 }
 
 #[derive(Derivative, Getters)]
