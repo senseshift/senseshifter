@@ -1,12 +1,11 @@
 use derivative::Derivative;
-use getset::Getters;
+use getset::{Getters, MutGetters};
 
 use crate::HapticEffect;
-use crate::traits::ScaleEffect;
 
-#[derive(Derivative, Getters)]
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct Track {
@@ -19,15 +18,5 @@ pub struct Track {
 impl Track {
   pub fn new(enable: Option<bool>, effects: Vec<HapticEffect>) -> Self {
     Self { enable, effects }
-  }
-}
-
-impl ScaleEffect for Track {
-  #[inline]
-  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
-    self
-      .effects
-      .iter_mut()
-      .for_each(|e| e.scale_effect(duration_scale, intensity));
   }
 }

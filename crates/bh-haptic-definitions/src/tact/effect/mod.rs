@@ -5,14 +5,13 @@ pub use dot::*;
 pub use path::*;
 
 use crate::DevicePosition;
-use crate::traits::ScaleEffect;
 use derivative::Derivative;
-use getset::Getters;
+use getset::{Getters, MutGetters};
 use std::collections::HashMap;
 
-#[derive(Derivative, Getters)]
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct HapticEffect {
@@ -43,18 +42,6 @@ impl HapticEffect {
   }
 }
 
-impl ScaleEffect for HapticEffect {
-  #[inline]
-  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
-    self.offset_time = ((self.offset_time as f64) * duration_scale) as u32;
-    self.start_time = ((self.start_time as f64) * duration_scale) as u32;
-    self
-      .modes
-      .values_mut()
-      .for_each(|m| m.scale_effect(duration_scale, intensity));
-  }
-}
-
 /// From the clients I always receive both `dotMode` and `pathMode` fields, but from observation,
 /// only the one, selected by the `mode` JSON field is used, so I assume we might optimize their
 /// struct to enum.
@@ -82,20 +69,6 @@ impl EffectMode {
 
   pub fn path_mode(path_mode: EffectPathMode) -> Self {
     Self::PathMode { path_mode }
-  }
-}
-
-impl ScaleEffect for EffectMode {
-  #[inline]
-  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
-    match self {
-      EffectMode::DotMode { dot_mode } => {
-        dot_mode.scale_effect(duration_scale, intensity);
-      }
-      EffectMode::PathMode { path_mode } => {
-        path_mode.scale_effect(duration_scale, intensity);
-      }
-    }
   }
 }
 

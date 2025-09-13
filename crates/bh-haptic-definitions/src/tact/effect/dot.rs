@@ -1,12 +1,11 @@
 use derivative::Derivative;
-use getset::Getters;
+use getset::{Getters, MutGetters};
 
 use crate::EffectFeedbackPlaybackType;
-use crate::traits::ScaleEffect;
 
-#[derive(Derivative, Getters)]
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct EffectDotMode {
@@ -25,19 +24,9 @@ impl EffectDotMode {
   }
 }
 
-impl ScaleEffect for EffectDotMode {
-  #[inline]
-  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
-    self
-      .feedback
-      .iter_mut()
-      .for_each(|f| f.scale_effect(duration_scale, intensity));
-  }
-}
-
-#[derive(Derivative, Getters)]
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct EffectDotModeFeedback {
@@ -63,21 +52,9 @@ impl EffectDotModeFeedback {
   }
 }
 
-impl ScaleEffect for EffectDotModeFeedback {
-  #[inline]
-  fn scale_effect(&mut self, duration_scale: f64, intensity: f64) {
-    self.start_time = ((self.start_time as f64) * duration_scale) as u32;
-    self.end_time = ((self.end_time as f64) * duration_scale) as u32;
-    self
-      .point_list
-      .iter_mut()
-      .for_each(|p| p.scale_effect(duration_scale, intensity));
-  }
-}
-
-#[derive(Derivative, Getters)]
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct EffectDotModePoint {
@@ -94,57 +71,5 @@ pub struct EffectDotModePoint {
 impl EffectDotModePoint {
   pub fn new(index: u32, intensity: f64) -> Self {
     Self { index, intensity }
-  }
-}
-
-impl ScaleEffect for EffectDotModePoint {
-  fn scale_effect(&mut self, _duration_scale: f64, intensity: f64) {
-    self.intensity *= intensity;
-  }
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn test_effect_dot_mode_scale_effect() {
-    let mut effect = EffectDotMode {
-      dot_connected: true,
-      feedback: vec![EffectDotModeFeedback {
-        start_time: 1000,
-        end_time: 2000,
-        playback_type: EffectFeedbackPlaybackType::None,
-        point_list: vec![
-          EffectDotModePoint {
-            index: 0,
-            intensity: 1.0,
-          },
-          EffectDotModePoint {
-            index: 1,
-            intensity: 0.8,
-          },
-        ],
-      }],
-    };
-
-    effect.scale_effect(1.2, 0.5);
-
-    assert!(effect.dot_connected);
-
-    assert_eq!(effect.feedback.len(), 1);
-
-    assert_eq!(effect.feedback[0].start_time, 1200);
-    assert_eq!(effect.feedback[0].end_time, 2400);
-
-    assert_eq!(
-      effect.feedback[0].playback_type,
-      EffectFeedbackPlaybackType::None
-    );
-
-    assert_eq!(effect.feedback[0].point_list.len(), 2);
-
-    assert_eq!(effect.feedback[0].point_list[0].intensity, 0.5);
-    assert_eq!(effect.feedback[0].point_list[1].intensity, 0.4);
   }
 }
