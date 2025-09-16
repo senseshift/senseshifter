@@ -1,6 +1,7 @@
 use crate::{
   DevicePosition, DotPoint, EffectMode, EffectPathMode, EffectPathModeFeedback,
   EffectPathModePoint, HapticEffect, PathPoint, TactFileProject, path_point_mapper::PositionMapper,
+  EffectDotMode, EffectDotModeFeedback, EffectDotModePoint, LayoutPoint,
 };
 use std::{collections::HashMap, sync::Arc};
 
@@ -93,12 +94,123 @@ impl FrameCompiler {
         EffectMode::PathMode { path_mode } => {
           self.compile_path_mode_at_time(path_mode, *device_position, local_time, frame);
         }
-        EffectMode::DotMode { dot_mode: _ } => {
-          // TODO: Implement dot mode compilation
-          // This would involve converting dot points to frame points
+        EffectMode::DotMode { dot_mode } => {
+          self.compile_dot_mode_at_time(project, dot_mode, *device_position, local_time, frame);
         }
       }
     }
+  }
+
+  /// Compile dot mode effect at a specific time
+  fn compile_dot_mode_at_time(
+    &self,
+    project: &TactFileProject,
+    dot_mode: &EffectDotMode,
+    device_position: DevicePosition,
+    local_time: u32,
+    frame: &mut CompiledFrame,
+  ) {
+    for feedback in dot_mode.feedback() {
+      self.compile_dot_feedback_at_time(project, feedback, device_position, local_time, frame);
+    }
+  }
+
+  /// Compile dot mode feedback at a specific time
+  fn compile_dot_feedback_at_time(
+    &self,
+    project: &TactFileProject,
+    feedback: &EffectDotModeFeedback,
+    device_position: DevicePosition,
+    local_time: u32,
+    frame: &mut CompiledFrame,
+  ) {
+    // Check if this feedback is active at the current time
+    let feedback_start = *feedback.start_time();
+    let feedback_end = *feedback.end_time();
+
+    if local_time < feedback_start || local_time > feedback_end {
+      return;
+    }
+
+    // For each dot point in the feedback, find its coordinate using layout
+    for dot_point in feedback.point_list() {
+      if let Some(frame_point) = self.convert_dot_point_to_frame_point(
+        project,
+        dot_point,
+        device_position,
+*dot_point.intensity() / 100.0 // Convert from 0-100 to 0.0-1.0
+      ) {
+        frame.add_point(device_position, frame_point);
+      }
+    }
+  }
+
+  /// Convert a dot point to a frame point using layout information
+  fn convert_dot_point_to_frame_point(
+    &self,
+    project: &TactFileProject,
+    dot_point: &EffectDotModePoint,
+    device_position: DevicePosition,
+    intensity: f64,
+  ) -> Option<FramePoint> {
+    // First try to use the layout from the project
+    if let Some(layout_point) = self.find_layout_point_by_index(project, device_position, *dot_point.index()) {
+      return Some(FramePoint {
+        x: *layout_point.x(),
+        y: *layout_point.y(),
+        intensity,
+      });
+    }
+
+    // Fallback: use position mapper to estimate coordinates
+    // Create a PathPoint at center position and map it to see where index would be
+    let center_path_point = PathPoint::new(0.5, 0.5, 50); // center position
+    if let Ok(mapped_dots) = self.position_mapper.map_point(&device_position, &center_path_point) {
+      // Try to find a dot point with matching index
+      for mapped_dot in mapped_dots {
+        if *mapped_dot.index() == *dot_point.index() as usize {
+          // Found matching index, but we don't have exact x,y coordinates from mapper
+          // Use a grid-based estimation based on the index
+          let (est_x, est_y) = self.estimate_coordinates_from_index(*dot_point.index());
+          return Some(FramePoint {
+            x: est_x,
+            y: est_y,
+            intensity,
+          });
+        }
+      }
+    }
+
+    // If all else fails, return None (point will be skipped)
+    None
+  }
+
+  /// Find a layout point by device position and index
+  fn find_layout_point_by_index<'a>(
+    &self,
+    project: &'a TactFileProject,
+    device_position: DevicePosition,
+    index: u32,
+  ) -> Option<&'a LayoutPoint> {
+    project
+      .layout()
+      .layouts()
+      .as_ref()?
+      .get(&device_position)?
+      .iter()
+      .find(|point| *point.index() == index)
+  }
+
+  /// Estimate coordinates from index when layout is not available
+  /// This is a simple grid-based estimation - assumes 8x4 grid layout
+  fn estimate_coordinates_from_index(&self, index: u32) -> (f64, f64) {
+    const GRID_WIDTH: u32 = 8;
+    const GRID_HEIGHT: u32 = 4;
+
+    let x = (index % GRID_WIDTH) as f64 / (GRID_WIDTH - 1) as f64;
+    let y = (index / GRID_WIDTH) as f64 / (GRID_HEIGHT - 1) as f64;
+
+    (x.clamp(0.0, 1.0), y.clamp(0.0, 1.0))
   }
 
   /// Compile path mode effect at a specific time
@@ -263,11 +375,7 @@ impl TactFileProject {
       .values()
       .map(|mode| match mode {
         EffectMode::PathMode { path_mode } => self.get_path_mode_duration(path_mode),
-        EffectMode::DotMode { dot_mode: _ } => {
-          // For now, assume dot mode has similar duration calculation
-          // This can be expanded based on dot mode structure
-          0
-        }
+        EffectMode::DotMode { dot_mode } => self.get_dot_mode_duration(dot_mode),
       })
       .max()
       .unwrap_or(0)
@@ -282,6 +390,16 @@ impl TactFileProject {
       .map(|point| point.time())
       .max()
       .copied()
+      .unwrap_or(0)
+  }
+
+  /// Get the duration of a dot mode effect
+  fn get_dot_mode_duration(&self, dot_mode: &EffectDotMode) -> u32 {
+    dot_mode
+      .feedback()
+      .iter()
+      .map(|feedback| *feedback.end_time())
+      .max()
       .unwrap_or(0)
   }
 }
@@ -867,6 +985,190 @@ mod tests {
         "Frame at {}ms should NOT have VestBack from disabled track",
         frame.timestamp
       );
+    }
+  }
+
+  #[test]
+  fn test_dot_mode_compilation_with_layout() {
+    let layout = create_test_layout();
+    let project = TactFileProject {
+      id: None,
+      name: None,
+      description: None,
+      tracks: vec![Track::new(
+        Some(true),
+        vec![HapticEffect::new(
+          Some("dot_mode_test".to_string()),
+          0,
+          0,
+          HashMap::from([(
+            DevicePosition::VestFront,
+            EffectMode::dot_mode(EffectDotMode::new(true, vec![EffectDotModeFeedback::new(
+              0,   // start_time
+              100, // end_time
+              crate::EffectFeedbackPlaybackType::None,
+              vec![
+                EffectDotModePoint::new(0, 50.0), // index 0, intensity 50
+                EffectDotModePoint::new(1, 80.0), // index 1, intensity 80
+              ],
+            )])),
+          )]),
+        )],
+      )],
+      layout,
+      media_file_duration: None,
+      created_at: None,
+      updated_at: None,
+    };
+
+    let config = FrameCompilationConfig::new(50); // 50ms steps
+    let position_mapper = create_test_position_mapper();
+    let compiler = FrameCompiler::new(config, position_mapper);
+
+    let frames = compiler.compile(&project);
+
+    // Should have frames at 0ms, 50ms, 100ms
+    assert_eq!(frames.len(), 3);
+
+    // All frames during the effect should have VestFront points
+    for frame in &frames {
+      assert!(frame.device_effects.contains_key(&DevicePosition::VestFront),
+              "Frame at {}ms should have VestFront dot effects", frame.timestamp);
+
+      let points = frame.device_effects.get(&DevicePosition::VestFront).unwrap();
+      assert_eq!(points.len(), 2, "Should have 2 dot points per frame");
+
+      // Verify that coordinates come from layout
+      // Layout point 0: (0.0, 0.0), Layout point 1: (0.5, 0.0)
+      let point_0 = points.iter().find(|p| (p.x - 0.0).abs() < 0.001 && (p.y - 0.0).abs() < 0.001);
+      let point_1 = points.iter().find(|p| (p.x - 0.5).abs() < 0.001 && (p.y - 0.0).abs() < 0.001);
+
+      assert!(point_0.is_some(), "Should find point at layout position (0.0, 0.0)");
+      assert!(point_1.is_some(), "Should find point at layout position (0.5, 0.0)");
+
+      // Verify intensities (50/100 = 0.5, 80/100 = 0.8)
+      if let Some(p0) = point_0 {
+        assert!((p0.intensity - 0.5).abs() < 0.01, "Point 0 should have intensity 0.5");
+      }
+      if let Some(p1) = point_1 {
+        assert!((p1.intensity - 0.8).abs() < 0.01, "Point 1 should have intensity 0.8");
+      }
+    }
+  }
+
+  #[test]
+  fn test_dot_mode_timing_boundaries() {
+    let layout = create_test_layout();
+    let project = TactFileProject {
+      id: None,
+      name: None,
+      description: None,
+      tracks: vec![Track::new(
+        Some(true),
+        vec![HapticEffect::new(
+          Some("dot_timing_test".to_string()),
+          0,
+          0,
+          HashMap::from([(
+            DevicePosition::VestFront,
+            EffectMode::dot_mode(EffectDotMode::new(true, vec![EffectDotModeFeedback::new(
+              20,  // start_time = 20ms
+              80,  // end_time = 80ms
+              crate::EffectFeedbackPlaybackType::None,
+              vec![EffectDotModePoint::new(0, 70.0)],
+            )])),
+          )]),
+        )],
+      )],
+      layout,
+      media_file_duration: None,
+      created_at: None,
+      updated_at: None,
+    };
+
+    let config = FrameCompilationConfig::new(20); // 20ms steps
+    let position_mapper = create_test_position_mapper();
+    let compiler = FrameCompiler::new(config, position_mapper);
+
+    let frames = compiler.compile(&project);
+
+    // Should have frames at 0ms, 20ms, 40ms, 60ms, 80ms
+    assert_eq!(frames.len(), 5);
+
+    // Frame at 0ms should be empty (before feedback starts)
+    let frame_0 = &frames[0];
+    assert!(!frame_0.device_effects.contains_key(&DevicePosition::VestFront));
+
+    // Frames at 20ms, 40ms, 60ms should have effects (within feedback time)
+    let frame_20 = &frames[1];
+    let frame_40 = &frames[2];
+    let frame_60 = &frames[3];
+
+    assert!(frame_20.device_effects.contains_key(&DevicePosition::VestFront));
+    assert!(frame_40.device_effects.contains_key(&DevicePosition::VestFront));
+    assert!(frame_60.device_effects.contains_key(&DevicePosition::VestFront));
+
+    // Frame at 80ms should have effects (at feedback end time)
+    let frame_80 = &frames[4];
+    assert!(frame_80.device_effects.contains_key(&DevicePosition::VestFront));
+  }
+
+  #[test]
+  fn test_mixed_path_and_dot_modes() {
+    let layout = create_test_layout();
+    let project = TactFileProject {
+      id: None,
+      name: None,
+      description: None,
+      tracks: vec![Track::new(
+        Some(true),
+        vec![HapticEffect::new(
+          Some("mixed_modes_test".to_string()),
+          0,
+          0,
+          HashMap::from([
+            (
+              DevicePosition::VestFront,
+              EffectMode::path_mode(EffectPathMode::new(vec![EffectPathModeFeedback::new(
+                crate::EffectFeedbackPlaybackType::None,
+                crate::EffectPathModeMovingPattern::ConstSpeed,
+                true,
+                vec![EffectPathModePoint::new(0.6, 50, 0.0, 0.5)],
+              )])),
+            ),
+            (
+              DevicePosition::VestBack,
+              EffectMode::dot_mode(EffectDotMode::new(true, vec![EffectDotModeFeedback::new(
+                0,
+                50,
+                crate::EffectFeedbackPlaybackType::None,
+                vec![EffectDotModePoint::new(3, 75.0)], // index 3 in VestBack
+              )])),
+            ),
+          ]),
+        )],
+      )],
+      layout,
+      media_file_duration: None,
+      created_at: None,
+      updated_at: None,
+    };
+
+    let config = FrameCompilationConfig::new(25);
+    let position_mapper = create_test_position_mapper();
+    let compiler = FrameCompiler::new(config, position_mapper);
+
+    let frames = compiler.compile(&project);
+
+    // Should have frames at 0ms, 25ms, 50ms
+    assert_eq!(frames.len(), 3);
+
+    // Each frame should have both path mode (VestFront) and dot mode (VestBack) effects
+    for frame in &frames {
+      assert!(frame.device_effects.contains_key(&DevicePosition::VestFront),
+              "Frame at {}ms should have VestFront path effects", frame.timestamp);
+      assert!(frame.device_effects.contains_key(&DevicePosition::VestBack),
+              "Frame at {}ms should have VestBack dot effects", frame.timestamp);
     }
   }
 }
