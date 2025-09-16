@@ -23,6 +23,10 @@ impl DotPoint {
       intensity: intensity.min(Self::MAX_INTENSITY),
     }
   }
+
+  pub fn new_unchecked(index: usize, intensity: u32) -> Self {
+    Self { index, intensity }
+  }
 }
 
 #[derive(Derivative, Getters, WithSetters)]

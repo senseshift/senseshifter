@@ -114,7 +114,7 @@ impl TactFileProject {
 
       for feedback in dot_mode.feedback() {
         for dot_point in feedback.point_list() {
-          let layout_point = &layout_points[*dot_point.index() as usize];
+          let layout_point = &layout_points[*dot_point.index()];
           let path_point = EffectPathModePoint::new(
             *dot_point.intensity(),
             *feedback.start_time(),
@@ -141,7 +141,7 @@ impl TactFileProject {
         let mut points = Vec::new();
 
         for dot_point in feedback.point_list() {
-          let layout_point = &layout_points[*dot_point.index() as usize];
+          let layout_point = &layout_points[*dot_point.index()];
           let path_point = EffectPathModePoint::new(
             *dot_point.intensity(),
             *feedback.start_time(),

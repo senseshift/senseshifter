@@ -1,9 +1,8 @@
 use crate::{
-  DevicePosition, DotPoint, EffectMode, EffectPathMode, EffectPathModeFeedback,
-  EffectPathModePoint, HapticEffect, PathPoint, TactFileProject, path_point_mapper::PositionMapper,
-  EffectDotMode, EffectDotModeFeedback, EffectDotModePoint, LayoutPoint,
+  DevicePosition, DotPoint, EffectDotMode, EffectDotModeFeedback, EffectMode, EffectPathMode,
+  EffectPathModeFeedback, EffectPathModePoint, HapticEffect, PathPoint, TactFileProject,
 };
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct FrameCompilationConfig {
@@ -25,20 +24,16 @@ impl FrameCompilationConfig {
 
 pub struct FrameCompiler {
   config: FrameCompilationConfig,
-  position_mapper: Arc<PositionMapper>,
 }
 
 impl FrameCompiler {
-  pub fn new(config: FrameCompilationConfig, position_mapper: Arc<PositionMapper>) -> Self {
-    Self {
-      config,
-      position_mapper,
-    }
+  pub fn new(config: FrameCompilationConfig) -> Self {
+    Self { config }
   }
 
   /// Compile the project into frames
   pub fn compile(&self, project: &TactFileProject) -> Vec<CompiledFrame> {
-    let mut frames = Vec::new();
+    let mut frames = Vec::new(); // todo: with capacity? (project.get_total_duration() / self.config.step_size_ms)
     let total_duration = project.get_total_duration();
 
     if total_duration == 0 {
@@ -95,7 +90,7 @@ impl FrameCompiler {
           self.compile_path_mode_at_time(path_mode, *device_position, local_time, frame);
         }
         EffectMode::DotMode { dot_mode } => {
-          self.compile_dot_mode_at_time(project, dot_mode, *device_position, local_time, frame);
+          self.compile_dot_mode_at_time(dot_mode, *device_position, local_time, frame);
         }
       }
     }
@@ -104,21 +99,19 @@ impl FrameCompiler {
   /// Compile dot mode effect at a specific time
   fn compile_dot_mode_at_time(
     &self,
-    project: &TactFileProject,
     dot_mode: &EffectDotMode,
     device_position: DevicePosition,
     local_time: u32,
     frame: &mut CompiledFrame,
   ) {
     for feedback in dot_mode.feedback() {
-      self.compile_dot_feedback_at_time(project, feedback, device_position, local_time, frame);
+      self.compile_dot_mode_feedback_at_time(feedback, device_position, local_time, frame);
     }
   }
 
   /// Compile dot mode feedback at a specific time
-  fn compile_dot_feedback_at_time(
+  fn compile_dot_mode_feedback_at_time(
     &self,
-    project: &TactFileProject,
     feedback: &EffectDotModeFeedback,
     device_position: DevicePosition,
     local_time: u32,
@@ -134,83 +127,11 @@ impl FrameCompiler {
 
     // For each dot point in the feedback, find its coordinate using layout
     for dot_point in feedback.point_list() {
-      if let Some(frame_point) = self.convert_dot_point_to_frame_point(
-        project,
-        dot_point,
+      frame.add_dot_point(
         device_position,
-*dot_point.intensity() / 100.0 // Convert from 0-100 to 0.0-1.0
-      ) {
-        frame.add_point(device_position, frame_point);
-      }
+        DotPoint::new(*dot_point.index(), (dot_point.intensity() * 100.0) as u32),
+      )
     }
-  }
-
-  /// Convert a dot point to a frame point using layout information
-  fn convert_dot_point_to_frame_point(
-    &self,
-    project: &TactFileProject,
-    dot_point: &EffectDotModePoint,
-    device_position: DevicePosition,
-    intensity: f64,
-  ) -> Option<FramePoint> {
-    // First try to use the layout from the project
-    if let Some(layout_point) = self.find_layout_point_by_index(project, device_position, *dot_point.index()) {
-      return Some(FramePoint {
-        x: *layout_point.x(),
-        y: *layout_point.y(),
-        intensity,
-      });
-    }
-
-    // Fallback: use position mapper to estimate coordinates
-    // Create a PathPoint at center position and map it to see where index would be
-    let center_path_point = PathPoint::new(0.5, 0.5, 50); // center position
-    if let Ok(mapped_dots) = self.position_mapper.map_point(&device_position, &center_path_point) {
-      // Try to find a dot point with matching index
-      for mapped_dot in mapped_dots {
-        if *mapped_dot.index() == *dot_point.index() as usize {
-          // Found matching index, but we don't have exact x,y coordinates from mapper
-          // Use a grid-based estimation based on the index
-          let (est_x, est_y) = self.estimate_coordinates_from_index(*dot_point.index());
-          return Some(FramePoint {
-            x: est_x,
-            y: est_y,
-            intensity,
-          });
-        }
-      }
-    }
-
-    // If all else fails, return None (point will be skipped)
-    None
-  }
-
-  /// Find a layout point by device position and index
-  fn find_layout_point_by_index<'a>(
-    &self,
-    project: &'a TactFileProject,
-    device_position: DevicePosition,
-    index: u32,
-  ) -> Option<&'a LayoutPoint> {
-    project
-      .layout()
-      .layouts()
-      .as_ref()?
-      .get(&device_position)?
-      .iter()
-      .find(|point| *point.index() == index)
-  }
-
-  /// Estimate coordinates from index when layout is not available
-  /// This is a simple grid-based estimation - assumes 8x4 grid layout
-  fn estimate_coordinates_from_index(&self, index: u32) -> (f64, f64) {
-    const GRID_WIDTH: u32 = 8;
-    const GRID_HEIGHT: u32 = 4;
-
-    let x = (index % GRID_WIDTH) as f64 / (GRID_WIDTH - 1) as f64;
-    let y = (index / GRID_WIDTH) as f64 / (GRID_HEIGHT - 1) as f64;
-
-    (x.clamp(0.0, 1.0), y.clamp(0.0, 1.0))
   }
 
   /// Compile path mode effect at a specific time
@@ -222,12 +143,12 @@ impl FrameCompiler {
     frame: &mut CompiledFrame,
   ) {
     for feedback in path_mode.feedback() {
-      self.compile_feedback_at_time(feedback, device_position, local_time, frame);
+      self.compile_path_mode_feedback_at_time(feedback, device_position, local_time, frame);
     }
   }
 
   /// Compile feedback at a specific time
-  fn compile_feedback_at_time(
+  fn compile_path_mode_feedback_at_time(
     &self,
     feedback: &EffectPathModeFeedback,
     device_position: DevicePosition,
@@ -240,28 +161,14 @@ impl FrameCompiler {
     }
 
     // Find the appropriate point(s) for interpolation at this time
+    // TODO: Pass feedback.playback_type() to interpolation for easing (ease-in/out/in-out)
     if let Some(interpolated_path_point) = self.interpolate_path_point_at_time(points, local_time) {
-      // Convert PathPoint to DotPoints using PositionMapper
-      if let Ok(dot_points) = self
-        .position_mapper
-        .map_point(&device_position, &interpolated_path_point)
-      {
-        for dot_point in dot_points {
-          // Convert DotPoint back to FramePoint for consistent API
-          // Note: This assumes we have layout information to convert index back to x,y
-          // For now, we'll use a simplified approach
-          let frame_point = FramePoint {
-            x: 0.0, // TODO: Convert index back to x coordinate using layout
-            y: 0.0, // TODO: Convert index back to y coordinate using layout
-            intensity: *dot_point.intensity() as f64 / DotPoint::MAX_INTENSITY as f64,
-          };
-          frame.add_point(device_position, frame_point);
-        }
-      }
+      frame.add_path_point(device_position, interpolated_path_point);
     }
   }
 
   /// Interpolate a PathPoint at a specific time from the point list
+  // TODO: Add playback_type parameter for easing functions
   fn interpolate_path_point_at_time(
     &self,
     points: &[EffectPathModePoint],
@@ -276,8 +183,8 @@ impl FrameCompiler {
     sorted_points.sort_by_key(|p| p.time());
 
     // Find the two points to interpolate between
-    let mut before_point = None;
-    let mut after_point = None;
+    let mut before_point: Option<&&_> = None;
+    let mut after_point: Option<&&_> = None;
 
     for point in &sorted_points {
       if point.time() <= &local_time {
@@ -288,6 +195,8 @@ impl FrameCompiler {
       }
     }
 
+    const MAX_INTENSITY_F64: f64 = PathPoint::MAX_INTENSITY as f64;
+
     match (before_point, after_point) {
       (Some(before), Some(after)) => {
         // Interpolate between two points
@@ -296,15 +205,18 @@ impl FrameCompiler {
           return Some(PathPoint::new(
             *before.x(),
             *before.y(),
-            (*before.intensity() * 100.0) as u8, // Convert to u8 intensity
+            (*before.intensity() * MAX_INTENSITY_F64) as u8, // Convert to u8 intensity
           ));
         }
 
         let t = (local_time - before.time()) as f64 / time_diff as f64;
+        // TODO: Apply easing function here instead of linear interpolation
+        // TODO: t_eased = apply_easing_function(t, playback_type) for playback_type curves
         Some(PathPoint::new(
-          before.x() + t * (after.x() - before.x()),
-          before.y() + t * (after.y() - before.y()),
-          ((before.intensity() + t * (after.intensity() - before.intensity())) * 100.0) as u8,
+          before.x() + t * (after.x() - before.x()), // TODO: Use t_eased for position interpolation
+          before.y() + t * (after.y() - before.y()), // TODO: Use t_eased for position interpolation
+          ((before.intensity() + t * (after.intensity() - before.intensity())) * MAX_INTENSITY_F64)
+            as u8, // TODO: Use t_eased for intensity
         ))
       }
       (Some(before), None) => {
@@ -312,7 +224,7 @@ impl FrameCompiler {
         Some(PathPoint::new(
           *before.x(),
           *before.y(),
-          (*before.intensity() * 100.0) as u8,
+          (*before.intensity() * MAX_INTENSITY_F64) as u8,
         ))
       }
       (None, Some(after)) => {
@@ -320,7 +232,7 @@ impl FrameCompiler {
         Some(PathPoint::new(
           *after.x(),
           *after.y(),
-          (*after.intensity() * 100.0) as u8,
+          (*after.intensity() * MAX_INTENSITY_F64) as u8,
         ))
       }
       (None, None) => None,
@@ -332,27 +244,28 @@ impl FrameCompiler {
 pub struct CompiledFrame {
   /// Timestamp in milliseconds
   pub timestamp: u32,
-  /// Device effects at this frame
-  pub device_effects: HashMap<DevicePosition, Vec<FramePoint>>,
-}
 
-#[derive(Debug, Clone)]
-pub struct FramePoint {
-  pub x: f64,
-  pub y: f64,
-  pub intensity: f64,
+  /// PathPoint Device effects at this frame
+  pub path_points: HashMap<DevicePosition, Vec<PathPoint>>,
+
+  pub dot_points: HashMap<DevicePosition, Vec<DotPoint>>,
 }
 
 impl CompiledFrame {
   pub fn new(timestamp: u32) -> Self {
     Self {
       timestamp,
-      device_effects: HashMap::new(),
+      path_points: HashMap::new(),
+      dot_points: HashMap::new(),
     }
   }
 
-  pub fn add_point(&mut self, device: DevicePosition, point: FramePoint) {
-    self.device_effects.entry(device).or_default().push(point);
+  pub fn add_path_point(&mut self, device: DevicePosition, point: PathPoint) {
+    self.path_points.entry(device).or_default().push(point);
+  }
+
+  pub fn add_dot_point(&mut self, device: DevicePosition, point: DotPoint) {
+    self.dot_points.entry(device).or_default().push(point);
   }
 }
 
@@ -408,7 +321,8 @@ impl TactFileProject {
 mod tests {
   use super::*;
   use crate::{
-    EffectFeedbackPlaybackType, EffectPathModeMovingPattern, Layout, LayoutPoint, Track,
+    EffectDotModePoint, EffectFeedbackPlaybackType, EffectPathModeMovingPattern, Layout,
+    LayoutPoint, Track,
   };
 
   fn create_test_layout() -> Layout {
@@ -448,25 +362,6 @@ mod tests {
     }
   }
 
-  fn create_test_position_mapper() -> Arc<PositionMapper> {
-    use crate::path_point_mapper::InterpolatingMapperEvenGrid;
-    use std::collections::HashMap;
-
-    let mut device_mappers = HashMap::new();
-    device_mappers.insert(
-      DevicePosition::VestFront,
-      Arc::new(Box::new(InterpolatingMapperEvenGrid::new(8, 4))
-        as Box<dyn crate::path_point_mapper::Mapper>),
-    );
-    device_mappers.insert(
-      DevicePosition::VestBack,
-      Arc::new(Box::new(InterpolatingMapperEvenGrid::new(8, 4))
-        as Box<dyn crate::path_point_mapper::Mapper>),
-    );
-
-    Arc::new(PositionMapper::new(device_mappers))
-  }
-
   #[test]
   fn test_frame_compilation_config() {
     let default_config = FrameCompilationConfig::default();
@@ -479,8 +374,7 @@ mod tests {
   #[test]
   fn test_frame_compiler_creation() {
     let config = FrameCompilationConfig::new(25);
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     assert_eq!(compiler.config.step_size_ms, 25);
   }
@@ -519,8 +413,7 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(50); // 50ms steps
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     let frames = compiler.compile(&project);
 
@@ -531,11 +424,7 @@ mod tests {
     let frame_0 = &frames[0];
     assert_eq!(frame_0.timestamp, 0);
 
-    assert!(
-      frame_0
-        .device_effects
-        .contains_key(&DevicePosition::VestFront)
-    );
+    assert!(frame_0.path_points.contains_key(&DevicePosition::VestFront));
   }
 
   #[test]
@@ -568,16 +457,14 @@ mod tests {
       updated_at: None,
     };
 
-    let position_mapper = create_test_position_mapper();
-
     // Test with 10ms steps
     let config_10ms = FrameCompilationConfig::new(10);
-    let compiler_10ms = FrameCompiler::new(config_10ms, position_mapper.clone());
+    let compiler_10ms = FrameCompiler::new(config_10ms);
     let frames_10ms = compiler_10ms.compile(&project);
 
     // Test with 25ms steps
     let config_25ms = FrameCompilationConfig::new(25);
-    let compiler_25ms = FrameCompiler::new(config_25ms, position_mapper);
+    let compiler_25ms = FrameCompiler::new(config_25ms);
     let frames_25ms = compiler_25ms.compile(&project);
 
     // 10ms should have more frames than 25ms
@@ -608,8 +495,7 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(20);
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
     let frames = compiler.compile(&project);
 
     assert!(frames.is_empty());
@@ -649,8 +535,7 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(25); // 25ms steps
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     let frames = compiler.compile(&project);
 
@@ -660,10 +545,7 @@ mod tests {
     // Verify frame at t=0ms (should match first point exactly)
     let frame_0 = &frames[0];
     assert_eq!(frame_0.timestamp, 0);
-    let vest_front_points_0 = frame_0
-      .device_effects
-      .get(&DevicePosition::VestFront)
-      .unwrap();
+    let vest_front_points_0 = frame_0.path_points.get(&DevicePosition::VestFront).unwrap();
     assert!(!vest_front_points_0.is_empty());
     // Note: Intensity is converted through DotPoint, so we expect it to be normalized
 
@@ -671,7 +553,7 @@ mod tests {
     let frame_50 = &frames[2]; // frames[0]=0ms, frames[1]=25ms, frames[2]=50ms
     assert_eq!(frame_50.timestamp, 50);
     let vest_front_points_50 = frame_50
-      .device_effects
+      .path_points
       .get(&DevicePosition::VestFront)
       .unwrap();
     assert!(!vest_front_points_50.is_empty());
@@ -683,7 +565,7 @@ mod tests {
     let frame_100 = &frames[4]; // Last frame
     assert_eq!(frame_100.timestamp, 100);
     let vest_front_points_100 = frame_100
-      .device_effects
+      .path_points
       .get(&DevicePosition::VestFront)
       .unwrap();
     assert!(!vest_front_points_100.is_empty());
@@ -723,8 +605,7 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(100); // 100ms steps for easier math
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     let frames = compiler.compile(&project);
 
@@ -738,15 +619,8 @@ mod tests {
 
     // Verify all frames have the expected device
     for frame in &frames {
-      assert!(
-        frame
-          .device_effects
-          .contains_key(&DevicePosition::VestFront)
-      );
-      let points = frame
-        .device_effects
-        .get(&DevicePosition::VestFront)
-        .unwrap();
+      assert!(frame.path_points.contains_key(&DevicePosition::VestFront));
+      let points = frame.path_points.get(&DevicePosition::VestFront).unwrap();
       assert!(
         !points.is_empty(),
         "Frame at {}ms should have points",
@@ -789,8 +663,7 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(20); // 20ms steps
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     let frames = compiler.compile(&project);
 
@@ -803,19 +676,15 @@ mod tests {
     let frame_20 = &frames[1]; // t=20ms  
     let frame_40 = &frames[2]; // t=40ms
 
-    assert!(
-      !frame_0
-        .device_effects
-        .contains_key(&DevicePosition::VestFront)
-    );
+    assert!(!frame_0.path_points.contains_key(&DevicePosition::VestFront));
     assert!(
       !frame_20
-        .device_effects
+        .path_points
         .contains_key(&DevicePosition::VestFront)
     );
     assert!(
       !frame_40
-        .device_effects
+        .path_points
         .contains_key(&DevicePosition::VestFront)
     );
 
@@ -826,17 +695,17 @@ mod tests {
 
     assert!(
       frame_60
-        .device_effects
+        .path_points
         .contains_key(&DevicePosition::VestFront)
     );
     assert!(
       frame_80
-        .device_effects
+        .path_points
         .contains_key(&DevicePosition::VestFront)
     );
     assert!(
       frame_100
-        .device_effects
+        .path_points
         .contains_key(&DevicePosition::VestFront)
     );
   }
@@ -891,8 +760,7 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(25);
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     let frames = compiler.compile(&project);
 
@@ -902,14 +770,12 @@ mod tests {
     // Each frame should have effects from both tracks
     for frame in &frames {
       assert!(
-        frame
-          .device_effects
-          .contains_key(&DevicePosition::VestFront),
+        frame.path_points.contains_key(&DevicePosition::VestFront),
         "Frame at {}ms should have VestFront effects",
         frame.timestamp
       );
       assert!(
-        frame.device_effects.contains_key(&DevicePosition::VestBack),
+        frame.path_points.contains_key(&DevicePosition::VestBack),
         "Frame at {}ms should have VestBack effects",
         frame.timestamp
       );
@@ -966,22 +832,19 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(25);
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     let frames = compiler.compile(&project);
 
     // Should have frames from enabled track only
     for frame in &frames {
       assert!(
-        frame
-          .device_effects
-          .contains_key(&DevicePosition::VestFront),
+        frame.path_points.contains_key(&DevicePosition::VestFront),
         "Frame at {}ms should have VestFront from enabled track",
         frame.timestamp
       );
       assert!(
-        !frame.device_effects.contains_key(&DevicePosition::VestBack),
+        !frame.path_points.contains_key(&DevicePosition::VestBack),
         "Frame at {}ms should NOT have VestBack from disabled track",
         frame.timestamp
       );
@@ -1003,15 +866,18 @@ mod tests {
           0,
           HashMap::from([(
             DevicePosition::VestFront,
-            EffectMode::dot_mode(EffectDotMode::new(true, vec![EffectDotModeFeedback::new(
-              0,   // start_time
-              100, // end_time
-              crate::EffectFeedbackPlaybackType::None,
-              vec![
-                EffectDotModePoint::new(0, 50.0), // index 0, intensity 50
-                EffectDotModePoint::new(1, 80.0), // index 1, intensity 80
-              ],
-            )])),
+            EffectMode::dot_mode(EffectDotMode::new(
+              true,
+              vec![EffectDotModeFeedback::new(
+                0,   // start_time
+                100, // end_time
+                crate::EffectFeedbackPlaybackType::None,
+                vec![
+                  EffectDotModePoint::new(0, 0.5), // index 0, intensity 50
+                  EffectDotModePoint::new(1, 0.8), // index 1, intensity 80
+                ],
+              )],
+            )),
           )]),
         )],
       )],
@@ -1022,8 +888,7 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(50); // 50ms steps
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     let frames = compiler.compile(&project);
 
@@ -1032,27 +897,39 @@ mod tests {
 
     // All frames during the effect should have VestFront points
     for frame in &frames {
-      assert!(frame.device_effects.contains_key(&DevicePosition::VestFront),
-              "Frame at {}ms should have VestFront dot effects", frame.timestamp);
+      assert!(
+        frame.dot_points.contains_key(&DevicePosition::VestFront),
+        "Frame at {}ms should have VestFront dot effects",
+        frame.timestamp
+      );
 
-      let points = frame.device_effects.get(&DevicePosition::VestFront).unwrap();
+      let points = frame.dot_points.get(&DevicePosition::VestFront).unwrap();
       assert_eq!(points.len(), 2, "Should have 2 dot points per frame");
 
       // Verify that coordinates come from layout
       // Layout point 0: (0.0, 0.0), Layout point 1: (0.5, 0.0)
-      let point_0 = points.iter().find(|p| (p.x - 0.0).abs() < 0.001 && (p.y - 0.0).abs() < 0.001);
-      let point_1 = points.iter().find(|p| (p.x - 0.5).abs() < 0.001 && (p.y - 0.0).abs() < 0.001);
+      let point_0 = points.iter().find(|p| *p.index() == 0);
+      let point_1 = points.iter().find(|p| *p.index() == 1);
 
-      assert!(point_0.is_some(), "Should find point at layout position (0.0, 0.0)");
-      assert!(point_1.is_some(), "Should find point at layout position (0.5, 0.0)");
+      assert!(
+        point_0.is_some(),
+        "Should find point at layout position (0.0, 0.0)"
+      );
+      assert!(
+        point_1.is_some(),
+        "Should find point at layout position (0.5, 0.0)"
+      );
 
-      // Verify intensities (50/100 = 0.5, 80/100 = 0.8)
-      if let Some(p0) = point_0 {
-        assert!((p0.intensity - 0.5).abs() < 0.01, "Point 0 should have intensity 0.5");
-      }
-      if let Some(p1) = point_1 {
-        assert!((p1.intensity - 0.8).abs() < 0.01, "Point 1 should have intensity 0.8");
-      }
+      assert_eq!(
+        *point_0.unwrap().intensity(),
+        50,
+        "Point 0 should have intensity 0.5"
+      );
+      assert_eq!(
+        *point_1.unwrap().intensity(),
+        80,
+        "Point 1 should have intensity 0.8"
+      );
     }
   }
 
@@ -1071,12 +948,15 @@ mod tests {
           0,
           HashMap::from([(
             DevicePosition::VestFront,
-            EffectMode::dot_mode(EffectDotMode::new(true, vec![EffectDotModeFeedback::new(
-              20,  // start_time = 20ms
-              80,  // end_time = 80ms
-              crate::EffectFeedbackPlaybackType::None,
-              vec![EffectDotModePoint::new(0, 70.0)],
-            )])),
+            EffectMode::dot_mode(EffectDotMode::new(
+              true,
+              vec![EffectDotModeFeedback::new(
+                20, // start_time = 20ms
+                80, // end_time = 80ms
+                crate::EffectFeedbackPlaybackType::None,
+                vec![EffectDotModePoint::new(0, 70.0)],
+              )],
+            )),
           )]),
         )],
       )],
@@ -1087,8 +967,7 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(20); // 20ms steps
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     let frames = compiler.compile(&project);
 
@@ -1097,20 +976,20 @@ mod tests {
 
     // Frame at 0ms should be empty (before feedback starts)
     let frame_0 = &frames[0];
-    assert!(!frame_0.device_effects.contains_key(&DevicePosition::VestFront));
+    assert!(!frame_0.dot_points.contains_key(&DevicePosition::VestFront));
 
     // Frames at 20ms, 40ms, 60ms should have effects (within feedback time)
     let frame_20 = &frames[1];
     let frame_40 = &frames[2];
     let frame_60 = &frames[3];
 
-    assert!(frame_20.device_effects.contains_key(&DevicePosition::VestFront));
-    assert!(frame_40.device_effects.contains_key(&DevicePosition::VestFront));
-    assert!(frame_60.device_effects.contains_key(&DevicePosition::VestFront));
+    assert!(frame_20.dot_points.contains_key(&DevicePosition::VestFront));
+    assert!(frame_40.dot_points.contains_key(&DevicePosition::VestFront));
+    assert!(frame_60.dot_points.contains_key(&DevicePosition::VestFront));
 
     // Frame at 80ms should have effects (at feedback end time)
     let frame_80 = &frames[4];
-    assert!(frame_80.device_effects.contains_key(&DevicePosition::VestFront));
+    assert!(frame_80.dot_points.contains_key(&DevicePosition::VestFront));
   }
 
   #[test]
@@ -1138,12 +1017,15 @@ mod tests {
             ),
             (
               DevicePosition::VestBack,
-              EffectMode::dot_mode(EffectDotMode::new(true, vec![EffectDotModeFeedback::new(
-                0,
-                50,
-                crate::EffectFeedbackPlaybackType::None,
-                vec![EffectDotModePoint::new(3, 75.0)], // index 3 in VestBack
-              )])),
+              EffectMode::dot_mode(EffectDotMode::new(
+                true,
+                vec![EffectDotModeFeedback::new(
+                  0,
+                  50,
+                  crate::EffectFeedbackPlaybackType::None,
+                  vec![EffectDotModePoint::new(3, 75.0)], // index 3 in VestBack
+                )],
+              )),
             ),
           ]),
         )],
@@ -1155,8 +1037,7 @@ mod tests {
     };
 
     let config = FrameCompilationConfig::new(25);
-    let position_mapper = create_test_position_mapper();
-    let compiler = FrameCompiler::new(config, position_mapper);
+    let compiler = FrameCompiler::new(config);
 
     let frames = compiler.compile(&project);
 
@@ -1165,10 +1046,16 @@ mod tests {
 
     // Each frame should have both path mode (VestFront) and dot mode (VestBack) effects
     for frame in &frames {
-      assert!(frame.device_effects.contains_key(&DevicePosition::VestFront),
-              "Frame at {}ms should have VestFront path effects", frame.timestamp);
-      assert!(frame.device_effects.contains_key(&DevicePosition::VestBack),
-              "Frame at {}ms should have VestBack dot effects", frame.timestamp);
+      assert!(
+        frame.path_points.contains_key(&DevicePosition::VestFront),
+        "Frame at {}ms should have VestFront path effects",
+        frame.timestamp
+      );
+      assert!(
+        frame.dot_points.contains_key(&DevicePosition::VestBack),
+        "Frame at {}ms should have VestBack dot effects",
+        frame.timestamp
+      );
     }
   }
 }

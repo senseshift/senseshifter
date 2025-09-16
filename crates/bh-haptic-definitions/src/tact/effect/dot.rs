@@ -62,14 +62,14 @@ pub struct EffectDotModePoint {
   /// At the same time is the motor index in the standard sense (see [InterpolatingMapperEvenGrid](crate::path_point_mapper::InterpolatingMapperEvenGrid) for index positions).
   ///
   /// Together they are used to apply rotation to the effect.
-  index: u32,
+  index: usize,
 
   #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_f64"))]
   intensity: f64,
 }
 
 impl EffectDotModePoint {
-  pub fn new(index: u32, intensity: f64) -> Self {
+  pub fn new(index: usize, intensity: f64) -> Self {
     Self { index, intensity }
   }
 }

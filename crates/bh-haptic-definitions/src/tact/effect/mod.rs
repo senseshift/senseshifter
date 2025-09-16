@@ -94,6 +94,8 @@ pub enum EffectFeedbackPlaybackType {
 }
 
 impl EffectFeedbackPlaybackType {
+  // TODO: Extend this method to return easing factor instead of just intensity modulation
+  // TODO: Add apply_easing(ratio) -> f64 method for position/coordinate interpolation
   pub fn apply(&self, ratio: f64, intensity: f64) -> f64 {
     match self {
       EffectFeedbackPlaybackType::None => intensity,
