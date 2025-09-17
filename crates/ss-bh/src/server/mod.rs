@@ -36,19 +36,29 @@ pub enum HapticManagerCommand {
 
     start_millis: u64,
 
-    // Intensity scale factor: 0.0-1.0
+    /// Intensity scale factor: `[0.0 .. =1.0]`
     intensity: f64,
 
-    // Duration scale factor: 0.0-1.0
+    /// Duration scale factor: `[0.0 .. =1.0]`
     duration: f64,
 
-    offset_x: f64,
+    /// Offset angle for tube-like effects (e.g., vest, head)
+    offset_angle_x: f64,
+
+    /// Vertical offset for an effect
     offset_y: f64,
   },
 
   StopAll {
     namespace: String,
   },
+
+  StopByEventName {
+    namespace: String,
+    event_name: String,
+  },
+
+  PingAll,
 }
 
 #[derive(Derivative, Debug, Clone)]

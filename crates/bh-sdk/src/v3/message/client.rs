@@ -1,4 +1,6 @@
-use bh_haptic_definitions::{HapticDefinitionsMessage, SdkApiResponseV3};
+use bh_haptic_definitions::{
+  DevicePosition, HapticDefinitionsMessage, PathPoint, SdkApiResponseV3,
+};
 
 use derivative::Derivative;
 use getset::Getters;
@@ -25,7 +27,19 @@ pub enum SdkMessage {
     #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]
     SdkPlayWithStartTimeMessage,
   ),
+  SdkPlayDotMode(
+    #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]
+    SdkPlayDotModeMessage,
+  ),
+  SdkPlayPathMode(
+    #[cfg_attr(feature = "serde", serde(with = "serde_handy::as_json_or_object"))]
+    SdkPlayPathModeMessage,
+  ),
+
+  SdkPingAll,
+
   SdkStopAll,
+  SdkStopByEventId(String),
 }
 
 #[cfg(feature = "serde")]
@@ -82,7 +96,11 @@ impl<'de> serde::de::Deserialize<'de> for SdkMessage {
       SdkMessageType::SdkPlayWithStartTime => {
         parse_msg(msg_v).map(SdkMessage::SdkPlayWithStartTime)
       }
+      SdkMessageType::SdkPlayDotMode => parse_msg(msg_v).map(SdkMessage::SdkPlayDotMode),
+      SdkMessageType::SdkPlayPathMode => parse_msg(msg_v).map(SdkMessage::SdkPlayPathMode),
+      SdkMessageType::SdkPingAll => Ok(SdkMessage::SdkPingAll),
       SdkMessageType::SdkStopAll => Ok(SdkMessage::SdkStopAll),
+      SdkMessageType::SdkStopByEventId => parse_msg(msg_v).map(SdkMessage::SdkStopByEventId),
     }
   }
 }
@@ -133,7 +151,6 @@ impl SdkRequestAuthMessage {
 #[derivative(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-#[cfg_attr(feature = "serde", serde_inline_default::serde_inline_default)]
 pub struct SdkPlayWithStartTimeMessage {
   event_name: String,
   request_id: u32,
@@ -211,6 +228,143 @@ impl SdkPlayWithStartTimeMessage {
   pub const fn default_offset_y() -> f64 {
     0.0
   }
+}
+
+#[derive(Derivative, Getters)]
+#[get = "pub"]
+#[derivative(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+pub struct SdkPlayDotModeMessage {
+  request_id: u32,
+
+  #[cfg_attr(
+    feature = "serde",
+    serde(
+      serialize_with = "DevicePosition::serialize_as_repr",
+      deserialize_with = "DevicePosition::deserialize_from_repr"
+    )
+  )]
+  position: DevicePosition,
+
+  duration_millis: u64,
+
+  /// Intensity per motor index. Usually these bits are representative of what BLE protocol is sending
+  ///
+  /// # Values per device position
+  ///
+  /// ## [DevicePosition::Vest]
+  ///
+  /// First 20 is front, last 20 is back
+  ///
+  /// ```text
+  /// |L   Front   R|L   Back    R|
+  /// +-------------+-------------+
+  /// | 0   1  2  3 | 20 21 22 23 |
+  /// | 4   5  6  7 | 24 25 26 27 |
+  /// | 8   9 10 11 | 28 29 30 31 |
+  /// | 12 13 14 15 | 32 33 34 35 |
+  /// | 16 17 18 19 | 36 37 38 39 | <- this row only for the X40 suit
+  /// +-------------+-------------+
+  /// ```
+  ///
+  /// ## [DevicePosition::VestFront], [DevicePosition::VestBack]
+  ///
+  /// From what I can see it is rarely, if ever, used.
+  ///
+  /// ```text
+  /// |L           R|
+  /// +-------------+
+  /// | 0   1  2  3 |
+  /// | 4   5  6  7 |
+  /// | 8   9 10 11 |
+  /// | 12 13 14 15 |
+  /// | 16 17 18 19 |
+  /// +-------------+
+  /// ```
+  ///
+  /// ## [DevicePosition::Head]
+  ///
+  /// ```text
+  /// +-------------------+
+  /// |   0   1   2   3   |
+  /// | +---------------+ |
+  /// | |               | |
+  /// | +---+       +---+ |
+  /// +-----+       +-----+
+  /// ```
+  ///
+  /// ## [DevicePosition::ForearmL], [DevicePosition::ForearmR]
+  ///
+  /// ```text
+  /// +---------+
+  /// |         |
+  /// | 0  1  2 |
+  /// |         |
+  /// +---------+
+  /// ```
+  ///
+  /// ## [DevicePosition::HandL], [DevicePosition::HandR]
+  ///
+  /// ```text
+  /// +-----+
+  /// |  0  |
+  /// |  1  |
+  /// |  2  |
+  /// +-----+
+  /// ```
+  ///
+  /// ## [DevicePosition::GloveL], [DevicePosition::GloveR]
+  ///
+  /// ```text
+  ///     .-.
+  ///   .-|2|-.
+  ///   |1| |3|
+  ///   | | | |-.
+  ///   | | | |4|
+  /// .-| | | | |
+  /// |0|     ` |
+  /// | |       |
+  /// |         |
+  /// \         /
+  ///  |   5   |
+  ///  |       |
+  /// ```
+  ///
+  /// ## [DevicePosition::FootL], [DevicePosition::FootR]
+  ///
+  /// ```text
+  /// +---------+
+  /// |         |
+  /// | 0  1  2 |
+  /// |         |
+  /// +---------+
+  /// ```
+  ///
+  /// todo: this is usually [u8; 40] as for 40 motors (values 0-100)
+  motor_values: Vec<u8>,
+}
+
+#[derive(Derivative, Getters)]
+#[get = "pub"]
+#[derivative(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+pub struct SdkPlayPathModeMessage {
+  request_id: u32,
+
+  #[cfg_attr(
+    feature = "serde",
+    serde(
+      serialize_with = "DevicePosition::serialize_as_repr",
+      deserialize_with = "DevicePosition::deserialize_from_repr"
+    )
+  )]
+  position: DevicePosition,
+
+  duration_millis: u64,
+
+  path_points: Vec<PathPoint>,
 }
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
 use ss_bh::server::ws::{BhWebsocketServerBuilder, BhWebsocketServerConfig};
 
-use ss_bh::server::HapticManagerCommand;
+use ss_bh::server::{HapticManagerCommand, HapticManagerEvent};
 use std::path::PathBuf;
 use tokio::sync::{broadcast, mpsc};
 use tokio_util::sync::CancellationToken;
@@ -26,10 +26,10 @@ async fn main() -> anyhow::Result<()> {
   let cancellation_token = CancellationToken::new();
 
   let (command_sender, mut command_receiver) = mpsc::channel::<HapticManagerCommand>(10);
-  let (event_sender, _event_receiver) = broadcast::channel::<ss_bh::server::HapticManagerEvent>(10);
+  let (event_sender, _event_receiver) = broadcast::channel::<HapticManagerEvent>(10);
 
   BhWebsocketServerBuilder::new(ws_config, command_sender, event_sender)
-    .with_cancellation_token(Some(cancellation_token))
+    .with_cancellation_token(Some(cancellation_token.clone()))
     .build()
     .await?;
 
@@ -44,6 +44,8 @@ async fn main() -> anyhow::Result<()> {
       }
     }
   }
+
+  cancellation_token.cancel();
 
   Ok(())
 }

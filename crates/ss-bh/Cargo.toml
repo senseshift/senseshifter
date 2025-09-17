@@ -37,6 +37,8 @@ rand = { workspace = true, optional = true }
 rand_chacha = { workspace = true, optional = true }
 
 [features]
+default = ["server", "serde",  "v2", "v3", "v4"]
+
 serde = ["dep:serde", "dep:serde_json", "bh-haptic-definitions/serde", "bh-sdk/serde"]
 
 tls = ["dep:rustls", "axum-server/tls-rustls"]
@@ -47,6 +49,8 @@ v1 = ["bh-sdk/v1"]
 v2 = ["bh-sdk/v2"]
 v3 = ["bh-sdk/v3", "tls"]
 v4 = ["bh-sdk/v4", "v3", "tls", "dep:rsa", "dep:aes-gcm", "dep:rand", "dep:rand_chacha", "dep:base64", "dep:hex"]
+
+server = ["ws"]
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }

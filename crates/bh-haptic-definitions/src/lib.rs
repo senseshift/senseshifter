@@ -1,6 +1,10 @@
+mod audio;
 mod device;
+pub mod path_point_mapper;
 mod tact;
+mod traits;
 
+pub use audio::*;
 pub use device::*;
 pub use tact::*;
 
@@ -123,6 +127,7 @@ pub struct HapticDefinitionMapping {
 
   #[cfg_attr(feature = "serde", serde(default))]
   tact_file_patterns: Vec<HapticDefinitionTactFilePattern>,
-  // #[serde(default)]
-  // audio_file_patterns: Option<Vec<HapticDefinitionAudioFilePattern>>,
+
+  #[cfg_attr(feature = "serde", serde(default))]
+  audio_file_patterns: Vec<HapticDefinitionAudioFilePattern>,
 }

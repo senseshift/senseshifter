@@ -1,19 +1,25 @@
 use crate::EffectFeedbackPlaybackType;
 use derivative::Derivative;
-use getset::Getters;
+use getset::{Getters, MutGetters};
 
-#[derive(Derivative, Getters)]
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct EffectPathMode {
   feedback: Vec<EffectPathModeFeedback>,
 }
 
-#[derive(Derivative, Getters)]
+impl EffectPathMode {
+  pub fn new(feedback: Vec<EffectPathModeFeedback>) -> Self {
+    Self { feedback }
+  }
+}
+
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct EffectPathModeFeedback {
@@ -23,9 +29,25 @@ pub struct EffectPathModeFeedback {
   point_list: Vec<EffectPathModePoint>,
 }
 
-#[derive(Derivative, Getters)]
+impl EffectPathModeFeedback {
+  pub fn new(
+    playback_type: EffectFeedbackPlaybackType,
+    moving_pattern: EffectPathModeMovingPattern,
+    visible: bool,
+    point_list: Vec<EffectPathModePoint>,
+  ) -> Self {
+    Self {
+      playback_type,
+      moving_pattern,
+      visible,
+      point_list,
+    }
+  }
+}
+
+#[derive(Derivative, Getters, MutGetters)]
 #[derivative(Debug, Clone, PartialEq, Eq)]
-#[get = "pub"]
+#[getset(get = "pub", get_mut = "pub")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct EffectPathModePoint {
@@ -39,6 +61,17 @@ pub struct EffectPathModePoint {
 
   #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_handy::de::to_f64"))]
   y: f64,
+}
+
+impl EffectPathModePoint {
+  pub fn new(intensity: f64, time: u32, x: f64, y: f64) -> Self {
+    Self {
+      intensity,
+      time,
+      x,
+      y,
+    }
+  }
 }
 
 #[derive(Derivative)]
